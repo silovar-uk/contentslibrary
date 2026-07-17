@@ -4,13 +4,23 @@
 
 ## v0.2で改善した入力・編集
 
-- 作品種別に応じて、状態・作者欄・進捗単位の表示を自動切替
-- PCの詳細ペインから、状態・評価・一言メモ・進捗をクイック編集
-- スマホの保存操作を画面下部へ固定
-- 新規登録の入力を自動下書き保存し、次回に復元
+- 作品種別に合わせて、作者欄・状態名・進捗単位を自動変更
+- PCの詳細ペインから状態・評価・一言・進捗をクイック編集
+- スマホは保存操作を画面下部へ固定
+- 新規入力の下書き保存・復元・破棄
 - 編集中の未保存離脱を確認
-- 進捗が全体を超える入力を、画面側とAPI側の両方で拒否
-- `Ctrl / Cmd + Enter`で作品フォームを保存
+- `Ctrl / Cmd + Enter`で保存
+- 進捗が全体を超える入力を画面側とAPI側で拒否
+
+## v0.3で改善した検索・整理
+
+- 複数語をすべて含むAND検索
+- 分類名の部分一致と複数分類AND検索
+- ジャンル・テーマ・タグ候補を使用回数順で表示
+- 現在の検索・絞り込み条件を名前付き保存
+- 保存ビューの適用、起動時の既定表示、削除
+- 適用中の絞り込みチップを個別解除
+- 保存ビューは利用者ごとに分離
 
 ## 実装済み
 
@@ -119,6 +129,9 @@ Cloudflare側の本番環境変数とSecretはGitHubへ保存しません。
 - `GET/PATCH/DELETE /api/works/:id`
 - `POST /api/works/:id/experiences`
 - `POST /api/works/:id/notes`
+- `GET /api/labels`
+- `GET/POST /api/saved-views`
+- `PATCH/DELETE /api/saved-views/:id`
 - `GET /api/export?format=json|csv|markdown`
 - `GET /api/admin/users`
 - `POST /api/admin/invitations`
@@ -131,7 +144,6 @@ Cloudflare側の本番環境変数とSecretはGitHubへ保存しません。
 ## MVP後に残るもの
 
 - Access認証ログの自動取り込み
-- 保存ビューのDB保存・編集
 - 作品同士の関連付けUI
 - インポート
 - viewer向け限定共有画面
@@ -141,4 +153,4 @@ Cloudflare側の本番環境変数とSecretはGitHubへ保存しません。
 
 - `node_modules` はOneDrive同期対象外のフォルダ（例: `C:\dev\contentlibrary`）で作成することを推奨します。
 - PowerShellの実行ポリシーで `npm` が止まる場合は `npm.cmd` を使用してください。
-- 公開npmレジストリ `https://registry.npmjs.org/` を使用します。
+- この配布版は公開npmレジストリ `https://registry.npmjs.org/` を使用します。
