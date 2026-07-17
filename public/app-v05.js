@@ -1,10 +1,12 @@
 const V5_VERSION='0.5';
 
 function v5MountStyles(){
-  if(document.querySelector('link[href="/v05.css"]'))return;
-  const link=document.createElement('link');
-  link.rel='stylesheet';link.href='/v05.css';
-  document.head.append(link);
+  for(const href of ['/v05.css','/v05-polish.css']){
+    if(document.querySelector(`link[href="${href}"]`))continue;
+    const link=document.createElement('link');
+    link.rel='stylesheet';link.href=href;
+    document.head.append(link);
+  }
 }
 
 function v5MountFolio(){
