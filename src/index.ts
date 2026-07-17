@@ -4,6 +4,7 @@ import type { AuthContext, Env } from "./types";
 import { assertProgressMutation } from "./v02-validation";
 import { addExperience, addNote, createWork, deleteWork, exportData, getHome, getWork, updateWork } from "./routes/works";
 import { createSavedView, deleteSavedView, listLabelSuggestions, listSavedViews, listWorksV03, updateSavedView } from "./routes/library-v03";
+import { deleteExperienceV04, deleteNoteV04, reorderNotesV04, updateExperienceV04, updateNoteV04 } from "./routes/content-v04";
 import { blockUser, createInvitation, listAuditEvents, listSecurityEvents, listUsers, resolveSecurityEvent, revokeUserSession, suspendUser, unblockUser } from "./routes/admin";
 
 function match(pathname: string, pattern: RegExp): RegExpMatchArray | null {
@@ -54,6 +55,22 @@ async function handleApi(request: Request, env: Env, auth: AuthContext): Promise
   if (m && request.method === "POST") return addExperience(request, env, auth, decodeURIComponent(m[1]!));
   m = match(path, /^\/api\/works\/([^/]+)\/notes$/);
   if (m && request.method === "POST") return addNote(request, env, auth, decodeURIComponent(m[1]!));
+  m = match(path, /^\/api\/works\/([^/]+)\/notes\/reorder$/);
+  if (m && request.method === "POST") return reorderNotesV04(request, env, auth, decodeURIComponent(m[1]!));
+
+  m = match(path, /^\/api\/notes\/([^/]+)$/);
+  if (m) {
+    const id = decodeURIComponent(m[1]!);
+    if (request.method === "PATCH") return updateNoteV04(request, env, auth, id);
+    if (request.method === "DELETE") return deleteNoteV04(env, auth, id);
+  }
+
+  m = match(path, /^\/api\/experiences\/([^/]+)$/);
+  if (m) {
+    const id = decodeURIComponent(m[1]!);
+    if (request.method === "PATCH") return updateExperienceV04(request, env, auth, id);
+    if (request.method === "DELETE") return deleteExperienceV04(env, auth, id);
+  }
 
   if (request.method === "GET" && path === "/api/admin/users") return listUsers(request, env, auth);
   if (request.method === "POST" && path === "/api/admin/invitations") return createInvitation(request, env, auth);
