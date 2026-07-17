@@ -2,7 +2,8 @@ import { authenticate } from "./auth";
 import { HttpError, assertSameOriginMutation, errorResponse, json, withSecurityHeaders } from "./http";
 import type { AuthContext, Env } from "./types";
 import { assertProgressMutation } from "./v02-validation";
-import { addExperience, addNote, createWork, deleteWork, exportData, getHome, getWork, listWorks, updateWork } from "./routes/works";
+import { addExperience, addNote, createWork, deleteWork, exportData, getHome, getWork, updateWork } from "./routes/works";
+import { createSavedView, deleteSavedView, listLabelSuggestions, listSavedViews, listWorksV03, updateSavedView } from "./routes/library-v03";
 import { blockUser, createInvitation, listAuditEvents, listSecurityEvents, listUsers, resolveSecurityEvent, revokeUserSession, suspendUser, unblockUser } from "./routes/admin";
 
 function match(pathname: string, pattern: RegExp): RegExpMatchArray | null {
@@ -28,11 +29,21 @@ async function handleApi(request: Request, env: Env, auth: AuthContext): Promise
     });
   }
   if (request.method === "GET" && path === "/api/home") return getHome(env, auth);
-  if (request.method === "GET" && path === "/api/works") return listWorks(request, env, auth);
+  if (request.method === "GET" && path === "/api/works") return listWorksV03(request, env, auth);
   if (request.method === "POST" && path === "/api/works") return createWork(request, env, auth);
   if (request.method === "GET" && path === "/api/export") return exportData(request, env, auth);
+  if (request.method === "GET" && path === "/api/labels") return listLabelSuggestions(request, env, auth);
+  if (request.method === "GET" && path === "/api/saved-views") return listSavedViews(env, auth);
+  if (request.method === "POST" && path === "/api/saved-views") return createSavedView(request, env, auth);
 
-  let m = match(path, /^\/api\/works\/([^/]+)$/);
+  let m = match(path, /^\/api\/saved-views\/([^/]+)$/);
+  if (m) {
+    const id = decodeURIComponent(m[1]!);
+    if (request.method === "PATCH") return updateSavedView(request, env, auth, id);
+    if (request.method === "DELETE") return deleteSavedView(env, auth, id);
+  }
+
+  m = match(path, /^\/api\/works\/([^/]+)$/);
   if (m) {
     const id = decodeURIComponent(m[1]!);
     if (request.method === "GET") return getWork(env, auth, id);
