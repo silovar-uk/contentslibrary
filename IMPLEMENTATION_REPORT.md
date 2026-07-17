@@ -32,7 +32,7 @@
 
 - TypeScript型検査: 成功
 - フロントエンドJavaScript構文確認: 成功
-- Nodeテスト: 19件成功、失敗0件
+- Nodeテスト: 20件成功、失敗0件
 - Wrangler deploy dry-run: 成功
 - 既存の認証、所有権、検索、保存ビュー、履歴編集テストも成功
 - GitHub Actions: 成功
