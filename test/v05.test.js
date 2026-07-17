@@ -25,11 +25,12 @@ test('均等なカードUIを崩す意図的な非対称レイアウトを持つ
 
 test('動的コンテンツにも装丁と控えめなモーションを適用する',async()=>{
   const app=await read('public/app-v05.js');
+  const css=await read('public/v05.css');
   assert.match(app,/archive-folio/);
   assert.match(app,/hero-editorial-note/);
   assert.match(app,/IntersectionObserver/);
   assert.match(app,/MutationObserver/);
-  assert.match(app,/prefers-reduced-motion/);
+  assert.match(css,/prefers-reduced-motion/);
 });
 
 test('v0.5の視覚レイヤーを読み込む',async()=>{
