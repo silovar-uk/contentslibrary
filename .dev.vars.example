@@ -1,0 +1,14 @@
+# ローカル開発専用。リモート環境では開発認証は動きません。
+APP_ENV=development
+DEV_AUTH_ENABLED=true
+DEV_AUTH_EMAIL=owner@example.com
+DEV_AUTH_SUB=dev-owner
+OWNER_EMAIL=owner@example.com
+ALLOW_OWNER_BOOTSTRAP=true
+SEED_DEMO_DATA=true
+
+# 本番デプロイ時にCloudflareの環境変数／Secretsへ設定
+TEAM_DOMAIN=https://your-team.cloudflareaccess.com
+POLICY_AUD=replace-with-access-audience-tag
+# CF_API_TOKEN=Cloudflare Accessセッション失効用（任意）
+# CF_ACCOUNT_ID=Cloudflare Account ID（任意）
