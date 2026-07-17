@@ -1,6 +1,6 @@
 {
   "name": "sakuhin-log",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,7 +8,8 @@
     "db:migrate:local": "wrangler d1 migrations apply DB --local --persist-to .wrangler/state",
     "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
     "deploy": "wrangler deploy",
-    "check": "tsc --noEmit && node --test test/*.test.js",
+    "check:frontend": "node --check public/app-v02.js && node --check public/app-v03.js && node --check public/app-v04.js && node --check public/app-v05.js",
+    "check": "tsc --noEmit && npm run check:frontend && node --test test/*.test.js",
     "dry-run": "wrangler deploy --dry-run --outdir dist-worker"
   },
   "dependencies": {
