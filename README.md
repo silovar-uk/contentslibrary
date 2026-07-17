@@ -2,6 +2,16 @@
 
 読書を中心に、本・映画・漫画・アニメ・ドラマとの関係を、表紙画像なし・テキスト中心で残す招待制Webアプリです。
 
+## v0.2で改善した入力・編集
+
+- 作品種別に応じて、状態・作者欄・進捗単位の表示を自動切替
+- PCの詳細ペインから、状態・評価・一言メモ・進捗をクイック編集
+- スマホの保存操作を画面下部へ固定
+- 新規登録の入力を自動下書き保存し、次回に復元
+- 編集中の未保存離脱を確認
+- 進捗が全体を超える入力を、画面側とAPI側の両方で拒否
+- `Ctrl / Cmd + Enter`で作品フォームを保存
+
 ## 実装済み
 
 - Cloudflare Access JWT検証（署名・issuer・audience・期限）
@@ -131,4 +141,4 @@ Cloudflare側の本番環境変数とSecretはGitHubへ保存しません。
 
 - `node_modules` はOneDrive同期対象外のフォルダ（例: `C:\dev\contentlibrary`）で作成することを推奨します。
 - PowerShellの実行ポリシーで `npm` が止まる場合は `npm.cmd` を使用してください。
-- この配布版は公開npmレジストリ `https://registry.npmjs.org/` を使用します。
+- 公開npmレジストリ `https://registry.npmjs.org/` を使用します。

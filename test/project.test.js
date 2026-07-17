@@ -35,3 +35,21 @@ test('主要UIとエクスポート形式が存在する', async () => {
   for (const id of ['globalSearch','workList','detailPanel','workDialog','adminView']) assert.match(html, new RegExp(`id="${id}"`));
   for (const format of ['json','csv','markdown']) assert.match(html, new RegExp(`data-export="${format}"`));
 });
+
+test('媒体別の入力支援とPCクイック編集を持つ', async () => {
+  const app = await read('public/app-v02.js');
+  assert.match(app, /const MEDIA_CONFIG/);
+  for (const unit of ['ページ','巻','分','話']) assert.match(app, new RegExp(unit));
+  assert.match(app, /quickEditForm/);
+  assert.match(app, /creatorLabelText/);
+  assert.match(app, /workDraftNotice/);
+});
+
+test('進捗の矛盾をサーバー側でも拒否する', async () => {
+  const validation = await read('src/v02-validation.ts');
+  const index = await read('src/index.ts');
+  assert.match(validation, /function validateProgress/);
+  assert.match(validation, /現在の進捗は全体以下にしてください/);
+  assert.match(validation, /SELECT progress_current, progress_total FROM works/);
+  assert.match(index, /await assertProgressMutation\(request, env, auth\)/);
+});

@@ -1,6 +1,7 @@
 import { authenticate } from "./auth";
 import { HttpError, assertSameOriginMutation, errorResponse, json, withSecurityHeaders } from "./http";
 import type { AuthContext, Env } from "./types";
+import { assertProgressMutation } from "./v02-validation";
 import { addExperience, addNote, createWork, deleteWork, exportData, getHome, getWork, listWorks, updateWork } from "./routes/works";
 import { blockUser, createInvitation, listAuditEvents, listSecurityEvents, listUsers, resolveSecurityEvent, revokeUserSession, suspendUser, unblockUser } from "./routes/admin";
 
@@ -12,6 +13,7 @@ async function handleApi(request: Request, env: Env, auth: AuthContext): Promise
   assertSameOriginMutation(request);
   const url = new URL(request.url);
   const path = url.pathname;
+  await assertProgressMutation(request, env, auth);
 
   if (request.method === "GET" && path === "/api/me") {
     return json({
