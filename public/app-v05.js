@@ -35,16 +35,6 @@ function v5SetCardOrder(root=document){
   });
 }
 
-function v5RevealElements(root=document){
-  const candidates=root.querySelectorAll('.section-heading,.reading-card,.home-columns>section,.stats-bar,.work-card,.detail-section,.settings-card');
-  candidates.forEach((item)=>{
-    if(item.dataset.v5Reveal==='true')return;
-    item.dataset.v5Reveal='true';
-    item.classList.add('reveal-entry');
-    v5Observer?.observe(item);
-  });
-}
-
 const v5Observer='IntersectionObserver' in window?new IntersectionObserver((entries,observer)=>{
   entries.forEach((entry)=>{
     if(!entry.isIntersecting)return;
@@ -54,6 +44,17 @@ const v5Observer='IntersectionObserver' in window?new IntersectionObserver((entr
     observer.unobserve(entry.target);
   });
 },{threshold:.08,rootMargin:'0px 0px -7% 0px'}):null;
+
+function v5RevealElements(root=document){
+  const candidates=root.querySelectorAll('.section-heading,.reading-card,.home-columns>section,.stats-bar,.work-card,.detail-section,.settings-card');
+  candidates.forEach((item)=>{
+    if(item.dataset.v5Reveal==='true')return;
+    item.dataset.v5Reveal='true';
+    item.classList.add('reveal-entry');
+    if(v5Observer)v5Observer.observe(item);
+    else item.classList.add('is-visible');
+  });
+}
 
 function v5EnhanceDynamicContent(){
   v5SetCardOrder();
