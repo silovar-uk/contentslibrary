@@ -22,6 +22,18 @@
 - 適用中の絞り込みチップを個別解除
 - 保存ビューは利用者ごとに分離
 
+## v0.4で改善したメモ・体験履歴
+
+- メモの編集・削除
+- メモを自分の順番へ並び替え
+- 更新順、作成順、メモ種別順への表示切替
+- 再読・再視聴など体験履歴の編集・削除
+- 体験履歴を初回順・最新順へ切替
+- 各体験の評価が前回からどう変わったかを表示
+- 初回評価から最新評価までの変化を要約
+- メモ・体験履歴にも楽観ロックを適用
+- 履歴変更後に作品の状態・評価・進捗を再同期
+
 ## 実装済み
 
 - Cloudflare Access JWT検証（署名・issuer・audience・期限）
@@ -129,6 +141,9 @@ Cloudflare側の本番環境変数とSecretはGitHubへ保存しません。
 - `GET/PATCH/DELETE /api/works/:id`
 - `POST /api/works/:id/experiences`
 - `POST /api/works/:id/notes`
+- `POST /api/works/:id/notes/reorder`
+- `PATCH/DELETE /api/notes/:id`
+- `PATCH/DELETE /api/experiences/:id`
 - `GET /api/labels`
 - `GET/POST /api/saved-views`
 - `PATCH/DELETE /api/saved-views/:id`
