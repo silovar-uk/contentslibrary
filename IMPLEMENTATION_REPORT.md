@@ -1,4 +1,4 @@
-# 実装レポート v0.5
+# 実装レポート v0.6
 
 ## 実装範囲
 
@@ -26,22 +26,47 @@
 - スマホでも同じデザイン言語を維持
 - IntersectionObserverによる控えめな表示モーション
 - `prefers-reduced-motion`対応
-- フォーカス表示とモバイルナビの現在地表示を調整
+
+## v0.6 本番公開・ログイン必須化
+
+- `/`、`/api/*`、`/health`、Static Assetsをすべて認証後に処理
+- Cloudflare Access JWTの署名、issuer、audienceをWorker内で再検証
+- Access通過後もD1の`members.status`と権限・所有権を再確認
+- リモート環境で`APP_ENV != production`なら503で停止
+- リモート環境で開発認証またはデモデータが有効なら503で停止
+- Access Team Domain / Audience未設定時は503で停止
+- 初期owner bootstrap有効時のメール設定を検証
+- 本番の`workers.dev`を無効化
+- カスタムドメインのみを生成設定へ登録
+- ローカル設定を`wrangler.dev.jsonc`へ分離
+- 本番設定を環境変数から`.wrangler.production.jsonc`へ安全に生成
+- GitHub Environment `production`を使う手動デプロイワークフロー
+- D1マイグレーション成功後だけWorkerをデプロイ
+- 初回owner作成後にbootstrapを無効化する運用手順
+- Access policyとアプリ内招待の二重登録手順
 
 ## 検証結果
 
-- TypeScript型検査: 成功
-- フロントエンドJavaScript構文確認: 成功
-- Nodeテスト: 20件成功、失敗0件
-- Wrangler deploy dry-run: 成功
-- 既存の認証、所有権、検索、保存ビュー、履歴編集テストも成功
-- GitHub Actions: 成功
+- TypeScript型検査
+- フロントエンドJavaScript構文確認
+- Nodeテスト 26件
+- 本番設定生成の成功・必須値不足時の停止
+- カスタムドメイン、`workers_dev=false`、D1 ID、Access値の生成確認
+- 全ルートが認証後に処理されることを確認
+- 既存の認証、所有権、検索、保存ビュー、履歴編集テスト
+- Wrangler deploy dry-run
+- GitHub Actions
 
-## 未実施・本番時に必要な作業
+## 実Cloudflare環境で残る作業
 
-- 実CloudflareアカウントでD1を作成し、`database_id`を設定
-- Cloudflare Access Applicationを作成し、`TEAM_DOMAIN`と`POLICY_AUD`を設定
-- 実IdPでの本番ログイン確認
-- セッション失効を使う場合、Cloudflare API Secretを設定
-- 実機・複数ブラウザでのE2E試験
-- Access認証ログの自動取り込み
+- Cloudflare D1を1つ作成
+- 利用するカスタムドメインを決定
+- Cloudflare Access self-hosted applicationを作成
+- Access Allow policyへ最初のownerメールを登録
+- GitHub Environment `production`へSecrets / Variablesを登録
+- `Deploy production`を手動実行
+- ownerで初回ログイン後、`ALLOW_OWNER_BOOTSTRAP=false`へ変更して再デプロイ
+- 実IdP・スマートフォン・複数ブラウザで本番E2E確認
+- Access認証ログの自動取り込みは未実装
+
+詳細手順は`docs/DEPLOYMENT.md`を参照してください。
