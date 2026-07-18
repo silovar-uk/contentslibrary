@@ -1,0 +1,32 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "sakuhin-log-local",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-17",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "not_found_handling": "single-page-application"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "sakuhin-log",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "vars": {
+    "APP_ENV": "development",
+    "DEV_AUTH_ENABLED": "true",
+    "DEV_AUTH_EMAIL": "owner@example.com",
+    "DEV_AUTH_SUB": "dev-owner",
+    "OWNER_EMAIL": "owner@example.com",
+    "ALLOW_OWNER_BOOTSTRAP": "true",
+    "SEED_DEMO_DATA": "true",
+    "TEAM_DOMAIN": "https://your-team.cloudflareaccess.com",
+    "POLICY_AUD": "replace-with-access-audience-tag"
+  }
+}
