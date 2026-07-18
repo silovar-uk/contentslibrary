@@ -44,8 +44,21 @@
 - 選択中の作品を朱色で反転し、右側詳細を雑誌の右ページとして構成
 - フィルター領域を暗い索引ページとして分離
 - ダイアログを編集用紙のような罫線中心の構成へ変更
-- スマホでも同じ編集思想を維持しつつ、操作領域と可読性を確保
+- スマホでも同じ編集思想を維持
 - 控えめなスクロール表示と`prefers-reduced-motion`対応
+
+## v0.6で改善した公開・認証
+
+- Cloudflare Accessを通過しないリクエストを全画面・API・Static Assetsで拒否
+- Access JWTの署名、issuer、audienceをWorker内でも再検証
+- Access通過後もD1の`members.status = active`を確認
+- `/health`を含む全ルートをログイン必須化
+- リモート環境で開発認証やデモデータが有効なら503で停止
+- `workers.dev`を本番で無効化し、カスタムドメインだけを公開
+- ローカル設定を`wrangler.dev.jsonc`へ分離
+- GitHub ActionsからD1マイグレーション後に手動デプロイ
+- D1 ID、ホスト名、Access設定などの必須値を公開前に検証
+- 初回owner作成後にbootstrapを閉じる運用を整備
 
 ## 実装済み
 
@@ -71,7 +84,7 @@
 - Cloudflare Access
 - TypeScript
 - Vanilla HTML / CSS / JavaScript
-- GitHub repository
+- GitHub Actions
 
 ## ローカル起動
 
@@ -81,9 +94,7 @@ npm run db:migrate:local
 npm run dev
 ```
 
-表示された `http://localhost:8787` を開きます。ローカル環境だけ、`wrangler.jsonc` の開発用ownerでログイン済みとして動作します。初回アクセス時にownerとデモデータを作成します。
-
-開発用認証はコード上でも `localhost / 127.0.0.1 / 0.0.0.0` に限定しており、公開URLでは利用できません。
+ローカル起動は`wrangler.dev.jsonc`を使い、`localhost / 127.0.0.1 / 0.0.0.0`だけ開発用ownerとして動作します。本番の`wrangler.jsonc`には開発ログイン情報を置きません。
 
 ## チェック
 
@@ -94,62 +105,27 @@ npm run dry-run
 
 `npm run check`はTypeScript、フロントエンドJavaScript構文、全Nodeテストを確認します。
 
-## Cloudflareへ配置
+## 本番公開
 
-### 1. D1を作成
+公開手順は次の文書へまとめています。
 
-```bash
-npx wrangler d1 create sakuhin-log
-```
+- [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
 
-表示された `database_id` を `wrangler.jsonc` の `d1_databases` に設定します。
+概要：
 
-```bash
-npm run db:migrate:remote
-```
+1. Cloudflare D1を作成
+2. カスタムドメイン用のCloudflare Accessアプリを作成
+3. ownerのメールだけをAllow policyへ登録
+4. GitHub Environment `production`へSecrets / Variablesを登録
+5. `Deploy production`ワークフローを手動実行
+6. ownerで初回ログイン
+7. `ALLOW_OWNER_BOOTSTRAP=false`へ変更して再デプロイ
 
-### 2. 本番環境変数を設定
-
-Cloudflare Workersの環境変数へ設定します。
-
-- `APP_ENV=production`
-- `DEV_AUTH_ENABLED=false`
-- `OWNER_EMAIL=最初のownerのメールアドレス`
-- `ALLOW_OWNER_BOOTSTRAP=true`（owner作成後はfalse推奨）
-- `SEED_DEMO_DATA=false`
-- `TEAM_DOMAIN=https://<team>.cloudflareaccess.com`
-- `POLICY_AUD=<Access Application Audience Tag>`
-
-管理画面からセッション失効を行う場合のみSecretを設定します。
-
-```bash
-npx wrangler secret put CF_API_TOKEN
-npx wrangler secret put CF_ACCOUNT_ID
-```
-
-APIトークンには、Cloudflare Accessのユーザーセッションを失効できる最小権限を付与します。
-
-### 3. Cloudflare Accessを設定
-
-Workerの本番URL全体をSelf-hosted applicationとして保護します。
-
-- ログイン方式：GoogleまたはメールのワンタイムPIN
-- セッション期間：初期案24時間
-- Preview URLにもAccessを有効化
-- Worker内でもAccess JWTを再検証
-
-Accessで本人確認に成功しても、D1に招待・active状態がなければアプリは拒否します。
-
-### 4. GitHubで管理
-
-1. Cloudflare Workers Buildsでこのリポジトリを接続
-2. Build command: `npm run check`
-3. Deploy command: `npx wrangler deploy`
-
-Cloudflare側の本番環境変数とSecretはGitHubへ保存しません。
+本番設定は`.wrangler.production.jsonc`として実行時に生成され、Git管理されません。
 
 ## API概要
 
+- `GET /health`（ログイン必須）
 - `GET /api/me`
 - `GET /api/home`
 - `GET/POST /api/works`
@@ -181,6 +157,6 @@ Cloudflare側の本番環境変数とSecretはGitHubへ保存しません。
 
 ## Windows / OneDriveでの注意
 
-- `node_modules` はOneDrive同期対象外のフォルダ（例: `C:\dev\contentlibrary`）で作成することを推奨します。
-- PowerShellの実行ポリシーで `npm` が止まる場合は `npm.cmd` を使用してください。
-- この配布版は公開npmレジストリ `https://registry.npmjs.org/` を使用します。
+- `node_modules`はOneDrive同期対象外のフォルダで作成することを推奨します。
+- PowerShellの実行ポリシーで`npm`が止まる場合は`npm.cmd`を使用してください。
+- 公開npmレジストリ`https://registry.npmjs.org/`を使用します。
