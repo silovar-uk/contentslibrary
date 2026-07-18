@@ -1,14 +1,10 @@
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
 import { HttpError } from "./http";
 import { audit, getMemberByIdentity, maskIp, newId, normalizeEmail, normalizeText, nowIso, securityEvent } from "./db";
+import { assertRuntimeConfiguration, isLocalRequest } from "./production-safety";
 import type { AuthContext, Env, Member } from "./types";
 
 const jwksCache = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
-
-function isLocalRequest(request: Request): boolean {
-  const host = new URL(request.url).hostname;
-  return host === "localhost" || host === "127.0.0.1" || host === "0.0.0.0";
-}
 
 function requestMeta(request: Request) {
   return {
@@ -134,6 +130,7 @@ async function seedDemoData(env: Env, ownerId: string): Promise<void> {
 }
 
 export async function authenticate(request: Request, env: Env): Promise<AuthContext> {
+  assertRuntimeConfiguration(request, env);
   const localDev = isLocalRequest(request) && env.DEV_AUTH_ENABLED === "true";
   let claims: JWTPayload;
   if (localDev) {
