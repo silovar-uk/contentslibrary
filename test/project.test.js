@@ -13,7 +13,9 @@ test('公開サインアップや自作パスワードを持たない', async ()
 
 test('ローカル開発認証はlocalhostに限定される', async () => {
   const auth = await read('src/auth.ts');
-  assert.match(auth, /host === "localhost"/);
+  const safety = await read('src/production-safety.ts');
+  assert.match(safety, /host === "localhost"/);
+  assert.match(safety, /host === "127\.0\.0\.1"/);
   assert.match(auth, /isLocalRequest\(request\) && env\.DEV_AUTH_ENABLED === "true"/);
 });
 
