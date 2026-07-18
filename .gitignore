@@ -2,5 +2,6 @@ node_modules/
 .wrangler/
 dist-worker/
 .dev.vars
+.wrangler.production.jsonc
 .DS_Store
 *.log
