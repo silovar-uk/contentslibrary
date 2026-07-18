@@ -1,0 +1,56 @@
+name: Deploy production
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sakuhin-log-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    env:
+      D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
+      APP_HOSTNAME: ${{ vars.APP_HOSTNAME }}
+      TEAM_DOMAIN: ${{ vars.TEAM_DOMAIN }}
+      POLICY_AUD: ${{ vars.POLICY_AUD }}
+      OWNER_EMAIL: ${{ vars.OWNER_EMAIL }}
+      ALLOW_OWNER_BOOTSTRAP: ${{ vars.ALLOW_OWNER_BOOTSTRAP }}
+      WORKER_NAME: ${{ vars.WORKER_NAME }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run checks
+        run: npm run check
+
+      - name: Generate production configuration
+        run: npm run production:config
+
+      - name: Apply D1 migrations
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: d1 migrations apply DB --remote --config .wrangler.production.jsonc
+
+      - name: Deploy Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --config .wrangler.production.jsonc
