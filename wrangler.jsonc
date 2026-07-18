@@ -4,6 +4,7 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-07-17",
   "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
@@ -19,14 +20,9 @@
     }
   ],
   "vars": {
-    "APP_ENV": "development",
-    "DEV_AUTH_ENABLED": "true",
-    "DEV_AUTH_EMAIL": "owner@example.com",
-    "DEV_AUTH_SUB": "dev-owner",
-    "OWNER_EMAIL": "owner@example.com",
-    "ALLOW_OWNER_BOOTSTRAP": "true",
-    "SEED_DEMO_DATA": "true",
-    "TEAM_DOMAIN": "https://your-team.cloudflareaccess.com",
-    "POLICY_AUD": "replace-with-access-audience-tag"
+    "APP_ENV": "production",
+    "DEV_AUTH_ENABLED": "false",
+    "ALLOW_OWNER_BOOTSTRAP": "false",
+    "SEED_DEMO_DATA": "false"
   }
 }
