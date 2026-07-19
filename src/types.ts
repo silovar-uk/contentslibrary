@@ -41,5 +41,5 @@ export interface AuthContext {
 }
 
 export type WorkType = "book" | "manga" | "movie" | "anime" | "drama" | "other";
-export type WorkStatus = "want" | "active" | "completed" | "paused" | "dropped";
+export type WorkStatus = "want" | "owned_unread" | "active" | "completed" | "paused" | "dropped";
 export type LabelKind = "genre" | "theme" | "tag";

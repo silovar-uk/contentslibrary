@@ -16,7 +16,9 @@ function assertItem(item, index) {
     if (typeof item[key] !== 'string' || !item[key].trim()) throw new Error(`item ${index + 1}: ${key} is required`);
   }
   if (!['book', 'manga', 'movie', 'anime', 'drama', 'other'].includes(item.type)) throw new Error(`item ${index + 1}: type is invalid`);
+  if (item.status && !['want', 'owned_unread', 'active', 'completed', 'paused', 'dropped'].includes(item.status)) throw new Error(`item ${index + 1}: status is invalid`);
   if (item.labels && typeof item.labels !== 'object') throw new Error(`item ${index + 1}: labels are invalid`);
+  if (item.notes && !Array.isArray(item.notes)) throw new Error(`item ${index + 1}: notes are invalid`);
 }
 
 function decryptPayload(packageData, privateKey) {
@@ -68,7 +70,8 @@ SELECT ${sql(id)}, o.id, ${sql(kind)}, ${sql(name.slice(0, 40))}, ${sql(normaliz
     const shortNote = item.short_note ? String(item.short_note).trim().slice(0, 280) : null;
     const metadata = JSON.stringify(item.metadata ?? {});
     const labelText = ['genre', 'theme', 'tag'].flatMap((kind) => item.labels?.[kind] ?? []).join(' ');
-    const searchText = [item.title, creator ?? '', shortNote ?? '', labelText]
+    const noteText = (item.notes ?? []).map((note) => note?.content ?? '').join(' ');
+    const searchText = [item.title, creator ?? '', shortNote ?? '', labelText, noteText]
       .join(' ')
       .normalize('NFKC')
       .toLowerCase()
@@ -95,6 +98,17 @@ FROM _library_import_owner o
 JOIN works w ON w.owner_id = o.id AND w.deleted_at IS NULL AND (w.source_key = ${sql(item.source_key)} OR w.title = ${sql(item.title)})
 JOIN labels l ON l.owner_id = o.id AND l.kind = ${sql(kind)} AND l.normalized_name = ${sql(normalized)};`);
       }
+    }
+
+    for (const [noteIndex, note] of (item.notes ?? []).entries()) {
+      const noteType = ['quick', 'summary', 'impression', 'quote', 'idea', 'connection', 'progress'].includes(note?.note_type) ? note.note_type : 'quick';
+      const content = String(note?.content ?? '').trim();
+      if (!content) continue;
+      const noteId = stableId('seed-note', `${item.source_key}:${noteIndex}:${noteType}:${content}`);
+      statements.push(`INSERT OR IGNORE INTO notes (id, work_id, experience_id, note_type, content, position, created_at, updated_at)
+SELECT ${sql(noteId)}, w.id, NULL, ${sql(noteType)}, ${sql(content)}, ${sql(note?.position ? String(note.position).slice(0, 120) : null)}, ${sql(item.created_at)}, ${sql(item.updated_at)}
+FROM _library_import_owner o
+JOIN works w ON w.owner_id = o.id AND w.deleted_at IS NULL AND (w.source_key = ${sql(item.source_key)} OR w.title = ${sql(item.title)});`);
     }
   }
 
