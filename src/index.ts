@@ -2,10 +2,12 @@ import { authenticate } from "./auth";
 import { HttpError, assertSameOriginMutation, errorResponse, json, withSecurityHeaders } from "./http";
 import type { AuthContext, Env } from "./types";
 import { assertProgressMutation } from "./v02-validation";
-import { addExperience, addNote, createWork, deleteWork, exportData, getHome, getWork, updateWork } from "./routes/works";
+import { addExperience, addNote, createWork, deleteWork, exportData, getWork, updateWork } from "./routes/works";
 import { createSavedView, deleteSavedView, listLabelSuggestions, listSavedViews, listWorksV03, updateSavedView } from "./routes/library-v03";
 import { deleteExperienceV04, deleteNoteV04, reorderNotesV04, updateExperienceV04, updateNoteV04 } from "./routes/content-v04";
 import { blockUser, createInvitation, listAuditEvents, listSecurityEvents, listUsers, resolveSecurityEvent, revokeUserSession, suspendUser, unblockUser } from "./routes/admin";
+import { getNotionImportStatus, importNotionSeed } from "./routes/notion-import";
+import { getHomeV07 } from "./routes/home-v07";
 
 function match(pathname: string, pattern: RegExp): RegExpMatchArray | null {
   return pathname.match(pattern);
@@ -29,7 +31,7 @@ async function handleApi(request: Request, env: Env, auth: AuthContext): Promise
       }
     });
   }
-  if (request.method === "GET" && path === "/api/home") return getHome(env, auth);
+  if (request.method === "GET" && path === "/api/home") return getHomeV07(env, auth);
   if (request.method === "GET" && path === "/api/works") return listWorksV03(request, env, auth);
   if (request.method === "POST" && path === "/api/works") return createWork(request, env, auth);
   if (request.method === "GET" && path === "/api/export") return exportData(request, env, auth);
@@ -76,6 +78,8 @@ async function handleApi(request: Request, env: Env, auth: AuthContext): Promise
   if (request.method === "POST" && path === "/api/admin/invitations") return createInvitation(request, env, auth);
   if (request.method === "GET" && path === "/api/admin/security-events") return listSecurityEvents(request, env, auth);
   if (request.method === "GET" && path === "/api/admin/audit-events") return listAuditEvents(request, env, auth);
+  if (request.method === "GET" && path === "/api/admin/notion-import") return getNotionImportStatus(env, auth);
+  if (request.method === "POST" && path === "/api/admin/notion-import") return importNotionSeed(env, auth);
 
   m = match(path, /^\/api\/admin\/users\/([^/]+)\/(suspend|block|unblock|revoke)$/);
   if (m && request.method === "POST") {
