@@ -1,0 +1,24 @@
+{
+  "name": "sakuhin-log",
+  "version": "0.6.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --config wrangler.dev.jsonc --local --persist-to .wrangler/state",
+    "db:migrate:local": "wrangler d1 migrations apply DB --config wrangler.dev.jsonc --local --persist-to .wrangler/state",
+    "production:config": "node scripts/build-production-config.mjs",
+    "db:migrate:remote": "npm run production:config && wrangler d1 migrations apply DB --remote --config .wrangler.production.jsonc",
+    "deploy": "npm run production:config && wrangler deploy --config .wrangler.production.jsonc",
+    "check:frontend": "node --check public/app-v02.js && node --check public/app-v03.js && node --check public/app-v04.js && node --check public/app-v05.js",
+    "check": "tsc --noEmit && npm run check:frontend && node --test test/*.test.js",
+    "dry-run": "wrangler deploy --dry-run --config wrangler.jsonc --outdir dist-worker"
+  },
+  "dependencies": {
+    "jose": "^6.1.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260717.1",
+    "typescript": "^5.9.2",
+    "wrangler": "^4.112.0"
+  }
+}
