@@ -6,6 +6,7 @@ import { addExperience, addNote, createWork, deleteWork, exportData, getHome, ge
 import { createSavedView, deleteSavedView, listLabelSuggestions, listSavedViews, listWorksV03, updateSavedView } from "./routes/library-v03";
 import { deleteExperienceV04, deleteNoteV04, reorderNotesV04, updateExperienceV04, updateNoteV04 } from "./routes/content-v04";
 import { blockUser, createInvitation, listAuditEvents, listSecurityEvents, listUsers, resolveSecurityEvent, revokeUserSession, suspendUser, unblockUser } from "./routes/admin";
+import { getNotionImportStatus, importNotionSeed } from "./routes/notion-import";
 
 function match(pathname: string, pattern: RegExp): RegExpMatchArray | null {
   return pathname.match(pattern);
@@ -76,6 +77,8 @@ async function handleApi(request: Request, env: Env, auth: AuthContext): Promise
   if (request.method === "POST" && path === "/api/admin/invitations") return createInvitation(request, env, auth);
   if (request.method === "GET" && path === "/api/admin/security-events") return listSecurityEvents(request, env, auth);
   if (request.method === "GET" && path === "/api/admin/audit-events") return listAuditEvents(request, env, auth);
+  if (request.method === "GET" && path === "/api/admin/notion-import") return getNotionImportStatus(env, auth);
+  if (request.method === "POST" && path === "/api/admin/notion-import") return importNotionSeed(env, auth);
 
   m = match(path, /^\/api\/admin\/users\/([^/]+)\/(suspend|block|unblock|revoke)$/);
   if (m && request.method === "POST") {
