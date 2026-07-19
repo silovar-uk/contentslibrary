@@ -19,7 +19,7 @@ test('v0.7の実用UIレイヤーを最後に読み込む',async()=>{
 
 test('Notion最新20件を整形済みデータとして保持する',async()=>{
   const seed=await read('src/notion-seed.ts');
-  assert.equal((seed.match(/sourceKey:/g)||[]).length,20);
+  assert.equal((seed.match(/sourceKey: "notion:/g)||[]).length,20);
   for(const title of ['テスカトリポカ','図書館の大魔術師','傲慢と善良','YABUNONAKA']) assert.match(seed,new RegExp(title));
   assert.match(seed,/NOTION_DATABASE_URL/);
 });
