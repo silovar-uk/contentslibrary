@@ -1,6 +1,6 @@
 {
   "name": "sakuhin-log",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,7 +9,7 @@
     "production:config": "node scripts/build-production-config.mjs",
     "db:migrate:remote": "npm run production:config && wrangler d1 migrations apply DB --remote --config .wrangler.production.jsonc",
     "deploy": "npm run production:config && wrangler deploy --config .wrangler.production.jsonc",
-    "check:frontend": "node --check public/app-v02.js && node --check public/app-v03.js && node --check public/app-v04.js && node --check public/app-v05.js",
+    "check:frontend": "node --check public/app-v02.js && node --check public/app-v03.js && node --check public/app-v04.js && node --check public/app-v05.js && node --check public/app-v07.js",
     "check": "tsc --noEmit && npm run check:frontend && node --test test/*.test.js",
     "dry-run": "wrangler deploy --dry-run --config wrangler.jsonc --outdir dist-worker"
   },
