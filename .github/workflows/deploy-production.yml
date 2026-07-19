@@ -17,7 +17,6 @@ jobs:
     environment: production
     env:
       D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
-      APP_HOSTNAME: ${{ vars.APP_HOSTNAME }}
       TEAM_DOMAIN: ${{ vars.TEAM_DOMAIN }}
       POLICY_AUD: ${{ vars.POLICY_AUD }}
       OWNER_EMAIL: ${{ vars.OWNER_EMAIL }}
