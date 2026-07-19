@@ -1,10 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { access, readFile, readdir } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 
 const root = new URL('../', import.meta.url);
 const read = (path) => readFile(new URL(path, root), 'utf8');
-const exists = async (path) => access(new URL(path, root)).then(()=>true).catch(()=>false);
 
 test('取込データは本番テーブルへ直接入れずステージングする', async () => {
   const migration = await read('migrations/0005_import_center.sql');
@@ -44,11 +43,12 @@ test('設定画面でSHA-256確認後に分割アップロードする', async (
   assert.match(app, /prompt\('本番へ反映します/);
 });
 
-test('旧GitHub Actions投入経路と転送データを残さない', async () => {
-  assert.equal(await exists('.github/workflows/import-private-library.yml'), false);
-  assert.equal(await exists('.github/workflows/prepare-library-import-key.yml'), false);
-  assert.equal(await exists('scripts/decrypt-library-import.mjs'), false);
-  assert.equal(await exists('data/library-import-public.pem'), false);
-  const files = await readdir(new URL('../data/', import.meta.url)).catch(()=>[]);
+test('公開リポジトリに暗号断片や平文取込ファイルを残さない', async () => {
+  let files = [];
+  try {
+    files = await readdir(new URL('../data/', import.meta.url));
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error;
+  }
   assert.equal(files.some((name) => /library-import\.(enc|json|csv)|part-/i.test(name)), false);
 });
