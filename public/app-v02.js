@@ -1,13 +1,13 @@
 const TYPE_LABELS = {book:'本',manga:'漫画',movie:'映画',anime:'アニメ',drama:'ドラマ',other:'その他'};
-const STATUS_LABELS = {want:'読みたい・見たい',active:'進行中',completed:'完了',paused:'一時停止',dropped:'中断'};
+const STATUS_LABELS = {want:'読みたい・見たい',owned_unread:'所持・未読',active:'進行中',completed:'完了',paused:'一時停止',dropped:'中断'};
 const NOTE_LABELS = {quick:'一言',summary:'要約',impression:'印象',quote:'引用',idea:'自分の考え',connection:'接続',progress:'途中メモ'};
 const DRAFT_KEY = 'sakuhin-log-work-draft-v2';
 const MEDIA_CONFIG = {
-  book:{creator:'著者',creatorPlaceholder:'著者名',unit:'ページ',current:'読んだ位置',total:'総ページ数',statuses:{want:'読みたい',active:'読書中',completed:'読了',paused:'保留',dropped:'読むのをやめた'}},
-  manga:{creator:'作者',creatorPlaceholder:'作者名',unit:'巻',current:'読んだ巻',total:'既刊・全巻',statuses:{want:'読みたい',active:'読書中',completed:'既刊読了',paused:'保留',dropped:'読むのをやめた'}},
-  movie:{creator:'監督',creatorPlaceholder:'監督名',unit:'分',current:'鑑賞位置',total:'上映時間',statuses:{want:'見たい',active:'鑑賞中',completed:'鑑賞済み',paused:'保留',dropped:'見るのをやめた'}},
-  anime:{creator:'監督・制作',creatorPlaceholder:'監督名・制作会社',unit:'話',current:'見た話数',total:'全話数',statuses:{want:'見たい',active:'視聴中',completed:'視聴済み',paused:'保留',dropped:'見るのをやめた'}},
-  drama:{creator:'監督・制作',creatorPlaceholder:'監督名・制作会社',unit:'話',current:'見た話数',total:'全話数',statuses:{want:'見たい',active:'視聴中',completed:'視聴済み',paused:'保留',dropped:'見るのをやめた'}},
+  book:{creator:'著者',creatorPlaceholder:'著者名',unit:'ページ',current:'読んだ位置',total:'総ページ数',statuses:{owned_unread:'所持・未読',want:'読みたい',active:'読書中',completed:'読了',paused:'保留',dropped:'読むのをやめた'}},
+  manga:{creator:'作者',creatorPlaceholder:'作者名',unit:'巻',current:'読んだ巻',total:'既刊・全巻',statuses:{owned_unread:'所持・未読',want:'読みたい',active:'読書中',completed:'既刊読了',paused:'保留',dropped:'読むのをやめた'}},
+  movie:{creator:'監督',creatorPlaceholder:'監督名',unit:'分',current:'鑑賞位置',total:'上映時間',statuses:{owned_unread:'所持・未読',want:'見たい',active:'鑑賞中',completed:'鑑賞済み',paused:'保留',dropped:'見るのをやめた'}},
+  anime:{creator:'監督・制作',creatorPlaceholder:'監督名・制作会社',unit:'話',current:'見た話数',total:'全話数',statuses:{owned_unread:'所持・未読',want:'見たい',active:'視聴中',completed:'視聴済み',paused:'保留',dropped:'見るのをやめた'}},
+  drama:{creator:'監督・制作',creatorPlaceholder:'監督名・制作会社',unit:'話',current:'見た話数',total:'全話数',statuses:{owned_unread:'所持・未読',want:'見たい',active:'視聴中',completed:'視聴済み',paused:'保留',dropped:'見るのをやめた'}},
   other:{creator:'作者・制作者',creatorPlaceholder:'作者・制作者名',unit:'件',current:'現在位置',total:'全体',statuses:STATUS_LABELS}
 };
 
