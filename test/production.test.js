@@ -71,7 +71,15 @@ test('本番必須値が欠けている場合は設定生成を停止する',asy
   try{
     let message='';
     try{
-      await execFileAsync(process.execPath,[script],{cwd,env:{...process.env,D1_DATABASE_ID:'123e4567-e89b-12d3-a456-426614174000'}});
+      await execFileAsync(process.execPath,[script],{cwd,env:{
+        ...process.env,
+        D1_DATABASE_ID:'123e4567-e89b-12d3-a456-426614174000',
+        TEAM_DOMAIN:'',
+        POLICY_AUD:'',
+        OWNER_EMAIL:'',
+        ALLOW_OWNER_BOOTSTRAP:'false',
+        WORKER_NAME:'contentslibrary'
+      }});
     }catch(error){message=`${error.message}\n${error.stderr||''}`;}
     assert.match(message,/TEAM_DOMAIN is required/);
   }finally{await rm(cwd,{recursive:true,force:true});}
