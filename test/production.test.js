@@ -40,22 +40,23 @@ test('既定Wrangler設定は公開先なし・開発認証なしで安全側に
   assert.equal(dev.vars.DEV_AUTH_ENABLED,'true');
 });
 
-test('本番設定生成はカスタムドメイン・Access・D1を固定する',async()=>{
-  const cwd=await mkdtemp(join(tmpdir(),'sakuhin-production-'));
+test('本番設定生成はworkers.dev・Access・D1を固定する',async()=>{
+  const cwd=await mkdtemp(join(tmpdir(),'contentslibrary-production-'));
   try{
     await execFileAsync(process.execPath,[script],{cwd,env:{
       ...process.env,
       D1_DATABASE_ID:'123e4567-e89b-12d3-a456-426614174000',
-      APP_HOSTNAME:'library.example.com',
       TEAM_DOMAIN:'https://example.cloudflareaccess.com',
       POLICY_AUD:'0123456789abcdef0123456789abcdef',
       OWNER_EMAIL:'owner@example.com',
       ALLOW_OWNER_BOOTSTRAP:'true',
-      WORKER_NAME:'sakuhin-log'
+      WORKER_NAME:'contentslibrary'
     }});
     const config=JSON.parse(await readFile(join(cwd,'.wrangler.production.jsonc'),'utf8'));
-    assert.equal(config.workers_dev,false);
-    assert.deepEqual(config.routes,[{pattern:'library.example.com',custom_domain:true}]);
+    assert.equal(config.name,'contentslibrary');
+    assert.equal(config.workers_dev,true);
+    assert.equal(config.preview_urls,false);
+    assert.equal('routes' in config,false);
     assert.equal(config.d1_databases[0].database_id,'123e4567-e89b-12d3-a456-426614174000');
     assert.equal(config.vars.APP_ENV,'production');
     assert.equal(config.vars.DEV_AUTH_ENABLED,'false');
@@ -66,13 +67,13 @@ test('本番設定生成はカスタムドメイン・Access・D1を固定する
 });
 
 test('本番必須値が欠けている場合は設定生成を停止する',async()=>{
-  const cwd=await mkdtemp(join(tmpdir(),'sakuhin-production-invalid-'));
+  const cwd=await mkdtemp(join(tmpdir(),'contentslibrary-production-invalid-'));
   try{
     let message='';
     try{
       await execFileAsync(process.execPath,[script],{cwd,env:{...process.env,D1_DATABASE_ID:'123e4567-e89b-12d3-a456-426614174000'}});
     }catch(error){message=`${error.message}\n${error.stderr||''}`;}
-    assert.match(message,/APP_HOSTNAME is required/);
+    assert.match(message,/TEAM_DOMAIN is required/);
   }finally{await rm(cwd,{recursive:true,force:true});}
 });
 
@@ -80,6 +81,7 @@ test('本番デプロイは手動実行しD1移行後にWorkerを公開する',a
   const workflow=await read('.github/workflows/deploy-production.yml');
   assert.match(workflow,/workflow_dispatch/);
   assert.match(workflow,/environment: production/);
+  assert.equal(/APP_HOSTNAME/.test(workflow),false);
   assert.match(workflow,/d1 migrations apply DB --remote/);
   assert.match(workflow,/deploy --config \.wrangler\.production\.jsonc/);
   assert.ok(workflow.indexOf('Apply D1 migrations')<workflow.indexOf('Deploy Worker'));
