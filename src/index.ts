@@ -87,7 +87,7 @@ async function handleApi(request: Request, env: Env, auth: AuthContext): Promise
     const action = m[2];
     if (action === "suspend") return suspendUser(request, env, auth, id);
     if (action === "block") return blockUser(request, env, auth, id);
-    if (action === "unblock") return unblockUser(env, auth, id);
+    if (action === "unblock") return unblockUser(request, env, auth, id);
     if (action === "revoke") return revokeUserSession(env, auth, id);
   }
   m = match(path, /^\/api\/admin\/security-events\/([^/]+)\/resolve$/);
