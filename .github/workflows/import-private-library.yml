@@ -4,10 +4,11 @@ on:
   push:
     branches: [main]
     paths:
-      - data/library-import.enc
+      - data/library-import-v3.part-*.b64
 
 permissions:
   contents: read
+  actions: write
 
 concurrency:
   group: contentslibrary-private-import
@@ -46,13 +47,19 @@ jobs:
           path: .private-import-key.pem
           key: contentslibrary-private-import-key-v1
 
-      - name: Validate private import package
+      - name: Rebuild and verify encrypted package
         shell: bash
         run: |
           set -euo pipefail
           test "${{ steps.import-key-cache.outputs.cache-hit }}" = "true"
           test -s .private-import-key.pem
-          test -s data/library-import.enc
+          : > data/library-import.enc
+          for file in $(find data -maxdepth 1 -name 'library-import-v3.part-*.b64' | sort); do
+            base64 --decode "$file" >> data/library-import.enc
+          done
+          test "$(find data -maxdepth 1 -name 'library-import-v3.part-*.b64' | wc -l)" -eq 6
+          echo "0be21ad7e04c8524b48009a588d50cd13fe3b601c29e45c0fe555149aef58560  data/library-import.enc" | sha256sum -c -
+          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('data/library-import.enc','utf8'));if(p.version!==3||!p.encrypted_key||!p.ciphertext)process.exit(1)"
 
       - name: Decrypt payload and prepare private SQL
         run: node scripts/decrypt-library-import.mjs data/library-import.enc .private-import-key.pem .library-import.sql
@@ -71,6 +78,12 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: d1 execute DB --remote --config .wrangler.production.jsonc --command "SELECT COUNT(*) AS imported_catalogue FROM works WHERE deleted_at IS NULL AND (source_key LIKE 'kindle:%' OR source_key LIKE 'notion:%');"
 
+      - name: Destroy temporary import key cache
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh cache delete contentslibrary-private-import-key-v1 --confirm || true
+
       - name: Remove decrypted files from runner
         if: always()
-        run: rm -f .private-import-key.pem .library-import.sql
+        run: rm -f .private-import-key.pem .library-import.sql data/library-import.enc
