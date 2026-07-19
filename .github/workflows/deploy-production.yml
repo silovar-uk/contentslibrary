@@ -2,6 +2,11 @@ name: Deploy production
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore:
+      - data/library-import-public.pem
+      - data/library-import.enc
 
 permissions:
   contents: read
