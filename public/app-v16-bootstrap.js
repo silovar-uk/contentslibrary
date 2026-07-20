@@ -10,7 +10,9 @@ function restoreAvatarInitialAnchorV16() {
 
 function nextPaintV16() {
   return new Promise((resolve) => {
-    requestAnimationFrame(() => requestAnimationFrame(resolve));
+    requestAnimationFrame(() => {
+      requestAnimationFrame(resolve);
+    });
   });
 }
 
