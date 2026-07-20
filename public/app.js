@@ -14,3 +14,4 @@ import './app-v102-selection-export.js';
 import './app-v13.js';
 import './app-v131-clear-filters.js';
 import './app-v14.js';
+import './app-v15-genre-shelf.js';
