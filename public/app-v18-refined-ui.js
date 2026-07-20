@@ -1,14 +1,27 @@
 const V18_STYLE = '/v18-refined-ui.css';
 
 function ensureStyleV18() {
-  if (document.querySelector(`link[href="${V18_STYLE}"]`)) return;
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = V18_STYLE;
-  document.head.append(link);
+  const existing = document.querySelector(`link[href="${V18_STYLE}"]`);
+  if (existing) {
+    if (existing.sheet) return Promise.resolve();
+    return new Promise((resolve) => {
+      existing.addEventListener('load', resolve, { once: true });
+      existing.addEventListener('error', resolve, { once: true });
+    });
+  }
+
+  return new Promise((resolve) => {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = V18_STYLE;
+    link.setAttribute('blocking', 'render');
+    link.addEventListener('load', resolve, { once: true });
+    link.addEventListener('error', resolve, { once: true });
+    document.head.append(link);
+  });
 }
 
-ensureStyleV18();
+window.__sakuhinLogUiStyleReady = ensureStyleV18();
 
 const ACTION_TITLES_V18 = {
   'open-work-dialog': '作品を追加',
