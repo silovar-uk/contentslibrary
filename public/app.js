@@ -15,4 +15,5 @@ import './app-v13.js';
 import './app-v131-clear-filters.js';
 import './app-v14.js';
 import './app-v15-genre-shelf.js';
+import './app-v18-refined-ui.js';
 import './app-v16-bootstrap.js';
