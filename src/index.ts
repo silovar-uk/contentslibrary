@@ -4,7 +4,9 @@ import type { AuthContext, Env } from "./types";
 import { assertProgressMutation } from "./v02-validation";
 import { addExperience, addNote, createWork, deleteWork, getWork, updateWork } from "./routes/works";
 import { exportDataV12 } from "./routes/export-v12";
-import { createSavedView, deleteSavedView, listLabelSuggestions, listSavedViews, listWorksV03, updateSavedView } from "./routes/library-v03";
+import { getWorkFactPackageV13, importWorkFactsV13, updateWorkPreferenceV13 } from "./routes/work-tools-v13";
+import { createSavedView, deleteSavedView, listLabelSuggestions, listSavedViews, updateSavedView } from "./routes/library-v03";
+import { listWorksV13 } from "./routes/library-v13";
 import { deleteExperienceV04, deleteNoteV04, reorderNotesV04, updateExperienceV04, updateNoteV04 } from "./routes/content-v04";
 import { blockUser, createInvitation, listAuditEvents, listSecurityEvents, listUsers, resolveSecurityEvent, revokeUserSession, suspendUser, unblockUser } from "./routes/admin";
 import { getNotionImportStatus, importNotionSeed } from "./routes/notion-import";
@@ -45,7 +47,7 @@ async function handleApi(request: Request, env: Env, auth: AuthContext): Promise
     });
   }
   if (request.method === "GET" && path === "/api/home") return getHomeV07(env, auth);
-  if (request.method === "GET" && path === "/api/works") return listWorksV03(request, env, auth);
+  if (request.method === "GET" && path === "/api/works") return listWorksV13(request, env, auth);
   if (request.method === "POST" && path === "/api/works") return createWork(request, env, auth);
   if (["GET", "POST"].includes(request.method) && path === "/api/export") return exportDataV12(request, env, auth);
   if (request.method === "GET" && path === "/api/labels") return listLabelSuggestions(request, env, auth);
@@ -66,6 +68,12 @@ async function handleApi(request: Request, env: Env, auth: AuthContext): Promise
     if (request.method === "PATCH") return updateWork(request, env, auth, id);
     if (request.method === "DELETE") return deleteWork(env, auth, id);
   }
+  m = match(path, /^\/api\/works\/([^/]+)\/preferences$/);
+  if (m && request.method === "PATCH") return updateWorkPreferenceV13(request, env, auth, decodeURIComponent(m[1]!));
+  m = match(path, /^\/api\/works\/([^/]+)\/fact-package$/);
+  if (m && request.method === "GET") return getWorkFactPackageV13(env, auth, decodeURIComponent(m[1]!));
+  m = match(path, /^\/api\/works\/([^/]+)\/facts$/);
+  if (m && request.method === "POST") return importWorkFactsV13(request, env, auth, decodeURIComponent(m[1]!));
   m = match(path, /^\/api\/works\/([^/]+)\/experiences$/);
   if (m && request.method === "POST") return addExperience(request, env, auth, decodeURIComponent(m[1]!));
   m = match(path, /^\/api\/works\/([^/]+)\/notes$/);
