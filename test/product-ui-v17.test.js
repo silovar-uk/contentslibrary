@@ -51,3 +51,15 @@ test('主要なアイコン寸法を共通トークンで揃える', async () =>
   assert.match(css, /width:var\(--ui-icon\)/);
   assert.match(css, /flex:0 0 var\(--ui-icon\)/);
 });
+
+test('プロダクトUI CSSの波括弧が対応している', async () => {
+  const css = await read('public/v17-product-ui.css');
+  const withoutComments = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  let depth = 0;
+  for (const char of withoutComments) {
+    if (char === '{') depth += 1;
+    if (char === '}') depth -= 1;
+    assert.ok(depth >= 0, '閉じ波括弧が先行しています');
+  }
+  assert.equal(depth, 0, 'CSSの波括弧が閉じていません');
+});
