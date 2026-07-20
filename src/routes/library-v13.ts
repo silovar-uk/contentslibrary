@@ -53,7 +53,7 @@ export async function listWorksV13(request: Request, env: Env, auth: AuthContext
 
   const ratingExact = url.searchParams.get("rating_exact");
   if (ratingExact === "unrated") clauses.push("w.rating IS NULL");
-  else if (ratingExact && /^[1-5]$/.test(ratingExact)) { clauses.push("CAST(w.rating AS INTEGER) = ?"); params.push(Number(ratingExact)); }
+  else if (ratingExact && /^[1-5]$/.test(ratingExact)) { clauses.push("ROUND(w.rating) = ?"); params.push(Number(ratingExact)); }
   else {
     const ratingMin = Number(url.searchParams.get("rating_min"));
     if (Number.isFinite(ratingMin) && ratingMin > 0) { clauses.push("w.rating >= ?"); params.push(ratingMin); }
