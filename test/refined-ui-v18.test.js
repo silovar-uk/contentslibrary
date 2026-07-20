@@ -16,8 +16,17 @@ test('最終UIは起動画面を外す前に読み込まれる', async () => {
 test('最終CSSをモジュール評価時に先読みする', async () => {
   const app = await read('public/app-v18-refined-ui.js');
   assert.match(app, /const V18_STYLE = '\/v18-refined-ui\.css'/);
-  assert.match(app, /ensureStyleV18\(\);/);
+  assert.match(app, /window\.__sakuhinLogUiStyleReady = ensureStyleV18\(\)/);
+  assert.match(app, /setAttribute\('blocking', 'render'\)/);
   assert.ok(app.indexOf('ensureStyleV18();') < app.indexOf('DOMContentLoaded'));
+});
+
+test('起動画面は最終CSSまたは安全上限を待って解除する', async () => {
+  const bootstrap = await read('public/app-v16-bootstrap.js');
+  assert.match(bootstrap, /window\.__sakuhinLogUiStyleReady \?\? Promise\.resolve\(\)/);
+  assert.match(bootstrap, /Promise\.race\(\[styleReady, safetyLimit\]\)/);
+  assert.match(bootstrap, /setTimeout\(resolve, 1200\)/);
+  assert.match(bootstrap, /await nextPaintV16\(\)/);
 });
 
 test('ヒーローとジャンル棚の視覚量を抑える', async () => {
