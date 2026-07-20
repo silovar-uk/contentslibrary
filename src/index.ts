@@ -8,6 +8,18 @@ import { deleteExperienceV04, deleteNoteV04, reorderNotesV04, updateExperienceV0
 import { blockUser, createInvitation, listAuditEvents, listSecurityEvents, listUsers, resolveSecurityEvent, revokeUserSession, suspendUser, unblockUser } from "./routes/admin";
 import { getNotionImportStatus, importNotionSeed } from "./routes/notion-import";
 import { getHomeV07 } from "./routes/home-v07";
+import {
+  commitImportBatch,
+  createImportBatch,
+  deleteImportBatch,
+  disableImportCenter,
+  enableImportCenter,
+  getImportBatchDetail,
+  getImportCenterStatus,
+  rollbackImportBatch,
+  uploadImportItems,
+  validateImportBatch
+} from "./routes/import-center";
 
 function match(pathname: string, pattern: RegExp): RegExpMatchArray | null {
   return pathname.match(pattern);
@@ -80,6 +92,23 @@ async function handleApi(request: Request, env: Env, auth: AuthContext): Promise
   if (request.method === "GET" && path === "/api/admin/audit-events") return listAuditEvents(request, env, auth);
   if (request.method === "GET" && path === "/api/admin/notion-import") return getNotionImportStatus(env, auth);
   if (request.method === "POST" && path === "/api/admin/notion-import") return importNotionSeed(env, auth);
+
+  if (request.method === "GET" && path === "/api/admin/import-center") return getImportCenterStatus(env, auth);
+  if (request.method === "POST" && path === "/api/admin/import-center/enable") return enableImportCenter(request, env, auth);
+  if (request.method === "POST" && path === "/api/admin/import-center/disable") return disableImportCenter(env, auth);
+  if (request.method === "POST" && path === "/api/admin/import-batches") return createImportBatch(request, env, auth);
+
+  m = match(path, /^\/api\/admin\/import-batches\/([^/]+)(?:\/(items|validate|commit|rollback))?$/);
+  if (m) {
+    const id = decodeURIComponent(m[1]!);
+    const action = m[2] ?? "detail";
+    if (request.method === "GET" && action === "detail") return getImportBatchDetail(env, auth, id);
+    if (request.method === "DELETE" && action === "detail") return deleteImportBatch(env, auth, id);
+    if (request.method === "POST" && action === "items") return uploadImportItems(request, env, auth, id);
+    if (request.method === "POST" && action === "validate") return validateImportBatch(env, auth, id);
+    if (request.method === "POST" && action === "commit") return commitImportBatch(env, auth, id);
+    if (request.method === "POST" && action === "rollback") return rollbackImportBatch(env, auth, id);
+  }
 
   m = match(path, /^\/api\/admin\/users\/([^/]+)\/(suspend|block|unblock|revoke)$/);
   if (m && request.method === "POST") {
