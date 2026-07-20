@@ -1,3 +1,15 @@
+const V18_STYLE = '/v18-refined-ui.css';
+
+function ensureStyleV18() {
+  if (document.querySelector(`link[href="${V18_STYLE}"]`)) return;
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = V18_STYLE;
+  document.head.append(link);
+}
+
+ensureStyleV18();
+
 const ACTION_TITLES_V18 = {
   'open-work-dialog': '作品を追加',
   'open-settings': '設定を開く',
