@@ -4,7 +4,8 @@ import type { AuthContext, Env } from "./types";
 import { assertProgressMutation } from "./v02-validation";
 import { addExperience, addNote, createWork, deleteWork, getWork, updateWork } from "./routes/works";
 import { exportDataV12 } from "./routes/export-v12";
-import { getWorkFactPackageV13, importWorkFactsV13, updateWorkPreferenceV13 } from "./routes/work-tools-v13";
+import { getWorkFactPackageV13, importWorkFactsV13 } from "./routes/work-tools-v13";
+import { updateWorkPreferenceV131 } from "./routes/work-preference-v131";
 import { createSavedView, deleteSavedView, listLabelSuggestions, listSavedViews, updateSavedView } from "./routes/library-v03";
 import { listWorksV13 } from "./routes/library-v13";
 import { deleteExperienceV04, deleteNoteV04, reorderNotesV04, updateExperienceV04, updateNoteV04 } from "./routes/content-v04";
@@ -69,7 +70,7 @@ async function handleApi(request: Request, env: Env, auth: AuthContext): Promise
     if (request.method === "DELETE") return deleteWork(env, auth, id);
   }
   m = match(path, /^\/api\/works\/([^/]+)\/preferences$/);
-  if (m && request.method === "PATCH") return updateWorkPreferenceV13(request, env, auth, decodeURIComponent(m[1]!));
+  if (m && request.method === "PATCH") return updateWorkPreferenceV131(request, env, auth, decodeURIComponent(m[1]!));
   m = match(path, /^\/api\/works\/([^/]+)\/fact-package$/);
   if (m && request.method === "GET") return getWorkFactPackageV13(env, auth, decodeURIComponent(m[1]!));
   m = match(path, /^\/api\/works\/([^/]+)\/facts$/);
