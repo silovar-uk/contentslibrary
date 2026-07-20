@@ -1,11 +1,31 @@
 <!doctype html>
-<html lang="ja">
+<html lang="ja" class="ui-booting">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f4f1ea">
+  <meta name="theme-color" content="#f3eee5">
   <title>作品体験ログ</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/v02.css">
+  <link rel="stylesheet" href="/v05.css">
+  <link rel="stylesheet" href="/v05-polish.css">
+  <link rel="stylesheet" href="/v07.css">
+  <link rel="stylesheet" href="/v09.css">
+  <link rel="stylesheet" href="/v10.css">
+  <link rel="stylesheet" href="/v13-work-tools.css">
+  <link rel="stylesheet" href="/v14-editorial.css">
+  <link rel="stylesheet" href="/v15-genre-shelf.css">
+  <style>
+    html.ui-booting body{overflow:hidden}
+    html.ui-booting #app,html.ui-booting dialog,html.ui-booting .toast-region{opacity:0!important;pointer-events:none!important}
+    html.ui-booting body::before{content:"作品体験ログ";position:fixed;inset:0;z-index:99998;display:grid;place-items:center;background:#f3eee5;color:#20231f;font:800 18px/1.2 Inter,"Hiragino Sans","Yu Gothic UI","Yu Gothic",Meiryo,system-ui,sans-serif;letter-spacing:.04em}
+    html.ui-booting body::after{content:"";position:fixed;z-index:99999;left:50%;top:calc(50% + 31px);width:76px;height:3px;border-radius:999px;background:linear-gradient(90deg,transparent,#9e3f2f,transparent);transform:translateX(-50%);animation:sakuhinBootPulse .85s ease-in-out infinite}
+    #app{transition:opacity .14s ease}
+    @keyframes sakuhinBootPulse{0%,100%{opacity:.24;transform:translateX(-50%) scaleX(.55)}50%{opacity:1;transform:translateX(-50%) scaleX(1)}}
+    @media(prefers-reduced-motion:reduce){html.ui-booting body::after{animation:none;opacity:.75}#app{transition:none}}
+  </style>
+  <script>window.__sakuhinLogBootTimer=window.setTimeout(function(){document.documentElement.classList.remove('ui-booting')},3000)</script>
   <script type="module" src="/app.js"></script>
 </head>
 <body>
