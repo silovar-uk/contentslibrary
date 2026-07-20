@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - data/private-import.enc
+      - data/private-import-manifest.json
 
 permissions:
   contents: write
@@ -44,6 +44,9 @@ jobs:
 
       - name: Run checks
         run: npm run check
+
+      - name: Reassemble and verify encrypted package
+        run: node scripts/reassemble-private-import.mjs data/private-import-manifest.json data/private-import.enc
 
       - name: Generate production configuration
         run: npm run production:config
@@ -140,10 +143,12 @@ jobs:
           node scripts/run-private-import.mjs .private-import.json "$IMPORT_URL" "$IMPORT_TOKEN" import-result.json
 
       - name: Upload non-sensitive import result
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: private-import-result
           path: import-result.json
+          if-no-files-found: ignore
           retention-days: 7
 
       - name: Remove encrypted transfer files
@@ -152,7 +157,8 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git rm -f --ignore-unmatch data/private-import.enc data/private-import-public.pem
+          git rm -f --ignore-unmatch data/private-import-manifest.json data/private-import-public.pem
+          git rm -rf --ignore-unmatch data/private-import-chunks
           if git diff --cached --quiet; then
             exit 0
           fi
@@ -172,7 +178,7 @@ jobs:
           TEMP_WORKER: ${{ steps.temp.outputs.worker }}
         shell: bash
         run: |
-          rm -f .private-import-key.pem .private-import.json .wrangler.import.jsonc "$RUNNER_TEMP/private-import-token"
+          rm -f .private-import-key.pem .private-import.json data/private-import.enc .wrangler.import.jsonc "$RUNNER_TEMP/private-import-token"
           if [ -n "${TEMP_WORKER:-}" ]; then
             npx wrangler delete --name "$TEMP_WORKER" --force || true
           fi
