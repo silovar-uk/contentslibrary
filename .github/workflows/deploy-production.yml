@@ -7,6 +7,8 @@ on:
     paths-ignore:
       - data/library-import-public.pem
       - data/library-import.enc
+      - data/private-import-public.pem
+      - data/private-import.enc
 
 permissions:
   contents: read

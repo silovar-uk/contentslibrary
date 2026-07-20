@@ -1,0 +1,64 @@
+name: Prepare private import key
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/prepare-private-import-key.yml
+      - scripts/decrypt-private-import.mjs
+      - scripts/run-private-import.mjs
+      - src/import-runner.ts
+
+permissions:
+  contents: write
+
+concurrency:
+  group: contentslibrary-private-import-key
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Restore private key cache
+        id: import-key-cache
+        uses: actions/cache@v4
+        with:
+          path: .private-import-key.pem
+          key: contentslibrary-private-import-rsa-v3
+
+      - name: Generate private key
+        if: steps.import-key-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -out .private-import-key.pem 2>/dev/null
+
+      - name: Derive public key
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p data
+          openssl pkey -in .private-import-key.pem -pubout -out data/private-import-public.pem 2>/dev/null
+
+      - name: Publish public key only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/private-import-public.pem
+          if git diff --cached --quiet; then
+            echo "Public key is already current."
+            exit 0
+          fi
+          git commit -m "chore: publish one-time import public key [skip private import]"
+          git pull --rebase origin main
+          git push origin HEAD:main

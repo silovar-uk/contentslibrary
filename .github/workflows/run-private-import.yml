@@ -1,0 +1,178 @@
+name: Run private library import
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - data/private-import.enc
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: contentslibrary-private-import
+  cancel-in-progress: false
+
+jobs:
+  import:
+    if: ${{ !contains(github.event.head_commit.message, '[skip private import]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment: production
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
+      TEAM_DOMAIN: ${{ vars.TEAM_DOMAIN }}
+      POLICY_AUD: ${{ vars.POLICY_AUD }}
+      OWNER_EMAIL: ${{ vars.OWNER_EMAIL }}
+      ALLOW_OWNER_BOOTSTRAP: ${{ vars.ALLOW_OWNER_BOOTSTRAP }}
+      WORKER_NAME: ${{ vars.WORKER_NAME }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run checks
+        run: npm run check
+
+      - name: Generate production configuration
+        run: npm run production:config
+
+      - name: Apply production migrations
+        run: npx wrangler d1 migrations apply DB --remote --config .wrangler.production.jsonc
+
+      - name: Restore one-time private key
+        id: import-key-cache
+        uses: actions/cache@v4
+        with:
+          path: .private-import-key.pem
+          key: contentslibrary-private-import-rsa-v3
+
+      - name: Validate encrypted package
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${{ steps.import-key-cache.outputs.cache-hit }}" = "true"
+          test -s .private-import-key.pem
+          test -s data/private-import.enc
+
+      - name: Decrypt and verify private payload
+        run: node scripts/decrypt-private-import.mjs data/private-import.enc .private-import-key.pem .private-import.json
+
+      - name: Prepare temporary import worker
+        id: temp
+        shell: bash
+        run: |
+          set -euo pipefail
+          TEMP_WORKER="contentslibrary-import-${GITHUB_RUN_ID}"
+          IMPORT_TOKEN="$(openssl rand -hex 48)"
+          TOKEN_FILE="$RUNNER_TEMP/private-import-token"
+          umask 077
+          printf '%s' "$IMPORT_TOKEN" > "$TOKEN_FILE"
+          echo "::add-mask::$IMPORT_TOKEN"
+          echo "worker=$TEMP_WORKER" >> "$GITHUB_OUTPUT"
+          echo "url=https://${TEMP_WORKER}.silovar-uk.workers.dev" >> "$GITHUB_OUTPUT"
+          TEMP_WORKER="$TEMP_WORKER" node - <<'NODE'
+          const fs = require('fs');
+          const config = {
+            $schema: './node_modules/wrangler/config-schema.json',
+            name: process.env.TEMP_WORKER,
+            main: 'src/import-runner.ts',
+            compatibility_date: '2026-07-17',
+            compatibility_flags: ['nodejs_compat'],
+            workers_dev: true,
+            preview_urls: false,
+            d1_databases: [{
+              binding: 'DB',
+              database_name: 'sakuhin-log',
+              database_id: process.env.D1_DATABASE_ID,
+              migrations_dir: 'migrations'
+            }],
+            vars: { APP_ENV: 'production' }
+          };
+          fs.writeFileSync('.wrangler.import.jsonc', JSON.stringify(config, null, 2));
+          NODE
+
+      - name: Deploy temporary import worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          IMPORT_TOKEN="$(cat "$RUNNER_TEMP/private-import-token")"
+          echo "::add-mask::$IMPORT_TOKEN"
+          npx wrangler deploy --config .wrangler.import.jsonc
+          printf '%s' "$IMPORT_TOKEN" | npx wrangler secret put IMPORT_TOKEN --config .wrangler.import.jsonc
+
+      - name: Wait for temporary worker
+        shell: bash
+        env:
+          IMPORT_URL: ${{ steps.temp.outputs.url }}
+        run: |
+          set -euo pipefail
+          IMPORT_TOKEN="$(cat "$RUNNER_TEMP/private-import-token")"
+          echo "::add-mask::$IMPORT_TOKEN"
+          for attempt in $(seq 1 30); do
+            if curl --silent --show-error --fail --header "Authorization: Bearer $IMPORT_TOKEN" "$IMPORT_URL/health" >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Temporary worker did not become ready." >&2
+          exit 1
+
+      - name: Stage, validate, commit, and verify
+        env:
+          IMPORT_URL: ${{ steps.temp.outputs.url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          IMPORT_TOKEN="$(cat "$RUNNER_TEMP/private-import-token")"
+          echo "::add-mask::$IMPORT_TOKEN"
+          node scripts/run-private-import.mjs .private-import.json "$IMPORT_URL" "$IMPORT_TOKEN" import-result.json
+
+      - name: Upload non-sensitive import result
+        uses: actions/upload-artifact@v4
+        with:
+          name: private-import-result
+          path: import-result.json
+          retention-days: 7
+
+      - name: Remove encrypted transfer files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -f --ignore-unmatch data/private-import.enc data/private-import-public.pem
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "chore: remove completed private import transfer [skip private import]"
+          git pull --rebase origin main
+          git push origin HEAD:main
+
+      - name: Remove private key cache
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: gh cache delete contentslibrary-private-import-rsa-v3 --confirm || true
+
+      - name: Remove temporary worker and plaintext
+        if: always()
+        env:
+          TEMP_WORKER: ${{ steps.temp.outputs.worker }}
+        shell: bash
+        run: |
+          rm -f .private-import-key.pem .private-import.json .wrangler.import.jsonc "$RUNNER_TEMP/private-import-token"
+          if [ -n "${TEMP_WORKER:-}" ]; then
+            npx wrangler delete --name "$TEMP_WORKER" --force || true
+          fi
