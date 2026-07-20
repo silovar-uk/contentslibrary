@@ -102,7 +102,7 @@ export async function getGenreInsightsV15(request: Request, env: Env, auth: Auth
   `).bind(auth.member.id).all<GenreRowV15>();
 
   const buckets = new Map<string, GenreBucketV15>();
-  const catalogOrder = new Map(GENRE_CATALOG_V15.map((genre, index) => [genre.id, index]));
+  const catalogOrder = new Map<string, number>(GENRE_CATALOG_V15.map((genre, index) => [genre.id, index]));
   const unmapped = new Map<string, number>();
   let unclassified = 0;
 
@@ -111,8 +111,9 @@ export async function getGenreInsightsV15(request: Request, env: Env, auth: Auth
       unclassified += 1;
       continue;
     }
-    const resolved = resolveGenreV15(row.genre_name) ?? GENRE_CATALOG_V15.find((genre) => genre.id === "other")!;
-    if (!resolveGenreV15(row.genre_name)) unmapped.set(row.genre_name, (unmapped.get(row.genre_name) ?? 0) + 1);
+    const matched = resolveGenreV15(row.genre_name);
+    const resolved = matched ?? GENRE_CATALOG_V15.find((genre) => genre.id === "other")!;
+    if (!matched) unmapped.set(row.genre_name, (unmapped.get(row.genre_name) ?? 0) + 1);
     const bucket = buckets.get(resolved.id) ?? {
       id: resolved.id,
       name: resolved.name,
