@@ -18,10 +18,13 @@ test('所持・未読をDB・API・UIで扱える', async () => {
   assert.match(app, /owned_unread:'所持・未読'/);
 });
 
-test('暗号化移行はNotionメモもnotesへ保存する', async () => {
-  const importer = await read('scripts/decrypt-library-import.mjs');
-  assert.match(importer, /item\.notes/);
-  assert.match(importer, /INSERT OR IGNORE INTO notes/);
-  assert.match(importer, /seed-note/);
-  assert.match(importer, /noteText/);
+test('ステージング移行はNotionメモを検証後にnotesへ保存する', async () => {
+  const importer = await read('src/routes/import-center.ts');
+  const migration = await read('migrations/0005_import_center.sql');
+  assert.match(importer, /raw\.notes/);
+  assert.match(importer, /INSERT INTO import_notes/);
+  assert.match(importer, /INSERT INTO notes/);
+  assert.match(importer, /applyNotes/);
+  assert.match(importer, /applied_note_id/);
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS import_notes/);
 });
