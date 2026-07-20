@@ -96,7 +96,7 @@ export async function exportDataV12(request: Request, env: Env, auth: AuthContex
     metadata_json: undefined
   }));
 
-  const byId = new Map(allDecorated.map((item) => [String(item.id), item]));
+  const byId = new Map(allDecorated.map((item) => [String(item["id"]), item]));
   const decorated = requestedIds
     ? requestedIds.flatMap((id) => {
         const item = byId.get(id);
@@ -108,7 +108,7 @@ export async function exportDataV12(request: Request, env: Env, auth: AuthContex
     throw new HttpError(400, "WORKS_NOT_FOUND", "選択した作品が見つかりませんでした。画面を更新して、もう一度選択してください。");
   }
 
-  const exportedIds = requestedIds ? new Set(decorated.map((item) => String(item.id))) : null;
+  const exportedIds = requestedIds ? new Set(decorated.map((item) => String(item["id"]))) : null;
   const exportedExperiences = exportedIds
     ? experiences.results.filter((item) => exportedIds.has(String(item.work_id)))
     : experiences.results;
