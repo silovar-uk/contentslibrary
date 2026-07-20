@@ -9,6 +9,8 @@ on:
       - data/library-import.enc
       - data/private-import-public.pem
       - data/private-import.enc
+      - data/private-import-manifest.json
+      - data/private-import-chunks/**
 
 permissions:
   contents: read
