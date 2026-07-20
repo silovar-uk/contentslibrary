@@ -76,11 +76,13 @@ jobs:
           set -euo pipefail
           TEMP_WORKER="contentslibrary-import-${GITHUB_RUN_ID}"
           IMPORT_TOKEN="$(openssl rand -hex 48)"
+          TOKEN_FILE="$RUNNER_TEMP/private-import-token"
+          umask 077
+          printf '%s' "$IMPORT_TOKEN" > "$TOKEN_FILE"
           echo "::add-mask::$IMPORT_TOKEN"
           echo "worker=$TEMP_WORKER" >> "$GITHUB_OUTPUT"
-          echo "token=$IMPORT_TOKEN" >> "$GITHUB_OUTPUT"
           echo "url=https://${TEMP_WORKER}.silovar-uk.workers.dev" >> "$GITHUB_OUTPUT"
-          node - <<'NODE'
+          TEMP_WORKER="$TEMP_WORKER" node - <<'NODE'
           const fs = require('fs');
           const config = {
             $schema: './node_modules/wrangler/config-schema.json',
@@ -100,16 +102,13 @@ jobs:
           };
           fs.writeFileSync('.wrangler.import.jsonc', JSON.stringify(config, null, 2));
           NODE
-        env:
-          TEMP_WORKER: ${{ steps.temp.outputs.worker }}
 
       - name: Deploy temporary import worker
         shell: bash
-        env:
-          TEMP_WORKER: ${{ steps.temp.outputs.worker }}
-          IMPORT_TOKEN: ${{ steps.temp.outputs.token }}
         run: |
           set -euo pipefail
+          IMPORT_TOKEN="$(cat "$RUNNER_TEMP/private-import-token")"
+          echo "::add-mask::$IMPORT_TOKEN"
           npx wrangler deploy --config .wrangler.import.jsonc
           printf '%s' "$IMPORT_TOKEN" | npx wrangler secret put IMPORT_TOKEN --config .wrangler.import.jsonc
 
@@ -117,9 +116,10 @@ jobs:
         shell: bash
         env:
           IMPORT_URL: ${{ steps.temp.outputs.url }}
-          IMPORT_TOKEN: ${{ steps.temp.outputs.token }}
         run: |
           set -euo pipefail
+          IMPORT_TOKEN="$(cat "$RUNNER_TEMP/private-import-token")"
+          echo "::add-mask::$IMPORT_TOKEN"
           for attempt in $(seq 1 30); do
             if curl --silent --show-error --fail --header "Authorization: Bearer $IMPORT_TOKEN" "$IMPORT_URL/health" >/dev/null; then
               exit 0
@@ -132,8 +132,12 @@ jobs:
       - name: Stage, validate, commit, and verify
         env:
           IMPORT_URL: ${{ steps.temp.outputs.url }}
-          IMPORT_TOKEN: ${{ steps.temp.outputs.token }}
-        run: node scripts/run-private-import.mjs .private-import.json "$IMPORT_URL" "$IMPORT_TOKEN" import-result.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          IMPORT_TOKEN="$(cat "$RUNNER_TEMP/private-import-token")"
+          echo "::add-mask::$IMPORT_TOKEN"
+          node scripts/run-private-import.mjs .private-import.json "$IMPORT_URL" "$IMPORT_TOKEN" import-result.json
 
       - name: Upload non-sensitive import result
         uses: actions/upload-artifact@v4
@@ -168,7 +172,7 @@ jobs:
           TEMP_WORKER: ${{ steps.temp.outputs.worker }}
         shell: bash
         run: |
-          rm -f .private-import-key.pem .private-import.json .wrangler.import.jsonc
+          rm -f .private-import-key.pem .private-import.json .wrangler.import.jsonc "$RUNNER_TEMP/private-import-token"
           if [ -n "${TEMP_WORKER:-}" ]; then
             npx wrangler delete --name "$TEMP_WORKER" --force || true
           fi
