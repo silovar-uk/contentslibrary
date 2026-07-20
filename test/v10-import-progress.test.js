@@ -7,7 +7,10 @@ const read = (path) => readFile(new URL(path, root), 'utf8');
 
 test('取込の4段階と進捗指標を常時表示する', async () => {
   const script = await read('public/app-v10.js');
+  const styleLoader = await read('public/v10-style.js');
   const css = await read('public/v10.css');
+  assert.doesNotThrow(() => new Function(script));
+  assert.doesNotThrow(() => new Function(styleLoader));
   assert.match(script, /ファイル確認/);
   assert.match(script, /ステージング/);
   assert.match(script, /重複・件数確認/);
