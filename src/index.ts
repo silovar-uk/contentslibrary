@@ -3,7 +3,7 @@ import { HttpError, assertSameOriginMutation, errorResponse, json, withSecurityH
 import type { AuthContext, Env } from "./types";
 import { assertProgressMutation } from "./v02-validation";
 import { addExperience, addNote, createWork, deleteWork, getWork, updateWork } from "./routes/works";
-import { exportDataV11 } from "./routes/export-v11";
+import { exportDataV12 } from "./routes/export-v12";
 import { createSavedView, deleteSavedView, listLabelSuggestions, listSavedViews, listWorksV03, updateSavedView } from "./routes/library-v03";
 import { deleteExperienceV04, deleteNoteV04, reorderNotesV04, updateExperienceV04, updateNoteV04 } from "./routes/content-v04";
 import { blockUser, createInvitation, listAuditEvents, listSecurityEvents, listUsers, resolveSecurityEvent, revokeUserSession, suspendUser, unblockUser } from "./routes/admin";
@@ -47,7 +47,7 @@ async function handleApi(request: Request, env: Env, auth: AuthContext): Promise
   if (request.method === "GET" && path === "/api/home") return getHomeV07(env, auth);
   if (request.method === "GET" && path === "/api/works") return listWorksV03(request, env, auth);
   if (request.method === "POST" && path === "/api/works") return createWork(request, env, auth);
-  if (request.method === "GET" && path === "/api/export") return exportDataV11(request, env, auth);
+  if (["GET", "POST"].includes(request.method) && path === "/api/export") return exportDataV12(request, env, auth);
   if (request.method === "GET" && path === "/api/labels") return listLabelSuggestions(request, env, auth);
   if (request.method === "GET" && path === "/api/saved-views") return listSavedViews(env, auth);
   if (request.method === "POST" && path === "/api/saved-views") return createSavedView(request, env, auth);
