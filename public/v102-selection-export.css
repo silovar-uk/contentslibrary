@@ -1,0 +1,33 @@
+.v102-selection-toggle{white-space:nowrap}
+.v102-selection-bar{position:sticky;bottom:12px;z-index:24;display:grid;grid-template-columns:minmax(170px,1fr) auto auto;gap:14px;align-items:center;margin:0 0 14px;padding:14px 16px;border:1px solid var(--accent);border-radius:14px;background:rgba(255,253,250,.96);box-shadow:0 16px 40px rgba(39,41,35,.16);backdrop-filter:blur(16px)}
+.v102-selection-bar[hidden]{display:none}
+.v102-selection-summary{display:flex;flex-direction:column;gap:2px;min-width:0}
+.v102-selection-summary strong{font-size:15px}
+.v102-selection-summary small{font-size:11px;color:var(--muted)}
+.v102-selection-subactions,.v102-selection-mainactions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.v102-selection-mainactions{justify-content:flex-end}
+.v102-selection-bar button:disabled{cursor:not-allowed;opacity:.45}
+.work-card{position:relative}
+.work-card .v102-select-mark{position:absolute;left:16px;top:16px;width:25px;height:25px;display:grid;place-items:center;border:1.5px solid var(--line);border-radius:50%;background:var(--surface);color:white;font-size:14px;font-weight:900;opacity:0;transform:scale(.86);transition:opacity .14s ease,transform .14s ease,background .14s ease,border-color .14s ease}
+.work-card.v102-selectable{padding-left:54px;cursor:pointer}
+.work-card.v102-selectable .v102-select-mark{opacity:1;transform:scale(1)}
+.work-card.v102-selected{border-color:var(--accent);background:linear-gradient(90deg,var(--accent-2),var(--surface) 55%);box-shadow:inset 4px 0 var(--accent)}
+.work-card.v102-selected .v102-select-mark{border-color:var(--accent);background:var(--accent)}
+.v102-selection-mode .detail-panel{opacity:.72}
+@media (max-width:1100px){
+  .v102-selection-bar{grid-template-columns:1fr auto}
+  .v102-selection-subactions{grid-column:1/-1;grid-row:2}
+}
+@media (max-width:760px){
+  .list-heading{align-items:flex-start;gap:12px}
+  .list-tools{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}
+  .v102-selection-toggle{min-height:38px;padding:0 12px}
+  .v102-selection-bar{bottom:calc(var(--mobile-nav) + 10px);grid-template-columns:1fr;padding:13px;margin-bottom:12px}
+  .v102-selection-subactions,.v102-selection-mainactions{grid-column:1;justify-content:flex-start}
+  .v102-selection-mainactions .primary-button{flex:1}
+  .work-card.v102-selectable{padding-left:50px}
+  .work-card .v102-select-mark{left:14px;top:14px}
+}
+@media (prefers-reduced-motion:reduce){
+  .work-card .v102-select-mark{transition:none}
+}
