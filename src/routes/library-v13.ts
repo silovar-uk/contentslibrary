@@ -1,5 +1,6 @@
 import { normalizeText } from "../db";
-import { json } from "../http";
+import { allNormalizedGenreAliasesV15, getGenreByIdV15, normalizedAliasesForGenreV15 } from "../domain/genre-catalog-v15";
+import { HttpError, json } from "../http";
 import type { AuthContext, Env, LabelKind, WorkStatus, WorkType } from "../types";
 
 const WORK_TYPES: WorkType[] = ["book", "manga", "movie", "anime", "drama", "other"];
@@ -22,7 +23,7 @@ async function attachLabels(env: Env, rows: Array<Record<string, unknown>>) {
   if (ids.length) {
     const placeholders = ids.map(() => "?").join(",");
     const result = await env.DB.prepare(
-      `SELECT wl.work_id, l.kind, l.name FROM work_labels wl JOIN labels l ON l.id = wl.label_id WHERE wl.work_id IN (${placeholders}) ORDER BY l.kind, l.name`
+      `SELECT wl.work_id, l.kind, l.name FROM work_labels wl JOIN labels l ON l.id = wl.label_id WHERE wl.work_id IN (${placeholders}) ORDER BY wl.work_id, l.kind, wl.position, l.name`
     ).bind(...ids).all<{ work_id: string; kind: LabelKind; name: string }>();
     for (const label of result.results) map.get(label.work_id)?.[label.kind].push(label.name);
   }
@@ -32,6 +33,38 @@ async function attachLabels(env: Env, rows: Array<Record<string, unknown>>) {
     labels: map.get(String(row.id)) ?? { genre: [], theme: [], tag: [] },
     metadata_json: undefined
   }));
+}
+
+function addGenreFilterV15(genreId: string, clauses: string[], params: unknown[]): void {
+  if (genreId === "unclassified") {
+    clauses.push("NOT EXISTS (SELECT 1 FROM work_labels wl JOIN labels l ON l.id = wl.label_id WHERE wl.work_id = w.id AND l.kind = 'genre')");
+    return;
+  }
+  const genre = getGenreByIdV15(genreId);
+  if (!genre) throw new HttpError(400, "INVALID_GENRE_ID", "指定されたジャンルが見つかりません。");
+  const aliases = normalizedAliasesForGenreV15(genreId);
+  if (genreId === "other") {
+    const allAliases = allNormalizedGenreAliasesV15();
+    clauses.push(`EXISTS (
+      SELECT 1 FROM work_labels wl
+      JOIN labels l ON l.id = wl.label_id
+      WHERE wl.work_id = w.id
+        AND l.kind = 'genre'
+        AND wl.position = 0
+        AND (l.normalized_name IN (${aliases.map(() => "?").join(",")}) OR l.normalized_name NOT IN (${allAliases.map(() => "?").join(",")}))
+    )`);
+    params.push(...aliases, ...allAliases);
+    return;
+  }
+  clauses.push(`EXISTS (
+    SELECT 1 FROM work_labels wl
+    JOIN labels l ON l.id = wl.label_id
+    WHERE wl.work_id = w.id
+      AND l.kind = 'genre'
+      AND wl.position = 0
+      AND l.normalized_name IN (${aliases.map(() => "?").join(",")})
+  )`);
+  params.push(...aliases);
 }
 
 export async function listWorksV13(request: Request, env: Env, auth: AuthContext): Promise<Response> {
@@ -48,8 +81,20 @@ export async function listWorksV13(request: Request, env: Env, auth: AuthContext
 
   const type = url.searchParams.get("type");
   if (type && WORK_TYPES.includes(type as WorkType)) { clauses.push("w.type = ?"); params.push(type); }
-  const status = url.searchParams.get("status");
-  if (status && WORK_STATUSES.includes(status as WorkStatus)) { clauses.push("w.status = ?"); params.push(status); }
+
+  const rawStatuses = (url.searchParams.get("statuses") || "").split(",").filter(Boolean);
+  const statuses = Array.from(new Set(rawStatuses.filter((value): value is WorkStatus => WORK_STATUSES.includes(value as WorkStatus))));
+  if (rawStatuses.length > 0 && statuses.length === 0) throw new HttpError(400, "INVALID_WORK_STATUSES", "状態の指定が正しくありません。");
+  if (statuses.length > 0) {
+    clauses.push(`w.status IN (${statuses.map(() => "?").join(",")})`);
+    params.push(...statuses);
+  } else {
+    const status = url.searchParams.get("status");
+    if (status && WORK_STATUSES.includes(status as WorkStatus)) { clauses.push("w.status = ?"); params.push(status); }
+  }
+
+  const genreId = url.searchParams.get("genre_id");
+  if (genreId) addGenreFilterV15(genreId, clauses, params);
 
   const ratingExact = url.searchParams.get("rating_exact");
   if (ratingExact === "unrated") clauses.push("w.rating IS NULL");
