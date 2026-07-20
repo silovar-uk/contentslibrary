@@ -2,6 +2,13 @@ import { nowIso } from "../db";
 import { HttpError, text } from "../http";
 import type { AuthContext, Env, LabelKind } from "../types";
 
+type ExportWork = Record<string, unknown> & {
+  id: string;
+  metadata: unknown;
+  labels: Record<LabelKind, string[]>;
+  metadata_json?: undefined;
+};
+
 function requireEditor(auth: AuthContext): void {
   if (!["owner", "admin", "member"].includes(auth.member.role)) {
     throw new HttpError(403, "FORBIDDEN", "編集権限がありません。");
@@ -89,14 +96,15 @@ export async function exportDataV12(request: Request, env: Env, auth: AuthContex
     labelsByWork.set(row.work_id, labels);
   }
 
-  const allDecorated = works.results.map((row) => ({
+  const allDecorated: ExportWork[] = works.results.map((row) => ({
     ...row,
+    id: String(row.id),
     metadata: parseJsonSafe(String(row.metadata_json ?? "{}"), {}),
     labels: labelsByWork.get(String(row.id)) ?? { genre: [], theme: [], tag: [] },
     metadata_json: undefined
   }));
 
-  const byId = new Map(allDecorated.map((item) => [String(item["id"]), item]));
+  const byId = new Map(allDecorated.map((item) => [item.id, item]));
   const decorated = requestedIds
     ? requestedIds.flatMap((id) => {
         const item = byId.get(id);
@@ -108,7 +116,7 @@ export async function exportDataV12(request: Request, env: Env, auth: AuthContex
     throw new HttpError(400, "WORKS_NOT_FOUND", "選択した作品が見つかりませんでした。画面を更新して、もう一度選択してください。");
   }
 
-  const exportedIds = requestedIds ? new Set(decorated.map((item) => String(item["id"]))) : null;
+  const exportedIds = requestedIds ? new Set(decorated.map((item) => item.id)) : null;
   const exportedExperiences = exportedIds
     ? experiences.results.filter((item) => exportedIds.has(String(item.work_id)))
     : experiences.results;
