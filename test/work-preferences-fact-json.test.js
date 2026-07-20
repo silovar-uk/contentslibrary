@@ -7,11 +7,12 @@ const read = (path) => readFile(new URL(path, root), 'utf8');
 
 test('作品ごとのお気に入りと5段階評価APIを公開する', async () => {
   const index = await read('src/index.ts');
-  const source = await read('src/routes/work-tools-v13.ts');
+  const source = await read('src/routes/work-preference-v131.ts');
   assert.match(index, /\/preferences/);
-  assert.match(index, /updateWorkPreferenceV13/);
-  assert.match(source, /integerField\(payload\.rating, "評価", 1, 5\)/);
+  assert.match(index, /updateWorkPreferenceV131/);
+  assert.match(source, /評価は1〜5の5段階/);
   assert.match(source, /metadata\.favorite/);
+  assert.match(source, /previousFavorite/);
 });
 
 test('AIのJSON取込は事実情報だけをホワイトリスト化する', async () => {
