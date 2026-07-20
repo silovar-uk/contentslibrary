@@ -99,7 +99,7 @@ export async function syncLabels(
   const statements: D1PreparedStatement[] = [env.DB.prepare("DELETE FROM work_labels WHERE work_id = ?").bind(workId)];
   for (const kind of ["genre", "theme", "tag"] as LabelKind[]) {
     const values = Array.from(new Set((labels[kind] ?? []).map((v) => v.trim()).filter(Boolean))).slice(0, 30);
-    for (const name of values) {
+    for (const [position, name] of values.entries()) {
       const normalized = normalizeText(name).slice(0, 80);
       const id = newId();
       statements.push(
@@ -109,8 +109,8 @@ export async function syncLabels(
       );
       statements.push(
         env.DB.prepare(
-          "INSERT OR IGNORE INTO work_labels (work_id, label_id) SELECT ?, id FROM labels WHERE owner_id = ? AND kind = ? AND normalized_name = ?"
-        ).bind(workId, ownerId, kind, normalized)
+          "INSERT OR IGNORE INTO work_labels (work_id, label_id, position) SELECT ?, id, ? FROM labels WHERE owner_id = ? AND kind = ? AND normalized_name = ?"
+        ).bind(workId, position, ownerId, kind, normalized)
       );
     }
   }
@@ -125,7 +125,7 @@ export async function rebuildWorkSearchText(env: Env, workId: string, ownerId: s
   }>();
   if (!work) return;
   const labels = await env.DB.prepare(
-    "SELECT l.name FROM labels l JOIN work_labels wl ON wl.label_id = l.id WHERE wl.work_id = ? ORDER BY l.kind, l.name"
+    "SELECT l.name FROM labels l JOIN work_labels wl ON wl.label_id = l.id WHERE wl.work_id = ? ORDER BY l.kind, wl.position, l.name"
   ).bind(workId).all<{ name: string }>();
   const notes = await env.DB.prepare("SELECT content FROM notes WHERE work_id = ? ORDER BY updated_at DESC LIMIT 100").bind(workId).all<{ content: string }>();
   const text = [work.title, work.creator ?? "", work.short_note ?? "", ...labels.results.map((x) => x.name), ...notes.results.map((x) => x.content)].join(" ");
@@ -137,7 +137,7 @@ export async function getLabelsForWorks(env: Env, workIds: string[]): Promise<Ma
   if (workIds.length === 0) return map;
   const placeholders = workIds.map(() => "?").join(",");
   const rows = await env.DB.prepare(
-    `SELECT wl.work_id, l.kind, l.name FROM work_labels wl JOIN labels l ON l.id = wl.label_id WHERE wl.work_id IN (${placeholders}) ORDER BY l.name`
+    `SELECT wl.work_id, l.kind, l.name FROM work_labels wl JOIN labels l ON l.id = wl.label_id WHERE wl.work_id IN (${placeholders}) ORDER BY wl.work_id, l.kind, wl.position, l.name`
   ).bind(...workIds).all<{ work_id: string; kind: LabelKind; name: string }>();
   for (const row of rows.results) {
     const current = map.get(row.work_id) ?? { genre: [], theme: [], tag: [] };
