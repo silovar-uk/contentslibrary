@@ -74,7 +74,10 @@ async function loadChunkImportFile(){
 }
 
 function yieldImportControl(ms = IMPORT_RENDER_YIELD_MS){
-  return new Promise((resolve)=>requestAnimationFrame(()=>setTimeout(resolve,ms)));
+  return new Promise((resolve)=>{
+    if(typeof requestAnimationFrame === 'function') requestAnimationFrame(()=>setTimeout(resolve,ms));
+    else setTimeout(resolve,ms);
+  });
 }
 
 function setImportControlsBusy(mode){
@@ -120,7 +123,7 @@ function setStepState(activeKey, completedKeys = []){
     const state = completedKeys.includes(key) ? 'done' : key === activeKey ? 'active' : 'waiting';
     step.dataset.state = state;
     const mark = step.querySelector('.import-step-mark');
-    if(mark && state === 'done') mark.textContent = '✓';
+    if(mark && state === 'done' && mark.textContent !== '✓') mark.textContent = '✓';
   });
 }
 
@@ -135,7 +138,7 @@ function showChunkCheckpoint({mode,processed,total,paused=false}){
   }
   const values = {
     '#importLiveKicker': mode === 'stage' ? 'STEP 2 / 4' : 'STEP 4 / 4',
-    '#importLiveTitle': paused ? '一時停止しました' : `${Math.min(IMPORT_OPERATION_LIMIT,processed)}件単位の処理が完了しました`,
+    '#importLiveTitle': paused ? '一時停止しました' : '100件分の処理が完了しました',
     '#importLiveDescription': mode === 'stage'
       ? '送信済みの作品はステージングへ保存されています。画面を閉じても、同じJSONを選べば続きから再開できます。'
       : '反映済みの作品は本番へ保存されています。画面を閉じても、取込履歴から続きの100件を反映できます。',
@@ -146,7 +149,7 @@ function showChunkCheckpoint({mode,processed,total,paused=false}){
   };
   for(const [selector,value] of Object.entries(values)){
     const node = document.querySelector(selector);
-    if(node) node.textContent = value;
+    if(node && node.textContent !== value) node.textContent = value;
   }
   const fill = document.querySelector('#importProgressFill');
   if(fill) fill.style.width = `${Math.max(0,Math.min(100,percent))}%`;
@@ -266,6 +269,10 @@ function requestChunkPause(){
   if(button){button.disabled=true;button.textContent='停止予約済み';}
 }
 
+function setTextIfChanged(node,value){
+  if(node && node.textContent !== value) node.textContent = value;
+}
+
 function decorateChunkedImportCenter(){
   const card = document.querySelector('#importCenterCard');
   if(!card) return false;
@@ -277,13 +284,13 @@ function decorateChunkedImportCenter(){
     actions.insertAdjacentHTML('afterend','<p class="muted" id="importChunkNotice">大量データは100件ごとに自動停止します。画面を閉じても、送信済み・反映済みの位置から再開できます。</p>');
   }
   const stage = card.querySelector('#stageImportFile');
-  if(stage && !chunkOperationBusy) stage.textContent = '100件ずつステージングへ送る';
+  if(stage && !chunkOperationBusy) setTextIfChanged(stage,'100件ずつステージングへ送る');
   card.querySelectorAll('[data-import-action="commit"]').forEach((button)=>{
     const status = button.closest('.import-batch-row')?.dataset.status;
-    button.textContent = status === 'committing' ? '次の100件を反映' : '最初の100件を反映';
+    setTextIfChanged(button,status === 'committing' ? '次の100件を反映' : '最初の100件を反映');
   });
-  card.querySelectorAll('.import-batch-row[data-status="uploading"] .import-batch-guide').forEach((guide)=>guide.textContent='次：同じJSONを選び、次の100件をステージング');
-  card.querySelectorAll('.import-batch-row[data-status="committing"] .import-batch-guide').forEach((guide)=>guide.textContent='次：次の100件を本番へ反映');
+  card.querySelectorAll('.import-batch-row[data-status="uploading"] .import-batch-guide').forEach((guide)=>setTextIfChanged(guide,'次：同じJSONを選び、次の100件をステージング'));
+  card.querySelectorAll('.import-batch-row[data-status="committing"] .import-batch-guide').forEach((guide)=>setTextIfChanged(guide,'次：次の100件を本番へ反映'));
   return true;
 }
 
@@ -316,7 +323,7 @@ function startChunkedImportControl(){
   }
   document.addEventListener('click',captureChunkedImportClick,true);
   const card = document.querySelector('#importCenterCard');
-  if(card) new MutationObserver(()=>queueMicrotask(decorateChunkedImportCenter)).observe(card,{subtree:true,childList:true,attributes:true,attributeFilter:['data-status','hidden','disabled']});
+  if(card) new MutationObserver(()=>queueMicrotask(decorateChunkedImportCenter)).observe(card,{subtree:true,childList:true,attributes:true,attributeFilter:['data-status','hidden']});
 }
 
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(startChunkedImportControl,180),{once:true});
