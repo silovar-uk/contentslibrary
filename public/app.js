@@ -17,4 +17,5 @@ import './app-v14.js';
 import './app-v15-genre-shelf.js';
 import './app-v18-refined-ui.js';
 import './app-v19-import-chunk-control.js';
+import './app-v191-import-reset.js';
 import './app-v16-bootstrap.js';
