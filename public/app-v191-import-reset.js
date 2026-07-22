@@ -106,13 +106,13 @@ function decorateImportResetActions(){
 
     if(deleteButton){
       if(SAFE_RESET_STATUSES.has(status)){
-        deleteButton.hidden=false;
+        if(deleteButton.hidden) deleteButton.hidden=false;
         deleteButton.dataset.importResetAction='staging';
         delete deleteButton.dataset.importAction;
-        setImportResetText(deleteButton,status === 'rolled_back' ? '送信状態をリセット' : '送信状態をリセット');
+        setImportResetText(deleteButton,'送信状態をリセット');
         deleteButton.title='本番データを残したまま、この送信途中のバッチだけを削除します';
       }else if(status === 'failed'){
-        deleteButton.hidden=true;
+        if(!deleteButton.hidden) deleteButton.hidden=true;
         delete deleteButton.dataset.importResetAction;
       }
     }
