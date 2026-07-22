@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="/v14-editorial.css">
   <link rel="stylesheet" href="/v15-genre-shelf.css">
   <link rel="stylesheet" href="/v17-product-ui.css">
+  <link rel="stylesheet" href="/v20-import-control.css">
   <style>
     html.ui-booting body{overflow:hidden}
     html.ui-booting #app,html.ui-booting dialog,html.ui-booting .toast-region{opacity:0!important;pointer-events:none!important}
@@ -118,69 +119,26 @@
       <section class="list-panel" aria-labelledby="libraryTitle">
         <div class="panel-heading list-heading">
           <div><p class="eyebrow">LIBRARY</p><h1 id="libraryTitle">作品一覧</h1><p id="resultSummary">読み込み中</p></div>
-          <div class="list-tools"><button class="ghost-button filter-toggle" type="button" data-action="toggle-filters">絞り込み</button><select id="sortSelect" aria-label="並び順"><option value="updated_desc">更新が新しい順</option><option value="title_asc">タイトル順</option><option value="rating_desc">評価が高い順</option><option value="created_desc">登録が新しい順</option></select></div>
         </div>
-        <div id="activeFilters" class="active-filters" aria-live="polite"></div>
-        <div id="workList" class="work-list" aria-live="polite"></div>
-        <button id="loadMore" class="load-more" type="button" hidden>続きを表示</button>
+        <div id="activeFilters" class="active-filters" hidden></div>
+        <div id="workList" class="work-list skeleton-zone"></div>
+        <button id="loadMore" class="ghost-button load-more" type="button" hidden>さらに読み込む</button>
       </section>
-
-      <aside id="detailPanel" class="detail-panel" aria-label="作品詳細">
-        <div class="detail-empty"><span>↗</span><strong>作品を選択</strong><p>一覧から作品を選ぶと、体験履歴やメモをここで確認できる。</p></div>
-      </aside>
     </main>
-
-    <section id="settingsView" class="standalone-view" hidden>
-      <div class="standalone-header"><div><p class="eyebrow">SETTINGS</p><h1>設定とデータ</h1></div><button class="ghost-button" type="button" data-action="go-home">閉じる</button></div>
-      <div class="settings-grid">
-        <article class="settings-card"><h2>アカウント</h2><dl id="accountInfo"></dl><a class="secondary-button" href="/cdn-cgi/access/logout">ログアウト</a></article>
-        <article class="settings-card"><h2>データを書き出す</h2><p>作品、体験、メモ、分類をサービス外でも読める形で保存する。</p><div class="export-buttons"><button data-export="json">JSON</button><button data-export="csv">CSV</button><button data-export="markdown">Markdown</button></div></article>
-        <article class="settings-card"><h2>この実装について</h2><p>外部作品APIや表紙画像に依存せず、手入力・検索・書き出しを継続できる設計。</p><p class="muted">ローカル開発時は開発用owner、本番はCloudflare Access JWTで認証。</p></article>
-      </div>
-    </section>
-
-    <section id="adminView" class="standalone-view" hidden>
-      <div class="standalone-header"><div><p class="eyebrow">ADMIN</p><h1>ユーザーとセキュリティ</h1></div><button class="ghost-button" type="button" data-action="go-home">閉じる</button></div>
-      <div class="admin-grid">
-        <article class="settings-card"><div class="card-heading"><h2>招待</h2></div><form id="inviteForm" class="inline-form"><input name="email" type="email" required placeholder="メールアドレス"><select name="role"><option value="member">member</option><option value="viewer">viewer</option><option value="admin">admin</option></select><button class="primary-button" type="submit">招待を作成</button></form><p class="muted">実際の本人確認はCloudflare Accessが担当。ここでは利用許可を登録する。</p></article>
-        <article class="settings-card admin-wide"><div class="card-heading"><h2>ユーザー</h2><button class="text-button" type="button" data-action="refresh-admin">更新</button></div><div id="userTable" class="table-wrap"></div></article>
-        <article class="settings-card admin-wide"><div class="card-heading"><h2>要確認イベント</h2><button class="text-button" type="button" data-action="refresh-admin">更新</button></div><div id="securityEvents" class="security-list"></div></article>
-      </div>
-    </section>
-
-    <nav class="mobile-nav" aria-label="主要メニュー">
-      <button type="button" data-mobile-view="home"><span>⌂</span>ホーム</button>
-      <button type="button" data-mobile-view="library"><span>⌕</span>検索</button>
-      <button type="button" class="mobile-add" data-action="open-work-dialog"><span>＋</span>追加</button>
-      <button type="button" data-mobile-view="records"><span>≡</span>記録</button>
-      <button type="button" data-mobile-view="settings"><span>•</span>設定</button>
-    </nav>
   </div>
 
-  <dialog id="workDialog" class="app-dialog">
-    <form id="workForm" method="dialog" class="dialog-form">
-      <header><div><p class="eyebrow">QUICK ADD</p><h2 id="workDialogTitle">作品を追加</h2></div><button type="button" class="icon-button" data-action="close-dialog" aria-label="閉じる">×</button></header>
-      <input type="hidden" name="id"><input type="hidden" name="version">
-      <label class="field-label main-field">タイトル<input name="title" required maxlength="300" autocomplete="off" placeholder="作品名"></label>
-      <div class="form-row"><label class="field-label">種別<select name="type"><option value="book">本</option><option value="manga">漫画</option><option value="movie">映画</option><option value="anime">アニメ</option><option value="drama">ドラマ</option><option value="other">その他</option></select></label><label class="field-label">状態<select name="status"><option value="want">読みたい・見たい</option><option value="active">進行中</option><option value="completed">完了</option><option value="paused">一時停止</option><option value="dropped">中断</option></select></label></div>
-      <label class="field-label">一言メモ<textarea name="short_note" maxlength="280" rows="3" placeholder="いま残しておきたいこと"></textarea><small><span data-counter="short_note">0</span>/280</small></label>
-      <details class="details-fields"><summary>詳細も追加する</summary><div class="details-inner">
-        <div class="form-row"><label class="field-label">作者・監督<input name="creator" maxlength="300"></label><label class="field-label">発表年<input name="release_year" type="number" min="0" max="3000"></label></div>
-        <label class="field-label">評価<select name="rating"><option value="">未評価</option><option>5</option><option>4.5</option><option>4</option><option>3.5</option><option>3</option><option>2.5</option><option>2</option><option>1.5</option><option>1</option><option>0.5</option></select></label>
-        <label class="field-label">ジャンル<input name="genre" placeholder="哲学, 社会"></label><label class="field-label">テーマ<input name="theme" placeholder="退屈, 消費, 自由"></label><label class="field-label">タグ<input name="tag" placeholder="再読したい, 仕事"></label>
-        <div class="form-row"><label class="field-label">進捗<input name="progress_current" type="number" step="0.1"></label><label class="field-label">全体<input name="progress_total" type="number" step="0.1"></label><label class="field-label">単位<input name="unit_label" placeholder="ページ / 話 / 巻"></label></div>
-      </div></details>
-      <div id="workFormError" class="form-error" role="alert"></div>
-      <footer><button type="button" class="ghost-button" data-action="close-dialog">キャンセル</button><button class="primary-button" type="submit">保存する</button></footer>
+  <dialog id="workDialog" class="work-dialog">
+    <form method="dialog" id="workForm">
+      <div class="dialog-header"><div><p class="eyebrow">NEW EXPERIENCE</p><h2 id="workDialogTitle">作品を追加</h2></div><button class="icon-button" value="cancel" aria-label="閉じる">×</button></div>
+      <input type="hidden" id="workId">
+      <label>タイトル<input id="workTitle" required maxlength="300"></label>
+      <label>作者・監督<input id="workCreator" maxlength="300"></label>
+      <div class="form-grid"><label>種別<select id="workType"><option value="book">本</option><option value="manga">漫画</option><option value="movie">映画</option><option value="anime">アニメ</option><option value="drama">ドラマ</option><option value="other">その他</option></select></label><label>状態<select id="workStatus"><option value="want">読みたい・見たい</option><option value="owned_unread">所持・未読</option><option value="active">進行中</option><option value="completed">完了</option><option value="paused">一時停止</option><option value="dropped">中断</option></select></label></div>
+      <label>評価<select id="workRating"><option value="">未評価</option><option value="5">5.0</option><option value="4.5">4.5</option><option value="4">4.0</option><option value="3.5">3.5</option><option value="3">3.0</option><option value="2.5">2.5</option><option value="2">2.0</option><option value="1.5">1.5</option><option value="1">1.0</option><option value="0.5">0.5</option></select></label>
+      <label>一言メモ<textarea id="workShortNote" maxlength="280"></textarea></label>
+      <div class="form-actions"><button class="ghost-button" value="cancel">キャンセル</button><button class="primary-button" value="default" id="saveWork">保存</button></div>
     </form>
   </dialog>
-
-  <dialog id="noteDialog" class="app-dialog small-dialog"><form id="noteForm" method="dialog" class="dialog-form"><header><div><p class="eyebrow">NOTE</p><h2>メモを追加</h2></div><button type="button" class="icon-button" data-action="close-dialog">×</button></header><input type="hidden" name="work_id"><label class="field-label">メモ種別<select name="note_type"><option value="quick">一言</option><option value="summary">要約</option><option value="impression">印象</option><option value="quote">引用</option><option value="idea">自分の考え</option><option value="connection">仕事・生活との接続</option><option value="progress">途中メモ</option></select></label><label class="field-label">内容<textarea name="content" required rows="8" placeholder="あとから戻りたい言葉を残す"></textarea></label><label class="field-label">位置・出典<input name="position" placeholder="p.128 / 第8話"></label><div class="form-error" role="alert"></div><footer><button type="button" class="ghost-button" data-action="close-dialog">キャンセル</button><button class="primary-button" type="submit">保存する</button></footer></form></dialog>
-
-  <dialog id="experienceDialog" class="app-dialog small-dialog"><form id="experienceForm" method="dialog" class="dialog-form"><header><div><p class="eyebrow">EXPERIENCE</p><h2>体験を追加</h2></div><button type="button" class="icon-button" data-action="close-dialog">×</button></header><input type="hidden" name="work_id"><div class="form-row"><label class="field-label">開始日<input name="started_at" type="date"></label><label class="field-label">完了日<input name="completed_at" type="date"></label></div><div class="form-row"><label class="field-label">評価<select name="rating"><option value="">未評価</option><option>5</option><option>4.5</option><option>4</option><option>3.5</option><option>3</option><option>2.5</option><option>2</option><option>1.5</option><option>1</option><option>0.5</option></select></label><label class="field-label">現在位置<input name="progress_current" type="number" step="0.1"></label><label class="field-label">全体<input name="progress_total" type="number" step="0.1"></label></div><label class="field-label">この回のメモ<textarea name="memo" rows="6"></textarea></label><div class="form-error" role="alert"></div><footer><button type="button" class="ghost-button" data-action="close-dialog">キャンセル</button><button class="primary-button" type="submit">保存する</button></footer></form></dialog>
-
-  <dialog id="dangerDialog" class="app-dialog small-dialog danger-dialog"><form id="dangerForm" method="dialog" class="dialog-form"><header><div><p class="eyebrow">DANGER ZONE</p><h2 id="dangerTitle">利用を停止</h2></div><button type="button" class="icon-button" data-action="close-dialog">×</button></header><input type="hidden" name="user_id"><input type="hidden" name="action"><p id="dangerDescription"></p><label class="field-label email-confirm" hidden>対象メールを再入力<input name="email_confirm"></label><label class="field-label">理由<textarea name="reason" required minlength="10" maxlength="500" rows="4"></textarea></label><label class="field-label suspend-until" hidden>停止期限<input name="suspended_until" type="datetime-local"></label><div class="form-error" role="alert"></div><footer><button type="button" class="ghost-button" data-action="close-dialog">キャンセル</button><button class="danger-button" type="submit">実行する</button></footer></form></dialog>
-
   <div id="toastRegion" class="toast-region" aria-live="polite"></div>
 </body>
 </html>
