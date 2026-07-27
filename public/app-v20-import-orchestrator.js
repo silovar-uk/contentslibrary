@@ -11,15 +11,19 @@ const IMPORT_V20_YIELD_MS = 140;
 // doesn't carry them), but which actions are safe (reset/rollback) is read
 // from allowed_actions via importV20RowActions() rather than duplicated
 // here as a status-name set — see STATUS_LABELS in import-center.ts.
+//
+// descriptionは状態説明＋次の行動を1文にまとめている。以前はapp-v10.jsの
+// renderBatchGuidance()が別枠(.import-batch-guide)で「次の行動」だけを
+// 重ねて表示しており、同じ行に説明文が2つ並ぶ重複表示になっていたため統合した。
 const IMPORT_V20_STATUS_COPY = {
-  draft: { tone:'neutral', description:'まだ作品は送信されていません。本番データは変更されていません。' },
-  uploading: { tone:'working', description:'作品をステージングへ一時保存中です。本番データは変更されていません。' },
-  review: { tone:'warning', description:'件数または重複の確認が必要です。本番データは変更されていません。' },
-  validated: { tone:'ready', description:'ステージングと検証は完了しています。本番への反映はまだです。' },
-  committing: { tone:'working', description:'一部の作品を本番へ反映済みです。続きから再開できます。' },
-  committed: { tone:'done', description:'今回の取込は本番へ反映済みです。' },
-  failed: { tone:'error', description:'処理が途中で停止しました。取込を取り消してからやり直せます。' },
-  rolled_back: { tone:'neutral', description:'今回の取込による本番変更は取り消し済みです。送信状態をリセットできます。' }
+  draft: { tone:'neutral', description:'まだ作品は送信されていません。本番データは変更されていません。次：作品をステージングへ送信してください。' },
+  uploading: { tone:'working', description:'作品をステージングへ一時保存中です。本番データは変更されていません。進行中：ステージングの続きを送信してください。' },
+  review: { tone:'warning', description:'件数または重複の確認が必要です。本番データは変更されていません。次：競合を解消して再検証してください。' },
+  validated: { tone:'ready', description:'ステージングと検証は完了しています。本番への反映はまだです。次：内容を確認して本番へ反映してください。' },
+  committing: { tone:'working', description:'一部の作品を本番へ反映済みです。続きから再開できます。進行中：本番への反映を続行してください。' },
+  committed: { tone:'done', description:'今回の取込は本番へ反映済みです。完了：作品一覧で確認してください。' },
+  failed: { tone:'error', description:'処理が途中で停止しました。取込を取り消してからやり直せます。失敗：内容を確認して再開または取消してください。' },
+  rolled_back: { tone:'neutral', description:'今回の取込による本番変更は取り消し済みです。完了：送信状態をリセットできます。' }
 };
 
 const importV20State = {

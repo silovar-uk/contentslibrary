@@ -111,32 +111,8 @@ function detailExpectedWorks(){
   return Number((target?.querySelector('dd')?.textContent || '').replace(/[^0-9]/g,'')) || 0;
 }
 
-function renderBatchGuidance(){
-  document.querySelectorAll('.import-batch-row').forEach((row)=>{
-    const status = row.dataset.status || '';
-    let guide = row.querySelector('.import-batch-guide');
-    if(!guide){
-      guide = document.createElement('p');
-      guide.className = 'import-batch-guide';
-      row.querySelector('.import-batch-main')?.append(guide);
-    }
-    const copy = {
-      draft:'次：作品をステージングへ送信',
-      uploading:'進行中：ステージングの続き',
-      review:'要確認：競合を解消して再検証',
-      validated:'次：内容を確認して本番へ反映',
-      committing:'進行中：本番への反映を続行',
-      committed:'完了：作品一覧へ反映済み',
-      failed:'失敗：内容を確認して再開または取消',
-      rolled_back:'完了：今回の取込を取消済み'
-    };
-    guide.textContent = copy[status] || '状態を確認してください';
-  });
-}
-
 function deriveProgressFromUI(){
   ensureProgressUI();
-  renderBatchGuidance();
   const messageNode = document.querySelector('#importCenterMessage');
   const message = messageNode?.textContent?.trim() || '';
   const messageType = messageNode?.dataset.type || '';
