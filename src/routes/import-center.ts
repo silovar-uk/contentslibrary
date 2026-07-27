@@ -333,17 +333,30 @@ async function addConflict(env: Env, batchId: string, itemId: string | null, kin
 // a non-technical operator, and what can they safely do right now."
 // The frontend must read allowed_actions from here rather than switching
 // on the internal status string itself (see docs/FRONTEND_MAP.md).
+//
+// `actions` lists only the row-button operations the UI offers
+// (validate/commit/rollback/delete), not every API call the status
+// technically permits — e.g. uploadImportItems also accepts draft/
+// uploading/review, and verifyImportBatch can run in any status, but
+// neither has a row button. Values below were cross-checked against the
+// guard conditions in validateImportBatch/commitImportBatch/
+// rollbackImportBatch/deleteImportBatch and against
+// IMPORT_V20_SAFE_RESET_STATUSES / IMPORT_V20_ROLLBACK_STATUSES in
+// app-v20-import-orchestrator.js so this table matches current UI
+// behavior exactly (delete on "failed" is intentionally excluded: v20
+// treats it as having possible production impact and requires rollback
+// first).
 const STATUS_LABELS: Record<BatchStatus, { label: string; production_impact: string; actions: string[] }> = {
-  draft: { label: "準備中", production_impact: "本番未変更", actions: ["upload", "delete"] },
-  uploading: { label: "送信途中", production_impact: "本番未変更", actions: ["upload", "validate", "delete"] },
+  draft: { label: "準備中", production_impact: "本番未変更", actions: ["validate", "delete"] },
+  uploading: { label: "送信途中", production_impact: "本番未変更", actions: ["validate", "delete"] },
   review: { label: "要確認", production_impact: "本番未変更", actions: ["validate", "delete"] },
   validated: { label: "反映待ち", production_impact: "本番未変更", actions: ["commit", "delete"] },
   committing: { label: "一部反映中", production_impact: "一部反映済み", actions: ["commit", "rollback"] },
-  committed: { label: "反映完了", production_impact: "反映済み", actions: ["verify", "rollback"] },
+  committed: { label: "反映完了", production_impact: "反映済み", actions: ["rollback"] },
   // "failed" exists in the schema for forward-compatibility but no code path
   // sets it yet (Phase 3 introduces explicit failure transitions). Treated
   // conservatively here so the UI has a safe fallback if it ever appears.
-  failed: { label: "処理停止", production_impact: "一部反映済みの可能性", actions: ["commit", "rollback"] },
+  failed: { label: "処理停止", production_impact: "一部反映済みの可能性", actions: ["rollback"] },
   rolled_back: { label: "取消完了", production_impact: "本番復旧済み", actions: ["delete"] }
 };
 
