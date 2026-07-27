@@ -7,17 +7,19 @@ const IMPORT_V20_REQUEST_TIMEOUT = 30_000;
 const IMPORT_V20_VALIDATE_TIMEOUT = 60_000;
 const IMPORT_V20_YIELD_MS = 140;
 
-const IMPORT_V20_SAFE_RESET_STATUSES = new Set(['draft','uploading','review','validated','rolled_back']);
-const IMPORT_V20_ROLLBACK_STATUSES = new Set(['committing','committed','failed']);
+// Phase 1.5: label/tone/description stay client-side (the server contract
+// doesn't carry them), but which actions are safe (reset/rollback) is read
+// from allowed_actions via importV20RowActions() rather than duplicated
+// here as a status-name set — see STATUS_LABELS in import-center.ts.
 const IMPORT_V20_STATUS_COPY = {
-  draft: { label:'準備中', tone:'neutral', description:'まだ作品は送信されていません。本番データは変更されていません。' },
-  uploading: { label:'送信途中', tone:'working', description:'作品をステージングへ一時保存中です。本番データは変更されていません。' },
-  review: { label:'要確認', tone:'warning', description:'件数または重複の確認が必要です。本番データは変更されていません。' },
-  validated: { label:'反映待ち', tone:'ready', description:'ステージングと検証は完了しています。本番への反映はまだです。' },
-  committing: { label:'一部反映中', tone:'working', description:'一部の作品を本番へ反映済みです。続きから再開できます。' },
-  committed: { label:'反映完了', tone:'done', description:'今回の取込は本番へ反映済みです。' },
-  failed: { label:'処理停止', tone:'error', description:'処理が途中で停止しました。取込を取り消してからやり直せます。' },
-  rolled_back: { label:'取消完了', tone:'neutral', description:'今回の取込による本番変更は取り消し済みです。送信状態をリセットできます。' }
+  draft: { tone:'neutral', description:'まだ作品は送信されていません。本番データは変更されていません。' },
+  uploading: { tone:'working', description:'作品をステージングへ一時保存中です。本番データは変更されていません。' },
+  review: { tone:'warning', description:'件数または重複の確認が必要です。本番データは変更されていません。' },
+  validated: { tone:'ready', description:'ステージングと検証は完了しています。本番への反映はまだです。' },
+  committing: { tone:'working', description:'一部の作品を本番へ反映済みです。続きから再開できます。' },
+  committed: { tone:'done', description:'今回の取込は本番へ反映済みです。' },
+  failed: { tone:'error', description:'処理が途中で停止しました。取込を取り消してからやり直せます。' },
+  rolled_back: { tone:'neutral', description:'今回の取込による本番変更は取り消し済みです。送信状態をリセットできます。' }
 };
 
 const importV20State = {
@@ -513,6 +515,10 @@ function importV20RowStatus(button){
   return button.closest('.import-batch-row')?.dataset.status || '';
 }
 
+function importV20RowActions(row){
+  return new Set((row?.dataset.allowedActions || '').split(' ').filter(Boolean));
+}
+
 async function importV20Commit(button){
   if(importV20State.busy){importV20BusyFeedback();return;}
   const batchId=button.dataset.batchId;
@@ -624,9 +630,9 @@ async function importV20Rollback(button){
 async function importV20Reset(button){
   if(importV20State.busy){importV20BusyFeedback();return;}
   const batchId=button.dataset.batchId;
-  const status=importV20RowStatus(button);
+  const row=button.closest('.import-batch-row');
   if(!batchId) return;
-  if(!IMPORT_V20_SAFE_RESET_STATUSES.has(status)){
+  if(!importV20RowActions(row).has('delete')){
     importV20SetMessage('本番へ反映された変更があるため、先に「100件ずつ取込を取り消す」を実行してください。','warning');
     return;
   }
@@ -679,10 +685,11 @@ function importV20SetText(node,text){
 function importV20DecorateRows(){
   document.querySelectorAll('#importCenterCard .import-batch-row').forEach((row)=>{
     const status=row.dataset.status||'';
-    const copy=IMPORT_V20_STATUS_COPY[status]||{label:status,tone:'neutral',description:'状態を確認してください。'};
+    const actions=importV20RowActions(row);
+    const copy=IMPORT_V20_STATUS_COPY[status]||{tone:'neutral',description:'状態を確認してください。'};
     const statusNode=row.querySelector('.import-status');
     if(statusNode){
-      importV20SetText(statusNode,copy.label);
+      importV20SetText(statusNode,row.dataset.statusLabel||status);
       statusNode.dataset.tone=copy.tone;
       statusNode.dataset.active=String(['uploading','committing'].includes(status));
     }
@@ -706,7 +713,7 @@ function importV20DecorateRows(){
 
     const remove=row.querySelector('[data-import-action="delete"], [data-v20-action="reset"]');
     if(remove){
-      if(IMPORT_V20_SAFE_RESET_STATUSES.has(status)){
+      if(actions.has('delete')){
         remove.hidden=false;
         remove.dataset.v20Action='reset';
         delete remove.dataset.importAction;
@@ -718,7 +725,7 @@ function importV20DecorateRows(){
     }
 
     const rollback=row.querySelector('[data-import-action="rollback"], [data-v20-action="rollback"]');
-    if(rollback && IMPORT_V20_ROLLBACK_STATUSES.has(status)){
+    if(rollback && actions.has('rollback')){
       rollback.hidden=false;
       rollback.dataset.v20Action='rollback';
       delete rollback.dataset.importAction;

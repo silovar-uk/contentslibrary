@@ -45,10 +45,6 @@ function validateImportPayload(payload){
   return payload;
 }
 
-function statusLabel(status){
-  return ({draft:'準備中',uploading:'アップロード中',review:'要確認',validated:'検証済み',committing:'反映中',committed:'反映済み',failed:'失敗',rolled_back:'取消済み'})[status] || status;
-}
-
 function renderImportCardShell(){
   const grid = document.querySelector('#settingsView .settings-grid');
   if(!grid || document.querySelector('#importCenterCard')) return false;
@@ -103,11 +99,12 @@ function releaseImportBusy(){
 }
 
 function batchButtons(batch){
+  const actions = new Set(batch.allowed_actions || []);
   const buttons = [`<button class="ghost-button" type="button" data-import-action="detail" data-batch-id="${importEsc(batch.id)}">内容</button>`];
-  if(['draft','uploading','review'].includes(batch.status)) buttons.push(`<button class="ghost-button" type="button" data-import-action="validate" data-batch-id="${importEsc(batch.id)}">再検証</button>`);
-  if(['validated','committing'].includes(batch.status)) buttons.push(`<button class="primary-button" type="button" data-import-action="commit" data-batch-id="${importEsc(batch.id)}">${batch.status==='committing'?'反映を続ける':'本番へ反映'}</button>`);
-  if(['committing','committed','failed'].includes(batch.status)) buttons.push(`<button class="ghost-button" type="button" data-import-action="rollback" data-batch-id="${importEsc(batch.id)}">取込を取り消す</button>`);
-  if(!['committing','committed'].includes(batch.status)) buttons.push(`<button class="text-button danger-text" type="button" data-import-action="delete" data-batch-id="${importEsc(batch.id)}">履歴を削除</button>`);
+  if(actions.has('validate')) buttons.push(`<button class="ghost-button" type="button" data-import-action="validate" data-batch-id="${importEsc(batch.id)}">再検証</button>`);
+  if(actions.has('commit')) buttons.push(`<button class="primary-button" type="button" data-import-action="commit" data-batch-id="${importEsc(batch.id)}">${batch.status==='committing'?'反映を続ける':'本番へ反映'}</button>`);
+  if(actions.has('rollback')) buttons.push(`<button class="ghost-button" type="button" data-import-action="rollback" data-batch-id="${importEsc(batch.id)}">取込を取り消す</button>`);
+  if(actions.has('delete')) buttons.push(`<button class="text-button danger-text" type="button" data-import-action="delete" data-batch-id="${importEsc(batch.id)}">履歴を削除</button>`);
   return buttons.join('');
 }
 
@@ -116,9 +113,9 @@ function renderBatchList(batches){
   if(!list) return;
   if(!batches.length){list.innerHTML='<p class="muted">取込履歴はまだありません。</p>';return;}
   list.innerHTML=batches.map((batch)=>`
-    <article class="import-batch-row" data-status="${importEsc(batch.status)}">
+    <article class="import-batch-row" data-status="${importEsc(batch.status)}" data-status-label="${importEsc(batch.status_label)}" data-production-impact="${importEsc(batch.production_impact)}" data-allowed-actions="${importEsc((batch.allowed_actions||[]).join(' '))}">
       <div class="import-batch-main">
-        <span class="import-status">${importEsc(statusLabel(batch.status))}</span>
+        <span class="import-status">${importEsc(batch.status_label)}</span>
         <strong>${importEsc(batch.name)}</strong>
         <small>${importEsc(batch.source_filename||'ファイル名なし')}・${importDate(batch.updated_at)}</small>
       </div>
@@ -198,7 +195,7 @@ function renderBatchDetail(detail){
   const batch=detail.batch;
   area.hidden=false;
   area.innerHTML=`
-    <div class="import-detail-heading"><div><span class="import-status">${importEsc(statusLabel(batch.status))}</span><h3>${importEsc(batch.name)}</h3></div><button class="icon-button" type="button" data-import-action="close-detail" aria-label="閉じる">×</button></div>
+    <div class="import-detail-heading"><div><span class="import-status">${importEsc(batch.status_label)}</span><h3>${importEsc(batch.name)}</h3></div><button class="icon-button" type="button" data-import-action="close-detail" aria-label="閉じる">×</button></div>
     <dl class="import-detail-counts">
       <div><dt>取込予定</dt><dd>${batch.expected_works}作品</dd></div><div><dt>メモ</dt><dd>${batch.expected_notes}件</dd></div><div><dt>新規</dt><dd>${batch.insert_count}</dd></div><div><dt>既存へ統合</dt><dd>${batch.merge_count}</dd></div><div><dt>スキップ</dt><dd>${batch.skip_count}</dd></div><div><dt>競合</dt><dd>${batch.conflict_count}</dd></div>
     </dl>
