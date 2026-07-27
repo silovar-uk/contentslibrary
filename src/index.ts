@@ -20,11 +20,13 @@ import {
   deleteImportBatch,
   disableImportCenter,
   enableImportCenter,
+  extendImportWindow,
   getImportBatchDetail,
   getImportCenterStatus,
   rollbackImportBatch,
   uploadImportItems,
-  validateImportBatch
+  validateImportBatch,
+  verifyImportBatch
 } from "./routes/import-center";
 
 function match(pathname: string, pattern: RegExp): RegExpMatchArray | null {
@@ -110,13 +112,15 @@ async function handleApi(request: Request, env: Env, auth: AuthContext): Promise
   if (request.method === "GET" && path === "/api/admin/import-center") return getImportCenterStatus(env, auth);
   if (request.method === "POST" && path === "/api/admin/import-center/enable") return enableImportCenter(request, env, auth);
   if (request.method === "POST" && path === "/api/admin/import-center/disable") return disableImportCenter(env, auth);
+  if (request.method === "POST" && path === "/api/admin/import-center/extend") return extendImportWindow(env, auth);
   if (request.method === "POST" && path === "/api/admin/import-batches") return createImportBatch(request, env, auth);
 
-  m = match(path, /^\/api\/admin\/import-batches\/([^/]+)(?:\/(items|validate|commit|rollback))?$/);
+  m = match(path, /^\/api\/admin\/import-batches\/([^/]+)(?:\/(items|validate|commit|rollback|verify))?$/);
   if (m) {
     const id = decodeURIComponent(m[1]!);
     const action = m[2] ?? "detail";
     if (request.method === "GET" && action === "detail") return getImportBatchDetail(env, auth, id);
+    if (request.method === "GET" && action === "verify") return verifyImportBatch(env, auth, id);
     if (request.method === "DELETE" && action === "detail") return deleteImportBatch(env, auth, id);
     if (request.method === "POST" && action === "items") return uploadImportItems(request, env, auth, id);
     if (request.method === "POST" && action === "validate") return validateImportBatch(env, auth, id);

@@ -11,8 +11,12 @@ test('一時Workerは強いトークンとownerだけで取込センターを操
   assert.match(runner, /Bearer \$\{token\}/);
   assert.match(runner, /role = 'owner'/);
   assert.match(runner, /status = 'active'/);
-  assert.match(runner, /verifyBatch/);
-  assert.match(runner, /PRAGMA foreign_key_check/);
+  // Phase 1-B: verify logic moved to import-center.ts so the app and the
+  // CI runner share one implementation instead of duplicating it.
+  assert.match(runner, /verifyImportBatch/);
+  const importCenter = await read('src/routes/import-center.ts');
+  assert.match(importCenter, /export async function verifyImportBatch/);
+  assert.match(importCenter, /PRAGMA foreign_key_check/);
 });
 
 test('暗号断片は個別・全体SHA-256とバイト数を検証してから復元する', async () => {

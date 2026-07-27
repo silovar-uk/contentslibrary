@@ -3,6 +3,14 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 const [payloadPath = '.private-import.json', baseUrl, token, resultPath = 'import-result.json'] = process.argv.slice(2);
 if (!baseUrl || !token) throw new Error('baseUrl and token are required.');
+// Phase 1-D: default to NOT auto-rolling-back on failure. commitImportBatch
+// applies items one at a time without a wrapping transaction, so an
+// automatic rollback triggered by a mid-commit failure can itself only
+// partially undo the change. Leaving the batch's status as-is and requiring
+// a human to run /rollback (or resume /commit) explicitly is safer than a
+// script silently attempting to undo a partially-applied state.
+// Set AUTO_ROLLBACK=true to restore the previous (automatic) behavior.
+const autoRollback = process.env.AUTO_ROLLBACK === 'true';
 const payloadBytes = await readFile(payloadPath);
 const payload = JSON.parse(payloadBytes.toString('utf8'));
 if (payload.version !== 1 || !Array.isArray(payload.items)) throw new Error('Import payload is invalid.');
@@ -115,15 +123,25 @@ try {
   console.log(JSON.stringify({ ok: true, batch_id: batchId, works: expectedWorks, notes: expectedNotes }));
 } catch (error) {
   let rollbackResult = null;
+  let requiresManualDecision = false;
   if (batchId && commitStarted) {
-    try { rollbackResult = await rollback(batchId); } catch (rollbackError) {
-      rollbackResult = { ok: false, error: String(rollbackError?.stack ?? rollbackError) };
+    if (autoRollback) {
+      try { rollbackResult = await rollback(batchId); } catch (rollbackError) {
+        rollbackResult = { ok: false, error: String(rollbackError?.stack ?? rollbackError) };
+      }
+    } else {
+      requiresManualDecision = true;
     }
   }
   const result = {
     ok: false,
     batch_id: batchId,
     commit_started: commitStarted,
+    auto_rollback_enabled: autoRollback,
+    requires_manual_decision: requiresManualDecision,
+    manual_decision_note: requiresManualDecision
+      ? `バッチ ${batchId} は反映の途中で失敗しました。自動取消は無効です。/batches/${batchId} で状態を確認し、続きから反映するか（/commit）、今回分を取り消すか（/rollback）を判断してください。`
+      : null,
     error: String(error?.stack ?? error),
     rollback: rollbackResult
   };

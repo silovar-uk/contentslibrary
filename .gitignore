@@ -5,3 +5,14 @@ dist-worker/
 .wrangler.production.jsonc
 .DS_Store
 *.log
+
+# Phase 1-E: reconciliation reports and any local export/audit dumps contain
+# the owner's private library data and must never be committed.
+reconciliation-report*.json
+data/production-export-*.json
+data/production-export-*.csv
+data/production-export-*.md
+data/audit-dump-*.json
+data/private-import.json
+.private-import.json
+.private-import-key.pem
