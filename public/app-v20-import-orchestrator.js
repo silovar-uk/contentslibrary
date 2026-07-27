@@ -279,31 +279,56 @@ async function importV20Api(path,options = {}){
   }
 }
 
-// Phase 1-C: the import window (60分, スライド延長つき) expiring mid-loop
-// used to surface as a generic, unexplained failure — the root cause of
-// "画面が固まったように見える" identified in the improvement plan §1.1.
-// This renders an explicit, actionable panel instead, with a one-click
-// re-enable path that resumes from where the batch left off.
-function importV20HandleLockedError(error,{processed=0,total=0,remaining=null} = {}){
-  if(error?.code !== 'IMPORT_CENTER_LOCKED') return false;
-  const confirmedNote = Number.isFinite(error.confirmedCount) && error.confirmedCount !== null
-    ? `画面を閉じても、${Number(error.confirmedCount).toLocaleString()}件までは保存されています。`
-    : '確定済みの分は保存されています。';
-  importV20SetMessage('取込の有効期限が切れました。もう一度有効にすると続きから再開できます。','error');
-  importV20SetPanel({
-    state:'locked',
-    kicker:'取込の有効期限切れ',
-    title:'取込を再度有効にしてください',
-    description:`原因：取込の有効化から時間が経過しました。${confirmedNote} 次の行動：下のボタンで再度有効にすると、続きから反映できます。`,
-    processed,total,current:0,currentTotal:IMPORT_V20_STAGE_LIMIT,remaining,
-    safety:error.safeState||'一部反映済みの可能性',safetyLevel:'warning',
-    log:'取込の有効期限切れで停止しました',logKey:`window-locked:${Date.now()}`
-  });
-  const panel = document.querySelector('#importV20OperationPanel');
-  if(panel && !panel.querySelector('#importV20ReenableButton')){
-    panel.insertAdjacentHTML('beforeend','<button class="primary-button" type="button" id="importV20ReenableButton">取込をもう一度有効にする</button>');
-    panel.querySelector('#importV20ReenableButton').addEventListener('click',importV20Reenable);
+// Phase 1.5 / 2: every catch path renders the same 4-part error —
+// cause / confirmed-so-far / production impact / next action — instead of
+// each operation inventing its own shape. The 423 (import window expired)
+// case gets a dedicated re-enable panel; everything else uses the caller's
+// fallback copy unless the server sent structured context
+// (HttpErrorContext in src/http.ts) to override it.
+//
+// Phase 1-C origin: the import window expiring mid-loop used to surface as
+// a generic, unexplained failure — the root cause of "画面が固まったように
+// 見える" identified in the improvement plan §1.1.
+function importV20HandleApiError(error,{
+  processed=0,total=0,remaining=null,kicker='処理停止',title='操作を完了できませんでした',
+  confirmedText='確定済みの分は保存されています。',fallbackSafety='状態を要確認',fallbackSafetyLevel='warning',
+  nextActionText='状態を確認してから、もう一度実行してください。',logKeyPrefix='api-error'
+} = {}){
+  if(error?.code === 'IMPORT_CENTER_LOCKED'){
+    const confirmedNote = Number.isFinite(error.confirmedCount) && error.confirmedCount !== null
+      ? `画面を閉じても、${Number(error.confirmedCount).toLocaleString()}件までは保存されています。`
+      : '確定済みの分は保存されています。';
+    importV20SetMessage('取込の有効期限が切れました。もう一度有効にすると続きから再開できます。','error');
+    importV20SetPanel({
+      state:'locked',
+      kicker:'取込の有効期限切れ',
+      title:'取込を再度有効にしてください',
+      description:`原因：取込の有効化から時間が経過しました。${confirmedNote} 次の行動：下のボタンで再度有効にすると、続きから反映できます。`,
+      processed,total,current:0,currentTotal:IMPORT_V20_STAGE_LIMIT,remaining,
+      safety:error.safeState||'一部反映済みの可能性',safetyLevel:'warning',
+      log:'取込の有効期限切れで停止しました',logKey:`window-locked:${Date.now()}`
+    });
+    const panel = document.querySelector('#importV20OperationPanel');
+    if(panel && !panel.querySelector('#importV20ReenableButton')){
+      panel.insertAdjacentHTML('beforeend','<button class="primary-button" type="button" id="importV20ReenableButton">取込をもう一度有効にする</button>');
+      panel.querySelector('#importV20ReenableButton').addEventListener('click',importV20Reenable);
+    }
+    importV20FocusPanel();
+    importV20RequestRefresh();
+    return true;
   }
+  const confirmedNote = Number.isFinite(error.confirmedCount) && error.confirmedCount !== null
+    ? `${Number(error.confirmedCount).toLocaleString()}件までは保存されています。`
+    : confirmedText;
+  const safety = error.safeState || fallbackSafety;
+  const safetyLevel = error.safeState ? 'warning' : fallbackSafetyLevel;
+  importV20SetMessage(error.message,'error');
+  importV20SetPanel({
+    state:'error',kicker,title,
+    description:`原因：${error.message} ${confirmedNote} 次の行動：${nextActionText}`,
+    processed,total,remaining,safety,safetyLevel,
+    log:title,logKey:`${logKeyPrefix}:${error.message}`
+  });
   importV20FocusPanel();
   importV20RequestRefresh();
   return true;
@@ -501,11 +526,14 @@ async function importV20Stage(button){
     }
     importV20RequestRefresh();
   }catch(error){
-    if(importV20HandleLockedError(error,{processed,total,remaining:total?total-processed:null})) return;
-    importV20SetMessage(error.message,'error');
-    importV20SetPanel({state:'error',kicker:'処理停止',title:'ステージングを完了できませんでした',description:`${error.message} 送信済み分は保存されています。`,processed,total,current:Math.max(0,processed-runStart),currentTotal:Math.min(IMPORT_V20_STAGE_LIMIT,Math.max(0,total-runStart)),remaining:total?total-processed:null,safety:'本番未変更',safetyLevel:'safe',log:'ステージングが停止しました',logKey:`stage-error:${error.message}`});
-    importV20FocusPanel();
-    importV20RequestRefresh();
+    importV20HandleApiError(error,{
+      processed,total,remaining:total?total-processed:null,
+      title:'ステージングを完了できませんでした',
+      confirmedText:'送信済み分は保存されています。',
+      fallbackSafety:'本番未変更',fallbackSafetyLevel:'safe',
+      nextActionText:'もう一度同じJSONを選び直すと、保存済み位置から再開できます。',
+      logKeyPrefix:'stage-error'
+    });
   }finally{
     if(importV20State.busy) importV20ReleaseBusy();
   }
@@ -559,11 +587,14 @@ async function importV20Commit(button){
     }
     importV20RequestRefresh();
   }catch(error){
-    if(importV20HandleLockedError(error,{processed,total,remaining})) return;
-    importV20SetMessage(error.message,'error');
-    importV20SetPanel({state:'error',kicker:'処理停止',title:'本番反映を完了できませんでした',description:`${error.message} 反映済み分は保存されています。`,processed,total,current:Math.max(0,processed-runStart),currentTotal:IMPORT_V20_STAGE_LIMIT,remaining,safety:'状態を要確認',safetyLevel:'warning',log:'本番反映が停止しました',logKey:`commit-error:${error.message}`});
-    importV20FocusPanel();
-    importV20RequestRefresh();
+    importV20HandleApiError(error,{
+      processed,total,remaining,
+      title:'本番反映を完了できませんでした',
+      confirmedText:'反映済み分は保存されています。',
+      fallbackSafety:'一部反映済みの可能性',fallbackSafetyLevel:'warning',
+      nextActionText:'取込履歴で状態を確認し、問題がなければ「次の100件を反映」からやり直してください。',
+      logKeyPrefix:'commit-error'
+    });
   }finally{
     importV20ReleaseBusy();
   }
@@ -586,11 +617,13 @@ async function importV20Validate(button){
     importV20SetPanel({state:conflicts===0?'ready':'warning',kicker:conflicts===0?'再検証完了':'要確認',title:conflicts===0?'本番反映の準備ができました':`${conflicts.toLocaleString()}件の競合があります`,description:conflicts===0?'「最初の100件を反映」から進められます。':'取込内容の競合を確認してください。本番データは変更されていません。',processed,total,current:0,currentTotal:100,remaining:Math.max(0,total-processed),safety:'本番未変更',safetyLevel:'safe',log:conflicts===0?'再検証が完了しました':'再検証で競合を検出しました',logKey:`revalidate:${conflicts}`});
     importV20RequestRefresh();
   }catch(error){
-    if(importV20HandleLockedError(error,{})) return;
-    importV20SetMessage(error.message,'error');
-    importV20SetPanel({state:'error',kicker:'再検証停止',title:'再検証を完了できませんでした',description:error.message,safety:'本番未変更',safetyLevel:'safe',log:'再検証が停止しました',logKey:`revalidate-error:${error.message}`});
-    importV20FocusPanel();
-    importV20RequestRefresh();
+    importV20HandleApiError(error,{
+      title:'再検証を完了できませんでした',
+      confirmedText:'本番データへの影響はありません。',
+      fallbackSafety:'本番未変更',fallbackSafetyLevel:'safe',
+      nextActionText:'内容を確認してから、もう一度「再検証」を実行してください。',
+      logKeyPrefix:'revalidate-error'
+    });
   }finally{
     importV20ReleaseBusy();
   }
@@ -618,10 +651,13 @@ async function importV20Rollback(button){
     }
     importV20RequestRefresh();
   }catch(error){
-    importV20SetMessage(error.message,'error');
-    importV20SetPanel({state:'error',kicker:'取消停止',title:'取込取消を完了できませんでした',description:`${error.message} 取消済み分は保存されています。`,safety:'状態を要確認',safetyLevel:'warning',log:'取込取消が停止しました',logKey:`rollback-error:${error.message}`});
-    importV20FocusPanel();
-    importV20RequestRefresh();
+    importV20HandleApiError(error,{
+      title:'取込取消を完了できませんでした',
+      confirmedText:'取消済み分は保存されています。',
+      fallbackSafety:'状態を要確認',fallbackSafetyLevel:'warning',
+      nextActionText:'状態を確認してから、もう一度「100件ずつ取込を取り消す」を実行してください。',
+      logKeyPrefix:'rollback-error'
+    });
   }finally{
     importV20ReleaseBusy();
   }
@@ -655,9 +691,13 @@ async function importV20Reset(button){
     importV20SetPanel({state:'done',kicker:'リセット完了',title:'送信状態をリセットしました',description:'取込用JSONを選び直すと、最初から送信できます。',safety:'本番未変更',safetyLevel:'safe',log:'送信状態をリセットしました',logKey:'reset-done'});
     importV20RequestRefresh();
   }catch(error){
-    importV20SetMessage(error.message,'error');
-    importV20SetPanel({state:'error',kicker:'リセット停止',title:'送信状態をリセットできませんでした',description:error.message,safety:'本番状態は維持',safetyLevel:'safe',log:'送信状態のリセットが停止しました',logKey:`reset-error:${error.message}`});
-    importV20FocusPanel();
+    importV20HandleApiError(error,{
+      title:'送信状態をリセットできませんでした',
+      confirmedText:'本番の作品・メモは変更していません。',
+      fallbackSafety:'本番状態は維持',fallbackSafetyLevel:'safe',
+      nextActionText:'状態を確認してから、もう一度「送信状態をリセット」を実行してください。',
+      logKeyPrefix:'reset-error'
+    });
   }finally{
     importV20ReleaseBusy();
   }

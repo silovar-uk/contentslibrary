@@ -4,9 +4,41 @@ let importPayload = null;
 let importFile = null;
 let selectedBatchId = null;
 let importBusy = false;
+let importCountdownTarget = 0;
+let importCountdownTimer = null;
 
 const importEsc = (value = '') => String(value).replace(/[&<>'"]/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
 const importDate = (value) => value ? new Intl.DateTimeFormat('ja-JP',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(value)) : '';
+
+function importFormatCountdown(seconds){
+  const clamped = Math.max(0, Math.round(seconds));
+  const m = Math.floor(clamped / 60);
+  const s = clamped % 60;
+  return `${m}:${String(s).padStart(2,'0')}`;
+}
+
+function importUpdateCountdown(){
+  const node = document.querySelector('#importEnabledUntil');
+  if(!node) return;
+  const remaining = Math.round((importCountdownTarget - Date.now()) / 1000);
+  if(remaining <= 0){
+    clearInterval(importCountdownTimer);
+    importCountdownTimer = null;
+    node.textContent = '取込有効期限が切れました';
+    refreshImportCenter();
+    return;
+  }
+  node.textContent = `取込有効期限 残り ${importFormatCountdown(remaining)}`;
+}
+
+function importStartCountdown(enabledUntil){
+  clearInterval(importCountdownTimer);
+  importCountdownTimer = null;
+  if(!enabledUntil) return;
+  importCountdownTarget = new Date(enabledUntil).getTime();
+  importUpdateCountdown();
+  importCountdownTimer = setInterval(importUpdateCountdown, 1000);
+}
 
 async function importApi(path, options = {}){
   const method = options.method || 'GET';
@@ -139,8 +171,14 @@ async function refreshImportCenter(){
     if(lock) lock.dataset.enabled = String(Boolean(data.enabled));
     if(locked) locked.hidden = data.enabled;
     if(enabled) enabled.hidden = !data.enabled;
-    const until = document.querySelector('#importEnabledUntil');
-    if(until) until.textContent = data.enabled_until ? `有効期限 ${importDate(data.enabled_until)}` : '';
+    if(data.enabled && data.enabled_until){
+      importStartCountdown(data.enabled_until);
+    }else{
+      clearInterval(importCountdownTimer);
+      importCountdownTimer = null;
+      const until = document.querySelector('#importEnabledUntil');
+      if(until) until.textContent = '';
+    }
     renderBatchList(data.batches || []);
   }catch(error){setImportMessage(error.message,'error');}
 }
