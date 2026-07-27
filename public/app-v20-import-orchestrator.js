@@ -800,7 +800,18 @@ function importV20Start(){
   }
   const card=document.querySelector('#importCenterCard');
   if(card){
-    new MutationObserver(()=>queueMicrotask(importV20Decorate)).observe(card,{subtree:true,childList:true,attributes:true,attributeFilter:['data-status','hidden','disabled']});
+    // importV20Decorate自身がdata-status/hidden/disabledを書き換えるため、
+    // 素朴なobserve→callbackだと自分の書き込みで再度発火し続ける
+    // (属性やtextContentは同値の再代入でもMutationRecordが生成される)。
+    // callback内でdisconnect→処理→observeと囲み、処理中に発生した変更を
+    // 記録させないことで自己発火のループを断つ。
+    const observeOptions={subtree:true,childList:true,attributes:true,attributeFilter:['data-status','hidden','disabled']};
+    const observer=new MutationObserver(()=>{
+      observer.disconnect();
+      importV20Decorate();
+      observer.observe(card,observeOptions);
+    });
+    observer.observe(card,observeOptions);
   }
   const input=document.querySelector('#importFileInput');
   if(input?.files?.[0]) void importV20InspectFile(input.files[0]);

@@ -245,7 +245,18 @@ function startImportProgressEnhancement(){
   deriveProgressFromUI();
   const card = document.querySelector('#importCenterCard');
   if(card){
-    new MutationObserver(()=>queueMicrotask(progressTick)).observe(card,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['hidden','data-type','data-status','disabled']});
+    // progressTickは#importV20Elapsed等のtextContentを書き換えるため、
+    // 素朴なobserve→callbackだと自分の書き込みで再度発火し続ける
+    // (textContentは同値の再代入でもMutationRecordが生成される)。
+    // callback内でdisconnect→処理→observeと囲み、処理中に発生した変更を
+    // 記録させないことで自己発火のループを断つ。
+    const observeOptions={subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['hidden','data-type','data-status','disabled']};
+    const progressObserver=new MutationObserver(()=>{
+      progressObserver.disconnect();
+      progressTick();
+      progressObserver.observe(card,observeOptions);
+    });
+    progressObserver.observe(card,observeOptions);
   }
   setInterval(progressTick,1000);
 }
