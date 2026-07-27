@@ -135,6 +135,11 @@ jobs:
       - name: Stage, validate, commit, and verify
         env:
           IMPORT_URL: ${{ steps.temp.outputs.url }}
+          # Phase 1-D: default OFF. commit is not atomic per-item, so an
+          # automatic rollback triggered by a mid-commit failure can only
+          # partially undo the change. Set the repository variable
+          # AUTO_ROLLBACK to "true" to restore the previous behavior.
+          AUTO_ROLLBACK: ${{ vars.AUTO_ROLLBACK || 'false' }}
         shell: bash
         run: |
           set -euo pipefail

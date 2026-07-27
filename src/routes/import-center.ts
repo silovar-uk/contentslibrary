@@ -6,6 +6,7 @@ const WORK_TYPES: WorkType[] = ["book", "manga", "movie", "anime", "drama", "oth
 const WORK_STATUSES: WorkStatus[] = ["want", "owned_unread", "active", "completed", "paused", "dropped"];
 const NOTE_TYPES = ["quick", "summary", "impression", "quote", "idea", "connection", "progress"] as const;
 const IMPORT_WINDOW_MINUTES = 60;
+const IMPORT_WINDOW_ABSOLUTE_MAX_MINUTES = 180;
 const MAX_BATCH_ITEMS = 5_000;
 const MAX_BATCH_NOTES = 20_000;
 const UPLOAD_CHUNK_LIMIT = 50;
@@ -33,6 +34,7 @@ interface ImportBatchRow {
   applied_works: number;
   applied_notes: number;
   status: BatchStatus;
+  origin: "browser" | "ci";
   error_message: string | null;
   created_at: string;
   validated_at: string | null;
@@ -269,8 +271,44 @@ async function requireImportWindow(env: Env, auth: AuthContext): Promise<string>
   const control = await env.DB.prepare("SELECT enabled_until FROM import_controls WHERE owner_id = ? LIMIT 1")
     .bind(auth.member.id).first<{ enabled_until: string | null }>();
   const enabledUntil = control?.enabled_until ?? null;
-  if (!enabledUntil || enabledUntil <= nowIso()) throw new HttpError(423, "IMPORT_CENTER_LOCKED", "データ取込は無効です。設定画面から60分間だけ有効にしてください。");
+  if (!enabledUntil || enabledUntil <= nowIso()) {
+    // Best-effort confirmed count across any in-progress batch, so the UI
+    // can show "420件までは保存されています" even though this specific
+    // request was rejected before it could look up a particular batch.
+    const mostRecent = await env.DB.prepare(
+      "SELECT applied_works FROM import_batches WHERE owner_id = ? AND status IN ('committing','committed') ORDER BY updated_at DESC LIMIT 1"
+    ).bind(auth.member.id).first<{ applied_works: number }>();
+    throw new HttpError(
+      423,
+      "IMPORT_CENTER_LOCKED",
+      "取込の有効期限が切れました。もう一度有効にすると、確定済みの続きから再開できます。",
+      null,
+      {
+        safeState: "一部反映済みの可能性",
+        confirmedCount: mostRecent?.applied_works ?? undefined,
+        nextActions: ["reenable_import_window"]
+      }
+    );
+  }
   return enabledUntil;
+}
+
+// Phase 1-C: slide the import window forward on every successful action,
+// so a long-running commit sequence does not silently expire mid-way.
+// The window is still capped at an absolute maximum from when it was
+// first enabled, so it cannot be extended indefinitely by mistake.
+async function slideImportWindow(env: Env, auth: AuthContext): Promise<void> {
+  const control = await env.DB.prepare("SELECT enabled_until, enabled_since FROM import_controls WHERE owner_id = ? LIMIT 1")
+    .bind(auth.member.id).first<{ enabled_until: string | null; enabled_since: string | null }>();
+  if (!control?.enabled_until) return;
+  const now = new Date();
+  const since = control.enabled_since ? new Date(control.enabled_since) : now;
+  const absoluteMax = new Date(since.getTime() + IMPORT_WINDOW_ABSOLUTE_MAX_MINUTES * 60_000);
+  const slidTo = new Date(now.getTime() + IMPORT_WINDOW_MINUTES * 60_000);
+  const nextUntil = slidTo < absoluteMax ? slidTo : absoluteMax;
+  if (nextUntil <= new Date(control.enabled_until)) return; // never move it backward
+  await env.DB.prepare("UPDATE import_controls SET enabled_until = ?, updated_at = ? WHERE owner_id = ?")
+    .bind(nextUntil.toISOString(), now.toISOString(), auth.member.id).run();
 }
 
 async function runStatements(env: Env, statements: D1PreparedStatement[], chunkSize = 80): Promise<void> {
@@ -291,6 +329,24 @@ async function addConflict(env: Env, batchId: string, itemId: string | null, kin
     .bind(newId(), batchId, itemId, kind, message, JSON.stringify(details ?? {}), nowIso()).run();
 }
 
+// Phase 1.5: single source of truth for "what does this status mean to
+// a non-technical operator, and what can they safely do right now."
+// The frontend must read allowed_actions from here rather than switching
+// on the internal status string itself (see docs/FRONTEND_MAP.md).
+const STATUS_LABELS: Record<BatchStatus, { label: string; production_impact: string; actions: string[] }> = {
+  draft: { label: "準備中", production_impact: "本番未変更", actions: ["upload", "delete"] },
+  uploading: { label: "送信途中", production_impact: "本番未変更", actions: ["upload", "validate", "delete"] },
+  review: { label: "要確認", production_impact: "本番未変更", actions: ["validate", "delete"] },
+  validated: { label: "反映待ち", production_impact: "本番未変更", actions: ["commit", "delete"] },
+  committing: { label: "一部反映中", production_impact: "一部反映済み", actions: ["commit", "rollback"] },
+  committed: { label: "反映完了", production_impact: "反映済み", actions: ["verify", "rollback"] },
+  // "failed" exists in the schema for forward-compatibility but no code path
+  // sets it yet (Phase 3 introduces explicit failure transitions). Treated
+  // conservatively here so the UI has a safe fallback if it ever appears.
+  failed: { label: "処理停止", production_impact: "一部反映済みの可能性", actions: ["commit", "rollback"] },
+  rolled_back: { label: "取消完了", production_impact: "本番復旧済み", actions: ["delete"] }
+};
+
 function batchSummary(row: ImportBatchRow): Record<string, unknown> {
   return {
     id: row.id,
@@ -308,6 +364,10 @@ function batchSummary(row: ImportBatchRow): Record<string, unknown> {
     applied_works: row.applied_works,
     applied_notes: row.applied_notes,
     status: row.status,
+    status_label: STATUS_LABELS[row.status].label,
+    production_impact: STATUS_LABELS[row.status].production_impact,
+    allowed_actions: STATUS_LABELS[row.status].actions,
+    origin: row.origin,
     error_message: row.error_message,
     created_at: row.created_at,
     validated_at: row.validated_at,
@@ -320,14 +380,18 @@ function batchSummary(row: ImportBatchRow): Record<string, unknown> {
 export async function getImportCenterStatus(env: Env, auth: AuthContext): Promise<Response> {
   requireOwner(auth);
   const current = nowIso();
-  const control = await env.DB.prepare("SELECT enabled_until FROM import_controls WHERE owner_id = ? LIMIT 1")
-    .bind(auth.member.id).first<{ enabled_until: string | null }>();
+  const control = await env.DB.prepare("SELECT enabled_until, enabled_since FROM import_controls WHERE owner_id = ? LIMIT 1")
+    .bind(auth.member.id).first<{ enabled_until: string | null; enabled_since: string | null }>();
   const batches = await env.DB.prepare("SELECT * FROM import_batches WHERE owner_id = ? ORDER BY updated_at DESC LIMIT 10")
     .bind(auth.member.id).all<ImportBatchRow>();
   const enabledUntil = control?.enabled_until ?? null;
+  const enabled = Boolean(enabledUntil && enabledUntil > current);
+  const remainingSeconds = enabled ? Math.max(0, Math.round((new Date(enabledUntil!).getTime() - Date.now()) / 1000)) : 0;
   return json({
-    enabled: Boolean(enabledUntil && enabledUntil > current),
+    enabled,
     enabled_until: enabledUntil,
+    enabled_since: control?.enabled_since ?? null,
+    remaining_seconds: remainingSeconds,
     batches: batches.results.map(batchSummary)
   });
 }
@@ -339,10 +403,33 @@ export async function enableImportCenter(request: Request, env: Env, auth: AuthC
   const now = new Date();
   const enabledUntil = new Date(now.getTime() + IMPORT_WINDOW_MINUTES * 60_000).toISOString();
   await env.DB.prepare(
-    "INSERT INTO import_controls (owner_id, enabled_until, updated_at) VALUES (?, ?, ?) ON CONFLICT(owner_id) DO UPDATE SET enabled_until = excluded.enabled_until, updated_at = excluded.updated_at"
-  ).bind(auth.member.id, enabledUntil, now.toISOString()).run();
+    "INSERT INTO import_controls (owner_id, enabled_until, enabled_since, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(owner_id) DO UPDATE SET enabled_until = excluded.enabled_until, enabled_since = excluded.enabled_since, updated_at = excluded.updated_at"
+  ).bind(auth.member.id, enabledUntil, now.toISOString(), now.toISOString()).run();
   await audit(env, "IMPORT_CENTER_ENABLED", auth.member.id, auth.member.id, { after: { enabled_until: enabledUntil } });
-  return json({ enabled: true, enabled_until: enabledUntil });
+  return json({ enabled: true, enabled_until: enabledUntil, enabled_since: now.toISOString() });
+}
+
+// Phase 1-C: lets the operator manually push the window forward from the UI
+// (e.g. when the "remaining time" indicator gets low), without re-entering
+// the ENABLE_IMPORT confirmation string. Only works while a window is
+// currently open, and is still capped by IMPORT_WINDOW_ABSOLUTE_MAX_MINUTES.
+export async function extendImportWindow(env: Env, auth: AuthContext): Promise<Response> {
+  requireOwner(auth);
+  const control = await env.DB.prepare("SELECT enabled_until, enabled_since FROM import_controls WHERE owner_id = ? LIMIT 1")
+    .bind(auth.member.id).first<{ enabled_until: string | null; enabled_since: string | null }>();
+  const current = nowIso();
+  if (!control?.enabled_until || control.enabled_until <= current) {
+    throw new HttpError(423, "IMPORT_CENTER_LOCKED", "取込の有効期限が切れています。確認文字列を入力して、もう一度有効にしてください。");
+  }
+  const now = new Date();
+  const since = control.enabled_since ? new Date(control.enabled_since) : now;
+  const absoluteMax = new Date(since.getTime() + IMPORT_WINDOW_ABSOLUTE_MAX_MINUTES * 60_000);
+  const requested = new Date(now.getTime() + IMPORT_WINDOW_MINUTES * 60_000);
+  const nextUntil = requested < absoluteMax ? requested : absoluteMax;
+  await env.DB.prepare("UPDATE import_controls SET enabled_until = ?, updated_at = ? WHERE owner_id = ?")
+    .bind(nextUntil.toISOString(), now.toISOString(), auth.member.id).run();
+  await audit(env, "IMPORT_CENTER_EXTENDED", auth.member.id, auth.member.id, { after: { enabled_until: nextUntil.toISOString() } });
+  return json({ enabled: true, enabled_until: nextUntil.toISOString(), capped: nextUntil.getTime() === absoluteMax.getTime() });
 }
 
 export async function disableImportCenter(env: Env, auth: AuthContext): Promise<Response> {
@@ -354,7 +441,7 @@ export async function disableImportCenter(env: Env, auth: AuthContext): Promise<
   return json({ enabled: false });
 }
 
-export async function createImportBatch(request: Request, env: Env, auth: AuthContext): Promise<Response> {
+export async function createImportBatch(request: Request, env: Env, auth: AuthContext, origin: "browser" | "ci" = "browser"): Promise<Response> {
   await requireImportWindow(env, auth);
   const payload = await parseJson<Record<string, unknown>>(request);
   const name = textField(payload.name ?? "作品データ取込", "取込名", 120, true)!;
@@ -369,9 +456,9 @@ export async function createImportBatch(request: Request, env: Env, auth: AuthCo
   const id = newId();
   const now = nowIso();
   await env.DB.prepare(
-    "INSERT INTO import_batches (id, owner_id, name, source_filename, content_hash, expected_works, expected_notes, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?)"
-  ).bind(id, auth.member.id, name, filename, contentHash.toLowerCase(), expectedWorks, expectedNotes, now, now).run();
-  await audit(env, "IMPORT_BATCH_CREATED", auth.member.id, id, { after: { name, filename, content_hash: contentHash.toLowerCase(), expected_works: expectedWorks, expected_notes: expectedNotes } });
+    "INSERT INTO import_batches (id, owner_id, name, source_filename, content_hash, expected_works, expected_notes, status, origin, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?)"
+  ).bind(id, auth.member.id, name, filename, contentHash.toLowerCase(), expectedWorks, expectedNotes, origin, now, now).run();
+  await audit(env, "IMPORT_BATCH_CREATED", auth.member.id, id, { after: { name, filename, content_hash: contentHash.toLowerCase(), expected_works: expectedWorks, expected_notes: expectedNotes, origin } });
   return json({ batch: batchSummary(await getBatch(env, auth, id)), reused: false }, 201);
 }
 
@@ -410,6 +497,7 @@ export async function uploadImportItems(request: Request, env: Env, auth: AuthCo
   await env.DB.prepare("UPDATE import_batches SET status = 'uploading', validated_at = NULL, error_message = NULL, updated_at = ? WHERE id = ? AND owner_id = ?")
     .bind(nowIso(), batchId, auth.member.id).run();
   await refreshBatchStagedCounts(env, batchId);
+  await slideImportWindow(env, auth);
   const updated = await getBatch(env, auth, batchId);
   return json({ batch: batchSummary(updated), uploaded: payload.items.length });
 }
@@ -503,6 +591,7 @@ export async function validateImportBatch(env: Env, auth: AuthContext, batchId: 
     "UPDATE import_batches SET insert_count = ?, merge_count = ?, skip_count = ?, conflict_count = ?, status = ?, validated_at = ?, error_message = NULL, updated_at = ? WHERE id = ? AND owner_id = ?"
   ).bind(Number(counts?.insert_count ?? 0), Number(counts?.merge_count ?? 0), Number(counts?.skip_count ?? 0), totalConflicts, status, now, now, batchId, auth.member.id).run();
   await audit(env, "IMPORT_BATCH_VALIDATED", auth.member.id, batchId, { after: { status, conflicts: totalConflicts } });
+  await slideImportWindow(env, auth);
   return getImportBatchDetail(env, auth, batchId);
 }
 
@@ -629,6 +718,7 @@ export async function commitImportBatch(env: Env, auth: AuthContext, batchId: st
   const now = nowIso();
   await env.DB.prepare("UPDATE import_batches SET applied_works = ?, applied_notes = ?, status = ?, committed_at = CASE WHEN ? THEN ? ELSE committed_at END, updated_at = ? WHERE id = ? AND owner_id = ?")
     .bind(Number(applied?.count ?? 0), Number(appliedNotes?.count ?? 0), done ? "committed" : "committing", done ? 1 : 0, now, now, batchId, auth.member.id).run();
+  if (!done) await slideImportWindow(env, auth);
   if (done) {
     await env.DB.prepare("UPDATE import_controls SET enabled_until = NULL, updated_at = ? WHERE owner_id = ?").bind(now, auth.member.id).run();
     await audit(env, "IMPORT_BATCH_COMMITTED", auth.member.id, batchId, { after: { applied_works: Number(applied?.count ?? 0), applied_notes: Number(appliedNotes?.count ?? 0) } });
@@ -681,6 +771,44 @@ export async function rollbackImportBatch(env: Env, auth: AuthContext, batchId: 
     await audit(env, "IMPORT_BATCH_ROLLED_BACK", auth.member.id, batchId);
   }
   return json({ done, processed: changes.results.length, remaining: Number(remaining?.count ?? 0), batch: batchSummary(await getBatch(env, auth, batchId)) });
+}
+
+export async function verifyImportBatch(env: Env, auth: AuthContext, batchId: string): Promise<Response> {
+  requireOwner(auth);
+  const batch = await env.DB.prepare(
+    "SELECT id, status, expected_works, expected_notes, staged_works, staged_notes, insert_count, merge_count, skip_count, conflict_count, applied_works, applied_notes FROM import_batches WHERE id = ? AND owner_id = ? LIMIT 1"
+  ).bind(batchId, auth.member.id).first<Record<string, unknown>>();
+  if (!batch) throw new HttpError(404, "IMPORT_BATCH_NOT_FOUND", "取込バッチが見つかりません。");
+
+  const missingWorks = await env.DB.prepare(
+    "SELECT COUNT(*) AS count FROM import_items i LEFT JOIN works w ON w.id = i.applied_work_id AND w.deleted_at IS NULL WHERE i.batch_id = ? AND i.action = 'applied' AND w.id IS NULL"
+  ).bind(batchId).first<{ count: number }>();
+  const missingNotes = await env.DB.prepare(
+    "SELECT COUNT(*) AS count FROM import_notes i LEFT JOIN notes n ON n.id = i.applied_note_id WHERE i.batch_id = ? AND i.action = 'applied' AND n.id IS NULL"
+  ).bind(batchId).first<{ count: number }>();
+  const duplicateSources = await env.DB.prepare(
+    "SELECT COUNT(*) AS count FROM (SELECT source_key FROM works WHERE owner_id = ? AND deleted_at IS NULL AND source_key IS NOT NULL GROUP BY source_key HAVING COUNT(*) > 1)"
+  ).bind(auth.member.id).first<{ count: number }>();
+  const unresolvedChanges = await env.DB.prepare(
+    "SELECT COUNT(*) AS count FROM import_applied_changes WHERE batch_id = ? AND reversed_at IS NOT NULL"
+  ).bind(batchId).first<{ count: number }>();
+  const foreignKeys = await env.DB.prepare("PRAGMA foreign_key_check").all<Record<string, unknown>>();
+
+  const checks = {
+    missing_applied_works: Number(missingWorks?.count ?? 0),
+    missing_applied_notes: Number(missingNotes?.count ?? 0),
+    duplicate_active_source_keys: Number(duplicateSources?.count ?? 0),
+    reversed_changes: Number(unresolvedChanges?.count ?? 0),
+    foreign_key_errors: foreignKeys.results.length
+  };
+  const expectedTotal = Number(batch.insert_count ?? 0) + Number(batch.merge_count ?? 0) + Number(batch.skip_count ?? 0);
+  const ok = batch.status === "committed"
+    && Number(batch.expected_works ?? 0) === Number(batch.staged_works ?? 0)
+    && Number(batch.expected_notes ?? 0) === Number(batch.staged_notes ?? 0)
+    && Number(batch.expected_works ?? 0) === expectedTotal
+    && Number(batch.conflict_count ?? 0) === 0
+    && Object.values(checks).every((value) => value === 0);
+  return json({ ok, batch, checks }, ok ? 200 : 409);
 }
 
 export async function deleteImportBatch(env: Env, auth: AuthContext, batchId: string): Promise<Response> {

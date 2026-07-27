@@ -1,13 +1,25 @@
+export interface HttpErrorContext {
+  // Phase 1.5: optional structured context so the frontend can render a
+  // consistent 4-part error (cause / confirmed-so-far / production impact /
+  // next action) without switching on error codes. Any HttpError may set
+  // these; routes that don't set them simply omit the fields below.
+  safeState?: string; // e.g. "一部反映済み" — current production impact in plain language
+  confirmedCount?: number; // how much work is durably confirmed so far
+  nextActions?: string[]; // action keys the UI should offer, e.g. ["extend_window"]
+}
+
 export class HttpError extends Error {
   status: number;
   code: string;
   details?: unknown;
+  context?: HttpErrorContext;
 
-  constructor(status: number, code: string, message: string, details?: unknown) {
+  constructor(status: number, code: string, message: string, details?: unknown, context?: HttpErrorContext) {
     super(message);
     this.status = status;
     this.code = code;
     this.details = details;
+    this.context = context;
   }
 }
 
@@ -73,7 +85,17 @@ export function assertSameOriginMutation(request: Request): void {
 
 export function errorResponse(error: unknown): Response {
   if (error instanceof HttpError) {
-    return json({ error: { code: error.code, message: error.message, details: error.details ?? null } }, error.status);
+    return json({
+      error: {
+        code: error.code,
+        message: error.message,
+        details: error.details ?? null,
+        user_message: error.message,
+        safe_state: error.context?.safeState ?? null,
+        confirmed_count: error.context?.confirmedCount ?? null,
+        next_actions: error.context?.nextActions ?? []
+      }
+    }, error.status);
   }
   console.error("Unhandled error", error instanceof Error ? error.stack : error);
   return json({ error: { code: "INTERNAL_ERROR", message: "処理中に問題が発生しました。入力内容は保持したまま、もう一度お試しください。" } }, 500);
