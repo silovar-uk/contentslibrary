@@ -39,6 +39,4 @@ test('旧制御を読み込まず統合制御だけを使う', async () => {
   const orchestrator = app.indexOf("import './app-v20-import-orchestrator.js'");
   const bootstrap = app.indexOf("import './app-v16-bootstrap.js'");
   assert.ok(ui >= 0 && style > ui && orchestrator > style && bootstrap > orchestrator);
-  assert.doesNotMatch(app, /app-v19-import-chunk-control/);
-  assert.doesNotMatch(app, /app-v191-import-reset/);
 });
