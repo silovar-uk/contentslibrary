@@ -1,11 +1,15 @@
 const IMPORT_V20_API = '/api/admin';
-const IMPORT_V20_STAGE_LIMIT = 100;
+// ステージングはこの件数ごとにチェックポイント表示を挟むだけで、以前と違い
+// 自動続行する(v21で分離実装していたが、v20側の1ループに統合した)。
+// 本番反映(commit)は依然としてこの件数を1回の操作の上限として扱う。
+const IMPORT_V20_CHECKPOINT_SIZE = 100;
 const IMPORT_V20_STAGE_CHUNK = 25;
 const IMPORT_V20_COMMIT_CHUNK = 20;
-const IMPORT_V20_COMMIT_CALLS = IMPORT_V20_STAGE_LIMIT / IMPORT_V20_COMMIT_CHUNK;
+const IMPORT_V20_COMMIT_CALLS = IMPORT_V20_CHECKPOINT_SIZE / IMPORT_V20_COMMIT_CHUNK;
 const IMPORT_V20_REQUEST_TIMEOUT = 30_000;
 const IMPORT_V20_VALIDATE_TIMEOUT = 60_000;
 const IMPORT_V20_YIELD_MS = 140;
+const IMPORT_V20_CHECKPOINT_DELAY_MS = 600;
 
 // Phase 1.5: label/tone/description stay client-side (the server contract
 // doesn't carry them), but which actions are safe (reset/rollback) is read
@@ -103,7 +107,7 @@ function importV20Log(message,key = message){
 }
 
 function importV20SetPanel({
-  state='idle',kicker='待機中',title='',description='',processed=0,total=0,current=0,currentTotal=IMPORT_V20_STAGE_LIMIT,
+  state='idle',kicker='待機中',title='',description='',processed=0,total=0,current=0,currentTotal=IMPORT_V20_CHECKPOINT_SIZE,
   remaining=null,safety='本番未変更',safetyLevel='safe',indeterminate=false,log='',logKey=''
 } = {}){
   if(!importV20EnsureUi()) return;
@@ -308,7 +312,7 @@ function importV20HandleApiError(error,{
       kicker:'取込の有効期限切れ',
       title:'取込を再度有効にしてください',
       description:`原因：取込の有効化から時間が経過しました。${confirmedNote} 次の行動：下のボタンで再度有効にすると、続きから反映できます。`,
-      processed,total,current:0,currentTotal:IMPORT_V20_STAGE_LIMIT,remaining,
+      processed,total,current:0,currentTotal:IMPORT_V20_CHECKPOINT_SIZE,remaining,
       safety:error.safeState||'一部反映済みの可能性',safetyLevel:'warning',
       log:'取込の有効期限切れで停止しました',logKey:`window-locked:${Date.now()}`
     });
@@ -395,7 +399,7 @@ async function importV20InspectFile(file){
   const stage = document.querySelector('#stageImportFile');
   const preview = document.querySelector('#importFilePreview');
   if(!file){
-    if(stage){stage.disabled=true;stage.textContent='100件ずつステージングへ送る';delete stage.dataset.fileState;}
+    if(stage){stage.disabled=true;stage.textContent='ステージングを開始／続きから再開';delete stage.dataset.fileState;}
     if(preview){preview.hidden=true;preview.innerHTML='';}
     importV20SetPanel({state:'idle',title:'取込JSONを選択してください',description:'取込用JSONには items 配列が必要です。バックアップ書き出しJSONとは形式が異なります。'});
     return;
@@ -436,7 +440,7 @@ async function importV20InspectFile(file){
     importV20State.selectedKey = importV20FileKey(file);
     if(stage){
       stage.disabled=false;
-      stage.textContent='100件ずつステージングへ送る';
+      stage.textContent='ステージングを開始／続きから再開';
       stage.dataset.fileState='valid';
     }
     if(preview){
@@ -485,13 +489,13 @@ async function importV20Stage(button){
   if(importV20State.busy){importV20BusyFeedback();return;}
   let processed=0;
   let total=0;
-  let runStart=0;
+  let checkpointStart=0;
   try{
     const selected = await importV20SelectedImport();
     total=selected.works;
     importV20SetBusy('stage',button,'送信を開始中…');
     importV20SetMessage('取込バッチと再開位置を確認しています…','working');
-    importV20SetPanel({state:'working',kicker:'ステージング準備',title:'再開位置を確認しています',description:'送信済みデータがある場合は、その続きから再開します。',processed:0,total,current:0,currentTotal:Math.min(100,total),remaining:total,indeterminate:true,log:'ステージング準備を開始しました',logKey:`stage-start:${Date.now()}`});
+    importV20SetPanel({state:'working',kicker:'ステージング準備',title:'再開位置を確認しています',description:'送信済みデータがある場合は、その続きから最後まで自動で進みます。',processed:0,total,current:0,currentTotal:Math.min(IMPORT_V20_CHECKPOINT_SIZE,total),remaining:total,indeterminate:true,log:'ステージング準備を開始しました',logKey:`stage-start:${Date.now()}`});
     importV20FocusPanel();
     const created=await importV20Api(`${IMPORT_V20_API}/import-batches`,{method:'POST',body:JSON.stringify({
       name:selected.payload.batch || selected.file.name.replace(/\.json$/i,''),
@@ -504,29 +508,35 @@ async function importV20Stage(button){
     if(['validated','committing','committed'].includes(batch.status)) throw new Error(batch.status==='committed'?'このJSONはすでに本番反映済みです。':'このJSONはステージング済みです。取込履歴から次の操作へ進んでください。');
     if(['failed','rolled_back'].includes(batch.status)) throw new Error('同じJSONの過去バッチが残っています。先に「送信状態をリセット」してください。');
     processed=Math.min(Number(batch.staged_works||0),total);
-    runStart=processed;
-    const stopAt=Math.min(total,processed+IMPORT_V20_STAGE_LIMIT);
-    while(processed<stopAt && !importV20State.pauseRequested){
-      const chunk=selected.payload.items.slice(processed,Math.min(processed+IMPORT_V20_STAGE_CHUNK,stopAt));
+    checkpointStart=processed;
+    while(processed<total && !importV20State.pauseRequested){
+      const chunk=selected.payload.items.slice(processed,Math.min(processed+IMPORT_V20_STAGE_CHUNK,total));
       const next=processed+chunk.length;
+      const checkpointTarget=Math.min(IMPORT_V20_CHECKPOINT_SIZE,total-checkpointStart);
       importV20SetMessage(`ステージング中… ${next} / ${total}作品`,'working');
-      importV20SetPanel({state:'working',kicker:'ステージング中',title:`${next.toLocaleString()} / ${total.toLocaleString()}作品を送信中`,description:'25件単位で一時保存しています。本番データは変更されていません。',processed,total,current:processed-runStart,currentTotal:Math.min(IMPORT_V20_STAGE_LIMIT,total-runStart),remaining:total-processed,safety:'本番未変更',safetyLevel:'safe',log:`${next.toLocaleString()}作品まで送信中`,logKey:`stage:${next}`});
+      importV20SetPanel({state:'working',kicker:'ステージング中',title:`${next.toLocaleString()} / ${total.toLocaleString()}作品を送信中`,description:'25件単位で保存しています。100件ごとに画面を更新し、そのまま自動で続行します。',processed,total,current:processed-checkpointStart,currentTotal:checkpointTarget,remaining:total-processed,safety:'本番未変更',safetyLevel:'safe',log:`${next.toLocaleString()}作品まで送信中`,logKey:`stage:${next}`});
       const result=await importV20Api(`${IMPORT_V20_API}/import-batches/${encodeURIComponent(batch.id)}/items`,{method:'POST',body:JSON.stringify({items:chunk})});
       processed=Number(result.batch?.staged_works??next);
-      importV20SetPanel({state:'working',kicker:'ステージング中',title:`${processed.toLocaleString()} / ${total.toLocaleString()}作品を保存済み`,description:'次の25件へ進みます。画面を閉じても保存済み位置から再開できます。',processed,total,current:processed-runStart,currentTotal:Math.min(IMPORT_V20_STAGE_LIMIT,total-runStart),remaining:total-processed,safety:'本番未変更',safetyLevel:'safe',log:`${processed.toLocaleString()}作品をステージング済み`,logKey:`staged:${processed}`});
+      importV20SetPanel({state:'working',kicker:'ステージング中',title:`${processed.toLocaleString()} / ${total.toLocaleString()}作品を保存済み`,description:'保存済み位置から再開できます。次の25件へ進みます。',processed,total,current:processed-checkpointStart,currentTotal:checkpointTarget,remaining:total-processed,safety:'本番未変更',safetyLevel:'safe',log:`${processed.toLocaleString()}作品をステージング済み`,logKey:`staged:${processed}`});
       await importV20Yield();
+
+      if(processed<total && processed-checkpointStart>=IMPORT_V20_CHECKPOINT_SIZE && !importV20State.pauseRequested){
+        importV20SetMessage(`${IMPORT_V20_CHECKPOINT_SIZE}件を保存しました。${processed.toLocaleString()} / ${total.toLocaleString()}作品。自動で続行します。`,'working');
+        importV20SetPanel({state:'working',kicker:`${IMPORT_V20_CHECKPOINT_SIZE}件チェックポイント`,title:`${processed.toLocaleString()} / ${total.toLocaleString()}作品を保存済み`,description:'画面の描画と通信負荷を整えてから、自動で次の100件へ進みます。',processed,total,current:IMPORT_V20_CHECKPOINT_SIZE,currentTotal:IMPORT_V20_CHECKPOINT_SIZE,remaining:total-processed,safety:'本番未変更',safetyLevel:'safe',log:`${IMPORT_V20_CHECKPOINT_SIZE}件チェックポイントを通過しました`,logKey:`checkpoint:${processed}`});
+        await importV20Yield(IMPORT_V20_CHECKPOINT_DELAY_MS);
+        checkpointStart=processed;
+      }
     }
     if(processed>=total){
       importV20SetMessage('重複と件数を検証しています…','working');
-      importV20SetPanel({state:'working',kicker:'検証中',title:'重複・件数・統合先を確認しています',description:'全作品のステージングが完了しました。検証中も本番データは変更されません。',processed,total,current:processed-runStart,currentTotal:Math.min(IMPORT_V20_STAGE_LIMIT,total-runStart),remaining:0,safety:'本番未変更',safetyLevel:'safe',indeterminate:true,log:'全作品の検証を開始しました',logKey:'validate-start'});
+      importV20SetPanel({state:'working',kicker:'検証中',title:'重複・件数・統合先を確認しています',description:'全作品のステージングが完了しました。検証中も本番データは変更されません。',processed,total,current:Math.max(0,processed-checkpointStart),currentTotal:Math.max(0,total-checkpointStart),remaining:0,safety:'本番未変更',safetyLevel:'safe',indeterminate:true,log:'全作品の検証を開始しました',logKey:'validate-start'});
       const detail=await importV20Api(`${IMPORT_V20_API}/import-batches/${encodeURIComponent(batch.id)}/validate`,{method:'POST',body:'{}',timeoutMs:IMPORT_V20_VALIDATE_TIMEOUT});
       const conflicts=Number(detail.batch?.conflict_count||0);
       importV20SetMessage(conflicts===0?'ステージングと検証が完了しました。本番データはまだ変更されていません。':'検証が完了しました。競合を確認してください。',conflicts===0?'success':'warning');
-      importV20SetPanel({state:conflicts===0?'ready':'warning',kicker:conflicts===0?'検証完了':'要確認',title:conflicts===0?'本番反映の準備ができました':`${conflicts.toLocaleString()}件の競合があります`,description:conflicts===0?'取込履歴の「最初の100件を反映」から進めてください。':'競合内容を確認してください。本番データはまだ変更されていません。',processed,total,current:processed-runStart,currentTotal:Math.min(IMPORT_V20_STAGE_LIMIT,total-runStart),remaining:0,safety:'本番未変更',safetyLevel:'safe',log:conflicts===0?'検証が完了しました':'競合を検出しました',logKey:`validate:${conflicts}`});
+      importV20SetPanel({state:conflicts===0?'ready':'warning',kicker:conflicts===0?'検証完了':'要確認',title:conflicts===0?'本番反映の準備ができました':`${conflicts.toLocaleString()}件の競合があります`,description:conflicts===0?'取込履歴の「最初の100件を反映」から進めてください。':'競合内容を確認してください。本番データはまだ変更されていません。',processed,total,current:Math.max(0,processed-checkpointStart),currentTotal:Math.max(0,total-checkpointStart),remaining:0,safety:'本番未変更',safetyLevel:'safe',log:conflicts===0?'検証が完了しました':'競合を検出しました',logKey:`validate:${conflicts}`});
     }else{
-      const paused=importV20State.pauseRequested;
-      importV20SetMessage(`${paused?'一時停止':'100件分完了'}：${processed} / ${total}作品をステージング済み。`,'success');
-      importV20SetPanel({state:paused?'paused':'ready',kicker:paused?'一時停止':'今回分完了',title:`${processed.toLocaleString()} / ${total.toLocaleString()}作品を保存済み`,description:'同じJSONを選んだまま、もう一度ボタンを押すと続きの100件を送信します。',processed,total,current:processed-runStart,currentTotal:Math.min(IMPORT_V20_STAGE_LIMIT,total-runStart),remaining:total-processed,safety:'本番未変更',safetyLevel:'safe',log:paused?'ステージングを一時停止しました':'100件分のステージングが完了しました',logKey:`stage-stop:${processed}:${paused}`});
+      importV20SetMessage(`一時停止しました。${processed.toLocaleString()} / ${total.toLocaleString()}作品を保存済みです。`,'success');
+      importV20SetPanel({state:'paused',kicker:'一時停止',title:`${processed.toLocaleString()} / ${total.toLocaleString()}作品を保存済み`,description:'同じJSONを選んだまま、もう一度ボタンを押すと続きから最後まで自動で進みます。',processed,total,current:processed-checkpointStart,currentTotal:Math.min(IMPORT_V20_CHECKPOINT_SIZE,total-checkpointStart),remaining:total-processed,safety:'本番未変更',safetyLevel:'safe',log:'ステージングを一時停止しました',logKey:`stage-pause:${processed}`});
     }
     importV20RequestRefresh();
   }catch(error){
@@ -578,16 +588,16 @@ async function importV20Commit(button){
       if(call===0) runStart=Math.max(0,processed-Number(result.processed||0));
       const current=Math.max(0,processed-runStart);
       importV20SetMessage(done?`反映完了：${processed}作品・${Number(result.batch?.applied_notes||0)}メモ`:`反映中… 残り${remaining}作品`,'working');
-      importV20SetPanel({state:'working',kicker:'本番反映中',title:`${processed.toLocaleString()} / ${total.toLocaleString()}作品を反映済み`,description:done?'最後の確認をしています。':'20作品単位で本番へ反映しています。反映済み分は保存されています。',processed,total,current,currentTotal:Math.min(IMPORT_V20_STAGE_LIMIT,total-runStart),remaining,safety:'一部反映済み',safetyLevel:'live',log:`${processed.toLocaleString()}作品を本番へ反映済み`,logKey:`commit:${processed}`});
+      importV20SetPanel({state:'working',kicker:'本番反映中',title:`${processed.toLocaleString()} / ${total.toLocaleString()}作品を反映済み`,description:done?'最後の確認をしています。':'20作品単位で本番へ反映しています。反映済み分は保存されています。',processed,total,current,currentTotal:Math.min(IMPORT_V20_CHECKPOINT_SIZE,total-runStart),remaining,safety:'一部反映済み',safetyLevel:'live',log:`${processed.toLocaleString()}作品を本番へ反映済み`,logKey:`commit:${processed}`});
       await importV20Yield();
     }
     if(done){
       importV20SetMessage('本番への反映が完了しました。','success');
-      importV20SetPanel({state:'done',kicker:'反映完了',title:'本番への反映が完了しました',description:'作品一覧で件数を確認してください。',processed,total,current:Math.max(0,processed-runStart),currentTotal:Math.min(IMPORT_V20_STAGE_LIMIT,total-runStart),remaining:0,safety:'反映済み',safetyLevel:'done',log:'本番反映が完了しました',logKey:'commit-done'});
+      importV20SetPanel({state:'done',kicker:'反映完了',title:'本番への反映が完了しました',description:'作品一覧で件数を確認してください。',processed,total,current:Math.max(0,processed-runStart),currentTotal:Math.min(IMPORT_V20_CHECKPOINT_SIZE,total-runStart),remaining:0,safety:'反映済み',safetyLevel:'done',log:'本番反映が完了しました',logKey:'commit-done'});
     }else{
       const paused=importV20State.pauseRequested;
       importV20SetMessage(`${paused?'一時停止':'100件分完了'}：${processed.toLocaleString()}作品を反映済み。残り${Number(remaining||0).toLocaleString()}作品。`,'success');
-      importV20SetPanel({state:paused?'paused':'ready',kicker:paused?'一時停止':'今回分完了',title:`${processed.toLocaleString()} / ${total.toLocaleString()}作品を反映済み`,description:'取込履歴の「次の100件を反映」から続けられます。',processed,total,current:Math.max(0,processed-runStart),currentTotal:Math.min(IMPORT_V20_STAGE_LIMIT,total-runStart),remaining,safety:'一部反映済み',safetyLevel:'warning',log:paused?'本番反映を一時停止しました':'100件分の本番反映が完了しました',logKey:`commit-stop:${processed}:${paused}`});
+      importV20SetPanel({state:paused?'paused':'ready',kicker:paused?'一時停止':'今回分完了',title:`${processed.toLocaleString()} / ${total.toLocaleString()}作品を反映済み`,description:'取込履歴の「次の100件を反映」から続けられます。',processed,total,current:Math.max(0,processed-runStart),currentTotal:Math.min(IMPORT_V20_CHECKPOINT_SIZE,total-runStart),remaining,safety:'一部反映済み',safetyLevel:'warning',log:paused?'本番反映を一時停止しました':'100件分の本番反映が完了しました',logKey:`commit-stop:${processed}:${paused}`});
     }
     importV20RequestRefresh();
   }catch(error){
@@ -726,6 +736,12 @@ function importV20SetText(node,text){
   if(node && node.textContent!==text) node.textContent=text;
 }
 
+// data-*も同値の再代入でMutationRecordが生成されるため、observerが監視する
+// 属性は必ず差分チェックしてから書き込む(自己発火ループの再発防止)。
+function importV20SetAttr(node,name,value){
+  if(node && node.getAttribute(name)!==value) node.setAttribute(name,value);
+}
+
 function importV20DecorateRows(){
   document.querySelectorAll('#importCenterCard .import-batch-row').forEach((row)=>{
     const status=row.dataset.status||'';
@@ -734,8 +750,8 @@ function importV20DecorateRows(){
     const statusNode=row.querySelector('.import-status');
     if(statusNode){
       importV20SetText(statusNode,row.dataset.statusLabel||status);
-      statusNode.dataset.tone=copy.tone;
-      statusNode.dataset.active=String(['uploading','committing'].includes(status));
+      importV20SetAttr(statusNode,'data-tone',copy.tone);
+      importV20SetAttr(statusNode,'data-active',String(['uploading','committing'].includes(status)));
     }
     const main=row.querySelector('.import-batch-main');
     let explanation=main?.querySelector('.import-v20-row-status');
@@ -745,8 +761,8 @@ function importV20DecorateRows(){
       main.append(explanation);
     }
     if(explanation){
-      explanation.textContent=copy.description;
-      explanation.dataset.tone=copy.tone;
+      importV20SetText(explanation,copy.description);
+      importV20SetAttr(explanation,'data-tone',copy.tone);
     }
 
     const commit=row.querySelector('[data-import-action="commit"]');
@@ -787,10 +803,10 @@ function importV20Decorate(){
     const hasFile=Boolean(input?.files?.length);
     if(!hasFile){
       stage.disabled=true;
-      importV20SetText(stage,'100件ずつステージングへ送る');
+      importV20SetText(stage,'ステージングを開始／続きから再開');
     }else if(importV20State.selected?.kind==='import'){
       stage.disabled=false;
-      importV20SetText(stage,'100件ずつステージングへ送る');
+      importV20SetText(stage,'ステージングを開始／続きから再開');
     }else if(importV20State.selected?.kind==='backup'){
       stage.disabled=false;
       importV20SetText(stage,'このファイルは取込用ではありません');

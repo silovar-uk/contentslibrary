@@ -5,10 +5,18 @@ import { readFile } from 'node:fs/promises';
 const root = new URL('../', import.meta.url);
 const read = (path) => readFile(new URL(path, root), 'utf8');
 
-test('大量取込は100件単位で自動停止する', async () => {
+test('ステージングは25件ずつ最後まで自動で進み、100件ごとに休止する', async () => {
   const source = await read('public/app-v20-import-orchestrator.js');
-  assert.match(source, /IMPORT_V20_STAGE_LIMIT = 100/);
+  assert.match(source, /IMPORT_V20_CHECKPOINT_SIZE = 100/);
   assert.match(source, /IMPORT_V20_STAGE_CHUNK = 25/);
+  assert.match(source, /IMPORT_V20_CHECKPOINT_DELAY_MS/);
+  assert.match(source, /while\(processed<total && !importV20State\.pauseRequested\)/);
+  assert.match(source, /processed-checkpointStart>=IMPORT_V20_CHECKPOINT_SIZE/);
+  assert.doesNotMatch(source, /const stopAt=/);
+});
+
+test('本番反映は20件ずつ最大100件で確認を挟む', async () => {
+  const source = await read('public/app-v20-import-orchestrator.js');
   assert.match(source, /IMPORT_V20_COMMIT_CHUNK = 20/);
   assert.match(source, /IMPORT_V20_COMMIT_CALLS/);
   assert.match(source, /call<IMPORT_V20_COMMIT_CALLS/);
