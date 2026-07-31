@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -83,6 +84,15 @@ test('本番必須値が欠けている場合は設定生成を停止する',asy
     }catch(error){message=`${error.message}\n${error.stderr||''}`;}
     assert.match(message,/TEAM_DOMAIN is required/);
   }finally{await rm(cwd,{recursive:true,force:true});}
+});
+
+test('起動用インラインスクリプトのCSPハッシュが実コードと一致する',async()=>{
+  const [html,http]=await Promise.all([read('public/index.html'),read('src/http.ts')]);
+  const inlineScripts=[...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)];
+  assert.equal(inlineScripts.length,1,'許可対象外のインラインスクリプトを増やさない');
+  const hash=createHash('sha256').update(inlineScripts[0][1],'utf8').digest('base64');
+  assert.match(http,new RegExp(`script-src 'self' 'sha256-${hash.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}'`));
+  assert.doesNotMatch(http,/script-src[^\n]*unsafe-inline/);
 });
 
 test('本番デプロイは手動実行しD1移行後にWorkerを公開する',async()=>{
