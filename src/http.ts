@@ -32,7 +32,7 @@ const SECURITY_HEADERS: Record<string, string> = {
   "Cross-Origin-Resource-Policy": "same-origin",
   "Content-Security-Policy": [
     "default-src 'self'",
-    "script-src 'self' 'sha256-hMNZNnvJMRlfPOPBLxg5zGk0bn10fsLw52bFADS6SIY='",
+    "script-src 'self'",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data:",
     "font-src 'self'",

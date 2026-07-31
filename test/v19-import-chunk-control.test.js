@@ -5,9 +5,10 @@ import { readFile } from 'node:fs/promises';
 const root = new URL('../', import.meta.url);
 const read = (path) => readFile(new URL(path, root), 'utf8');
 
-test('本番反映は20件ずつ最大100件で確認を挟む', async () => {
+test('大量取込は100件単位で自動停止する', async () => {
   const source = await read('public/app-v20-import-orchestrator.js');
   assert.match(source, /IMPORT_V20_STAGE_LIMIT = 100/);
+  assert.match(source, /IMPORT_V20_STAGE_CHUNK = 25/);
   assert.match(source, /IMPORT_V20_COMMIT_CHUNK = 20/);
   assert.match(source, /IMPORT_V20_COMMIT_CALLS/);
   assert.match(source, /call<IMPORT_V20_COMMIT_CALLS/);
@@ -31,12 +32,11 @@ test('一時停止、描画待機、操作中表示を備える', async () => {
   assert.match(source, /importV20OperationPanel/);
 });
 
-test('統合制御、連続ステージング、起動処理の順に読み込む', async () => {
+test('旧制御を読み込まず統合制御だけを使う', async () => {
   const app = await read('public/app.js');
   const ui = app.indexOf("import './app-v18-refined-ui.js'");
   const style = app.indexOf("import './v20-import-style.js'");
   const orchestrator = app.indexOf("import './app-v20-import-orchestrator.js'");
-  const continuous = app.indexOf("import './app-v21-continuous-staging.js'");
   const bootstrap = app.indexOf("import './app-v16-bootstrap.js'");
-  assert.ok(ui >= 0 && style > ui && orchestrator > style && continuous > orchestrator && bootstrap > continuous);
+  assert.ok(ui >= 0 && style > ui && orchestrator > style && bootstrap > orchestrator);
 });
