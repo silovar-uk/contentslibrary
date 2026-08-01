@@ -17,6 +17,7 @@ import './app-v14.js';
 import './app-v15-genre-shelf.js';
 import './app-v18-refined-ui.js';
 import './app-v21-ai-classification.js';
+import './app-v211-classification-review-safety.js';
 import './v20-import-style.js';
 import './app-v20-import-orchestrator.js';
 import './app-v16-bootstrap.js';
