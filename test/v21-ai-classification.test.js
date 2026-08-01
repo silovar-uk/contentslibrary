@@ -4,6 +4,7 @@ import test from 'node:test';
 
 const server = readFileSync(new URL('../src/routes/work-tools-v21.ts', import.meta.url), 'utf8');
 const frontend = readFileSync(new URL('../public/app-v21-ai-classification.js', import.meta.url), 'utf8');
+const reviewSafety = readFileSync(new URL('../public/app-v211-classification-review-safety.js', import.meta.url), 'utf8');
 const appEntry = readFileSync(new URL('../public/app.js', import.meta.url), 'utf8');
 const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const plan = readFileSync(new URL('../docs/bulk-unclassified-classification-plan.md', import.meta.url), 'utf8');
@@ -37,8 +38,14 @@ test('frontend shows classification review and blocks unknown tags', () => {
   assert.match(frontend, /v21ClassificationPreview/);
   assert.match(frontend, /新規候補は初期OFF/);
   assert.match(frontend, /kind === 'tag' && !known && !current/);
-  assert.match(frontend, /checked = current \|\| known/);
   assert.match(frontend, /sanitizeFactLabelsV21/);
+});
+
+test('every classification not already on the work requires explicit approval', () => {
+  assert.match(reviewSafety, /isCurrent = state\.textContent\.trim\(\) === '現在使用中'/);
+  assert.match(reviewSafety, /if \(!isCurrent\) input\.checked = false/);
+  assert.match(reviewSafety, /既存語彙・確認して追加/);
+  assert.match(reviewSafety, /新規候補・確認して追加/);
 });
 
 test('creator field is promoted and classifications are displayed by kind', () => {
@@ -48,12 +55,15 @@ test('creator field is promoted and classifications are displayed by kind', () =
   assert.match(frontend, /classificationGroupV21\('tag'/);
 });
 
-test('V21 loads before import orchestration and is syntax-checked', () => {
+test('V21 safety modules load before import orchestration and are syntax-checked', () => {
   const v21 = appEntry.indexOf("import './app-v21-ai-classification.js';");
+  const v211 = appEntry.indexOf("import './app-v211-classification-review-safety.js';");
   const v20 = appEntry.indexOf("import './app-v20-import-orchestrator.js';");
   assert.ok(v21 >= 0);
-  assert.ok(v20 > v21);
+  assert.ok(v211 > v21);
+  assert.ok(v20 > v211);
   assert.match(packageJson.scripts['check:frontend'], /app-v21-ai-classification\.js/);
+  assert.match(packageJson.scripts['check:frontend'], /app-v211-classification-review-safety\.js/);
 });
 
 test('bulk unclassified plan requires staged, resumable, reviewed updates', () => {
