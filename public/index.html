@@ -74,9 +74,16 @@
         <div id="shelfBody" class="shelf-body" aria-live="polite"></div>
       </section>
 
+      <section id="themeShelf" class="theme-shelf" aria-labelledby="themeShelfTitle">
+        <div class="shelf-heading">
+          <div><p class="shelf-kicker">CROSS-GENRE THEMES</p><h2 id="themeShelfTitle">テーマで横断する</h2><p>ジャンルをまたいで、いま気になっている主題から探す。</p></div>
+        </div>
+        <div id="themeShelfBody" class="shelf-body" aria-live="polite"></div>
+      </section>
+
       <div class="section-heading">
         <div><span class="section-number">01</span><h2>現在読んでいる本</h2></div>
-        <button type="button" class="text-button" data-action="show-reading">すべて見る →</button>
+        <button type="button" class="text-button" data-preset="reading">すべて見る →</button>
       </div>
       <div id="readingStrip" class="reading-strip" aria-live="polite"></div>
 
@@ -201,7 +208,7 @@
       <button type="button" data-mobile-view="home"><span>⌂</span>ホーム</button>
       <button type="button" data-mobile-view="library"><span>⌕</span>探す</button>
       <button type="button" class="mobile-add" data-action="open-work-dialog"><span>＋</span>追加</button>
-      <button type="button" data-mobile-view="records"><span>≡</span>記録</button>
+      <button type="button" data-preset="completed"><span>≡</span>記録</button>
       <button type="button" data-mobile-view="settings"><span>•</span>設定</button>
     </nav>
   </div>

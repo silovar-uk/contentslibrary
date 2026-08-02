@@ -16,8 +16,13 @@ test('アイコンは共通クラスで寸法を揃える', async () => {
 
 test('モバイルナビは5項目・下部固定で構成される', async () => {
   const html = await read('public/index.html');
-  const buttons = (html.match(/data-mobile-view="[a-z]+"/g) || []).length;
-  assert.equal(buttons, 4); // home/library/records/settings(+中央の追加ボタンは別要素)
+  const nav = html.match(/<nav class="mobile-nav"[\s\S]*?<\/nav>/)[0];
+  const buttons = (nav.match(/<button/g) || []).length;
+  assert.equal(buttons, 5); // home/library/追加/記録(data-preset)/settings
+  assert.match(nav, /data-mobile-view="home"/);
+  assert.match(nav, /data-mobile-view="library"/);
+  assert.match(nav, /data-mobile-view="settings"/);
+  assert.match(nav, /data-preset="completed"/); // 記録タブは既存の絞り込みプリセットを再利用する
   assert.match(html, /class="mobile-add"/);
   const css = await read('public/styles/app.css');
   assert.match(css, /\.mobile-nav\{display:none\}/);

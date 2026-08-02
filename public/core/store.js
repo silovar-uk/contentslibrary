@@ -12,7 +12,7 @@ export const state = {
   selectedId: null,
   selected: null, // /api/works/:id のフルレスポンス(work/experiences/notes/relations)
   quickEditOpen: false,
-  filters: { q: "", type: "", statuses: [], rating_min: "", rating_exact: "", favorite: "", label: "", has_notes: false, sort: "updated_desc", genreId: "" },
+  filters: { q: "", type: "", statuses: [], rating_min: "", rating_exact: "", favorite: "", label: "", has_notes: false, sort: "updated_desc", genreId: "", theme: "" },
   admin: { users: [], security: [] }
 };
 
@@ -54,7 +54,7 @@ export function setFilters(patch) {
 }
 
 export function clearFilters() {
-  state.filters = { q: "", type: "", statuses: [], rating_min: "", rating_exact: "", favorite: "", label: "", has_notes: false, sort: "updated_desc", genreId: "" };
+  state.filters = { q: "", type: "", statuses: [], rating_min: "", rating_exact: "", favorite: "", label: "", has_notes: false, sort: "updated_desc", genreId: "", theme: "" };
   notify();
 }
 
@@ -132,6 +132,8 @@ function matchesFilters(work, filters) {
   if (filters.favorite === "true" && work.metadata?.favorite !== true) return false;
   if (filters.favorite === "false" && work.metadata?.favorite === true) return false;
 
+  if (filters.theme && !(work.labels?.theme || []).includes(filters.theme)) return false;
+
   if (filters.label) {
     const terms = filters.label.split(/[、,]/).map((t) => normalizeText(t.trim())).filter(Boolean);
     const names = [...(work.labels?.genre || []), ...(work.labels?.theme || []), ...(work.labels?.tag || [])].map(normalizeText);
@@ -208,4 +210,15 @@ export function shelfData(scope = "all") {
     }))
     .sort((a, b) => b.count - a.count || (catalogOrder.get(a.id) ?? 999) - (catalogOrder.get(b.id) ?? 999));
   return { scope, total, classified: total - unclassified, unclassified, genres };
+}
+
+// ジャンル棚とは別に、テーマ(1作品が複数持つ)は先頭1件だけを見ずに全件をカウントする。
+export function themeData(scope = "all") {
+  const predicate = SHELF_SCOPE_PREDICATE[scope] || SHELF_SCOPE_PREDICATE.all;
+  const counts = new Map();
+  for (const work of allWorks().filter(predicate)) {
+    for (const name of work.labels?.theme || []) counts.set(name, (counts.get(name) || 0) + 1);
+  }
+  return Array.from(counts, ([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, "ja"));
 }

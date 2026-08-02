@@ -31,7 +31,8 @@ function readControlsIntoFilters() {
     label: $("#filterLabel").value.trim(),
     has_notes: $("#filterNotes").checked,
     sort: $("#sortSelect").value,
-    genreId: ""
+    genreId: "",
+    theme: ""
   });
 }
 
@@ -79,6 +80,7 @@ function renderActiveFilters() {
   else if (f.rating_min) chips.push(`評価${f.rating_min}以上`);
   if (f.favorite === "true") chips.push("お気に入りのみ");
   if (f.favorite === "false") chips.push("栞なし");
+  if (f.theme) chips.push(`テーマ：${f.theme}`);
   if (f.label) chips.push(`分類：${f.label}`);
   if (f.has_notes) chips.push("メモあり");
   $("#activeFilters").innerHTML = chips.map((c, i) => `<button type="button" class="filter-chip" data-chip-index="${i}">${esc(c)} <span aria-hidden="true">×</span></button>`).join("");
@@ -91,6 +93,7 @@ function clearChipByText(text) {
   if (text === STATUS_LABELS[f.statuses[0]]) { setFilters({ statuses: [] }); $("#filterStatus").value = ""; return; }
   if (text.startsWith("評価")) { setFilters({ rating_min: "", rating_exact: "" }); $("#filterRating").value = ""; $("#filterRatingExact").value = ""; return; }
   if (text === "お気に入りのみ" || text === "栞なし") { setFilters({ favorite: "" }); $("#filterFavorite").value = ""; return; }
+  if (text.startsWith("テーマ：")) { setFilters({ theme: "" }); return; }
   if (text.startsWith("分類：")) { setFilters({ label: "" }); $("#filterLabel").value = ""; return; }
   if (text === "メモあり") { setFilters({ has_notes: false }); $("#filterNotes").checked = false; return; }
 }
@@ -129,7 +132,8 @@ function applySavedQuery(query) {
     label: query.label || "",
     has_notes: query.has_notes === true,
     sort: "updated_desc",
-    genreId: ""
+    genreId: "",
+    theme: ""
   });
   syncControlsFromState();
   setView("library");
@@ -369,4 +373,12 @@ export function shelfNavigateToGenre(genreId, statuses, favorite) {
 
 export function shelfClearGenreFilter() {
   setFilters({ genreId: "" });
+}
+
+export function themeNavigate(name) {
+  clearStoreFilters();
+  setFilters({ theme: name });
+  syncControlsFromState();
+  $(".mobile-nav [data-mobile-view='library']")?.click();
+  setView("library");
 }

@@ -68,7 +68,7 @@ a{color:inherit}
 .security-banner{background:var(--danger-bg);border:1px solid #dca59d;color:#6f2924;border-radius:14px;padding:14px 18px;margin-bottom:26px}
 
 /* --- ジャンル棚 --- */
-.genre-shelf{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:26px;box-shadow:var(--shadow-sm);margin-bottom:48px}
+.genre-shelf,.theme-shelf{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:26px;box-shadow:var(--shadow-sm);margin-bottom:48px}
 .shelf-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;margin-bottom:16px}
 .shelf-kicker{font-size:10px;letter-spacing:.16em;color:var(--warm);font-weight:800;margin:0 0 4px}
 .shelf-heading h2{margin:0 0 4px;font-size:21px}
@@ -92,6 +92,10 @@ a{color:inherit}
 .shelf-item-copy small{color:var(--muted);font-size:11px}
 .shelf-expand{grid-column:1/-1;margin-top:10px;border:1px dashed var(--line);background:none;border-radius:10px;padding:10px;font-size:12px;color:var(--muted)}
 .shelf-empty{color:var(--muted);padding:16px 0}
+.theme-chip-grid{display:flex;flex-wrap:wrap;gap:8px}
+.theme-chip{display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:7px 12px;font-size:12px;font-weight:600}
+.theme-chip:hover{transform:translateY(-1px);box-shadow:var(--shadow-sm)}
+.theme-chip small{color:var(--muted);font-weight:500}
 
 /* --- ホーム: セクション各種 --- */
 .section-heading{display:flex;align-items:end;justify-content:space-between;margin:34px 0 16px}
@@ -245,6 +249,7 @@ a{color:inherit}
 .section-heading-row h3{margin:0}
 .section-heading-row label{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
 .section-heading-row select{border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--surface)}
+.section-heading-tools{display:flex;align-items:center;gap:10px}
 .timeline-item{position:relative;padding:0 0 18px 20px;border-left:1px solid var(--line);margin-left:6px}
 .timeline-item:before{content:"";position:absolute;left:-5px;top:3px;width:9px;height:9px;border-radius:50%;background:var(--accent)}
 .item-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}

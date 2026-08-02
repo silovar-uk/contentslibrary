@@ -1,7 +1,7 @@
 import { $, $$ } from "./core/dom.js";
 import { api } from "./core/api.js";
 import { toast } from "./core/dom.js";
-import { state, loadSnapshot, subscribe, setView, closeDetail } from "./core/store.js";
+import { state, loadSnapshot, subscribe, setView, closeDetail, toggleQuickEdit } from "./core/store.js";
 import { renderAccount, loadAdmin } from "./views/admin.js";
 import { initHome, loadHome } from "./views/home.js";
 import { initLibrary, renderWorkList } from "./views/library.js";
@@ -28,7 +28,6 @@ function bindShell() {
     const mobile = event.target.closest("[data-mobile-view]")?.dataset.mobileView;
     if (mobile === "home") setView("home");
     if (mobile === "library") { setView("library"); $("#globalSearch").focus(); }
-    if (mobile === "records") { setView("library"); document.dispatchEvent(new CustomEvent("app:apply-preset", { detail: "stopped-or-completed" })); }
     if (mobile === "settings") setView("settings");
   });
 
@@ -40,6 +39,11 @@ function bindShell() {
       if (form && ["workForm", "quickEditForm", "noteForm", "inlineNoteForm", "experienceForm"].includes(form.id)) { event.preventDefault(); form.requestSubmit(); }
     }
     if (!typing && !event.metaKey && !event.ctrlKey && event.key.toLowerCase() === "n") { event.preventDefault(); openWorkDialog(false); }
+    if (!typing && !event.metaKey && !event.ctrlKey && event.key.toLowerCase() === "e" && state.selected) {
+      event.preventDefault();
+      if (matchMedia("(min-width:1200px)").matches) toggleQuickEdit();
+      else openWorkDialog(true);
+    }
     if (!typing && !event.metaKey && !event.ctrlKey && event.key === "Escape" && !$$("dialog[open]").length) closeDetail();
   });
 
@@ -61,11 +65,6 @@ async function init() {
     initLibrary();
     initHome();
     initDetail();
-
-    document.addEventListener("app:apply-preset", (event) => {
-      // 記録タブは「完了・停止」をまとめて見る導線
-      if (event.detail === "stopped-or-completed") document.dispatchEvent(new CustomEvent("app:noop"));
-    });
 
     await Promise.all([loadHome(), loadSnapshot()]);
     renderWorkList();

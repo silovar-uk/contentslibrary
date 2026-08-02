@@ -53,7 +53,7 @@ function experiencesMarkup(experiences) {
   let last = null;
   for (const item of chronological) { previousRating.set(item.id, last); if (item.rating != null) last = Number(item.rating); }
   const items = sortedExperiences(experiences);
-  return `<div class="section-heading-row"><h3>体験履歴</h3><label>並び順<select id="experienceSortSelect"><option value="desc" ${experienceSort === "desc" ? "selected" : ""}>新しい体験から</option><option value="asc" ${experienceSort === "asc" ? "selected" : ""}>初回から</option></select></label></div>
+  return `<div class="section-heading-row"><h3>体験履歴</h3><div class="section-heading-tools"><button type="button" class="text-button" data-action="add-experience">＋ 体験を追加</button><label>並び順<select id="experienceSortSelect"><option value="desc" ${experienceSort === "desc" ? "selected" : ""}>新しい体験から</option><option value="asc" ${experienceSort === "asc" ? "selected" : ""}>初回から</option></select></label></div></div>
     ${experienceSummary(experiences)}
     <div class="timeline">${items.length ? items.map((x) => `<article class="timeline-item" data-experience-id="${esc(x.id)}"><div class="item-top"><div><strong>${x.sequence}回目${x.completed_at ? "・完了" : x.started_at ? "・進行中" : ""}</strong>${ratingDelta(x.rating, previousRating.get(x.id))}</div><div class="item-actions"><button type="button" data-edit-experience="${esc(x.id)}">編集</button><button type="button" class="danger-link" data-delete-experience="${esc(x.id)}">削除</button></div></div><p class="item-meta">${[x.started_at && `開始 ${fmtDate(x.started_at)}`, x.completed_at && `完了 ${fmtDate(x.completed_at)}`, x.rating != null && stars(x.rating), x.progress_current != null && `進捗 ${x.progress_current}${x.progress_total != null ? ` / ${x.progress_total}` : ""}`].filter(Boolean).join(" / ") || "日付・評価なし"}</p>${x.memo ? `<p class="item-memo">${esc(x.memo)}</p>` : ""}</article>`).join("") : '<p class="muted">まだ体験記録がありません。</p>'}</div>`;
 }
@@ -347,7 +347,6 @@ export function initDetail() {
     if (workId && !event.target.closest("#workList")) { document.dispatchEvent(new CustomEvent("app:open-work", { detail: workId })); }
 
     if (event.target.closest("[data-action='toggle-quick-edit']")) { toggleQuickEdit(); if (state.quickEditOpen) setTimeout(() => $('#quickEditForm select[name="status"]')?.focus(), 20); }
-    if (event.target.closest("[data-action='add-note']")) openNoteDialog(state.selectedId);
     if (event.target.closest("[data-action='add-experience']")) openExperienceDialog(state.selectedId);
     if (event.target.closest("[data-action='delete-work']")) void deleteSelectedWork();
     if (event.target.closest("[data-action='close-detail']")) closeDetail();

@@ -1,13 +1,14 @@
 import { $, $$, esc, toast, fmtDate } from "../core/dom.js";
 import { api } from "../core/api.js";
 import { TYPE_LABELS, statusLabel, stars } from "../core/format.js";
-import { state, shelfData, subscribe, setView, selectWork } from "../core/store.js";
-import { shelfNavigateToGenre, shelfClearGenreFilter } from "./library.js";
+import { state, shelfData, themeData, subscribe, setView, selectWork } from "../core/store.js";
+import { shelfNavigateToGenre, shelfClearGenreFilter, themeNavigate } from "./library.js";
 
 let homeData = null;
 let shelfScope = "all";
 let shelfExpanded = false;
 let activeShelfFilter = null;
+let themeExpanded = false;
 
 const RANDOM_HISTORY_KEY = "sakuhin-log-random-history-v2";
 function previousRandomIds() {
@@ -91,6 +92,21 @@ function renderShelf() {
   $$("[data-shelf-scope]").forEach((btn) => btn.setAttribute("aria-selected", String(btn.dataset.shelfScope === shelfScope)));
 }
 
+function themeChipMarkup(theme) {
+  return `<button type="button" class="theme-chip" data-theme-name="${esc(theme.name)}"><strong>${esc(theme.name)}</strong><small>${theme.count}</small></button>`;
+}
+
+function renderThemeShelf() {
+  const body = $("#themeShelfBody");
+  if (!body) return;
+  const themes = themeData("all");
+  if (!themes.length) { body.innerHTML = '<div class="shelf-empty">テーマが設定された作品はまだありません。</div>'; return; }
+  const visible = themeExpanded ? themes : themes.slice(0, 12);
+  const items = visible.map(themeChipMarkup).join("");
+  const canExpand = themes.length > 12;
+  body.innerHTML = `<div class="theme-chip-grid">${items}</div>${canExpand ? `<button type="button" class="shelf-expand" data-theme-expand>${themeExpanded ? "テーマをたたむ" : "ほかのテーマも見る"}</button>` : ""}`;
+}
+
 function renderShelfFilterChip() {
   const chip = $("#shelfFilterChip");
   if (!activeShelfFilter) { chip.hidden = true; chip.innerHTML = ""; return; }
@@ -135,6 +151,7 @@ export function renderHome() {
 
   renderShelf();
   renderShelfFilterChip();
+  renderThemeShelf();
 }
 
 export async function loadHome() {
@@ -173,6 +190,7 @@ async function setupNotionImport() {
 
 export function initHome() {
   subscribe(renderShelf);
+  subscribe(renderThemeShelf);
   $("#randomScope").addEventListener("change", drawRandom);
   document.addEventListener("click", (event) => {
     if (event.target.closest("[data-action='draw-random']")) { event.preventDefault(); void drawRandom(); return; }
@@ -197,9 +215,10 @@ export function initHome() {
       renderShelfFilterChip();
       shelfClearGenreFilter();
     }
-    if (event.target.closest("[data-action='show-reading']")) {
-      document.dispatchEvent(new CustomEvent("app:apply-preset", { detail: "reading" }));
-    }
+
+    if (event.target.closest("[data-theme-expand]")) { themeExpanded = !themeExpanded; renderThemeShelf(); return; }
+    const themeButton = event.target.closest("[data-theme-name]");
+    if (themeButton) { themeNavigate(themeButton.dataset.themeName); return; }
   });
   void setupNotionImport();
 }
