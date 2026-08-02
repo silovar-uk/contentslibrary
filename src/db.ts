@@ -126,17 +126,27 @@ export async function rebuildWorkSearchText(env: Env, workId: string, ownerId: s
   await env.DB.prepare("UPDATE works SET search_text = ? WHERE id = ? AND owner_id = ?").bind(normalizeText(text), workId, ownerId).run();
 }
 
+// D1は1クエリあたりのバインド変数上限が100件のため、idをこの単位で分割して問い合わせる
+// (蔵書が増えるとIN句が上限を超え、SQLITE_ERRORで/api/library/snapshot等が丸ごと500になっていた)。
+export function chunkIds(ids: string[], size = 100): string[][] {
+  const chunks: string[][] = [];
+  for (let i = 0; i < ids.length; i += size) chunks.push(ids.slice(i, i + size));
+  return chunks;
+}
+
 export async function getLabelsForWorks(env: Env, workIds: string[]): Promise<Map<string, { genre: string[]; theme: string[]; tag: string[] }>> {
   const map = new Map<string, { genre: string[]; theme: string[]; tag: string[] }>();
   if (workIds.length === 0) return map;
-  const placeholders = workIds.map(() => "?").join(",");
-  const rows = await env.DB.prepare(
-    `SELECT wl.work_id, l.kind, l.name FROM work_labels wl JOIN labels l ON l.id = wl.label_id WHERE wl.work_id IN (${placeholders}) ORDER BY wl.work_id, l.kind, wl.position, l.name`
-  ).bind(...workIds).all<{ work_id: string; kind: LabelKind; name: string }>();
-  for (const row of rows.results) {
-    const current = map.get(row.work_id) ?? { genre: [], theme: [], tag: [] };
-    current[row.kind].push(row.name);
-    map.set(row.work_id, current);
+  for (const chunk of chunkIds(workIds)) {
+    const placeholders = chunk.map(() => "?").join(",");
+    const rows = await env.DB.prepare(
+      `SELECT wl.work_id, l.kind, l.name FROM work_labels wl JOIN labels l ON l.id = wl.label_id WHERE wl.work_id IN (${placeholders}) ORDER BY wl.work_id, l.kind, wl.position, l.name`
+    ).bind(...chunk).all<{ work_id: string; kind: LabelKind; name: string }>();
+    for (const row of rows.results) {
+      const current = map.get(row.work_id) ?? { genre: [], theme: [], tag: [] };
+      current[row.kind].push(row.name);
+      map.set(row.work_id, current);
+    }
   }
   return map;
 }

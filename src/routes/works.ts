@@ -1,4 +1,4 @@
-import { escapeLike, getLabelsForWorks, newId, normalizeText, nowIso, rebuildWorkSearchText, syncLabels } from "../db";
+import { chunkIds, escapeLike, getLabelsForWorks, newId, normalizeText, nowIso, rebuildWorkSearchText, syncLabels } from "../db";
 import { HttpError, json, parseJson, text } from "../http";
 import type { AuthContext, Env, LabelKind, WorkStatus, WorkType } from "../types";
 
@@ -331,9 +331,16 @@ export async function exportData(request: Request, env: Env, auth: AuthContext):
   const works = await env.DB.prepare("SELECT * FROM works WHERE owner_id = ? AND deleted_at IS NULL ORDER BY created_at").bind(auth.member.id).all<Record<string, unknown>>();
   const decorated = await attachLabels(env, works.results);
   const ids = works.results.map((w) => String(w.id));
-  const experiences = ids.length ? await env.DB.prepare(`SELECT * FROM experiences WHERE work_id IN (${ids.map(() => "?").join(",")}) ORDER BY work_id, sequence`).bind(...ids).all() : { results: [] };
-  const notes = ids.length ? await env.DB.prepare(`SELECT * FROM notes WHERE work_id IN (${ids.map(() => "?").join(",")}) ORDER BY work_id, created_at`).bind(...ids).all() : { results: [] };
-  const data = { exported_at: nowIso(), user: { email: auth.member.email }, works: decorated, experiences: experiences.results, notes: notes.results };
+  const experienceRows: unknown[] = [];
+  const noteRows: unknown[] = [];
+  for (const chunk of chunkIds(ids)) {
+    const placeholders = chunk.map(() => "?").join(",");
+    const experiences = await env.DB.prepare(`SELECT * FROM experiences WHERE work_id IN (${placeholders}) ORDER BY work_id, sequence`).bind(...chunk).all();
+    experienceRows.push(...experiences.results);
+    const notes = await env.DB.prepare(`SELECT * FROM notes WHERE work_id IN (${placeholders}) ORDER BY work_id, created_at`).bind(...chunk).all();
+    noteRows.push(...notes.results);
+  }
+  const data = { exported_at: nowIso(), user: { email: auth.member.email }, works: decorated, experiences: experienceRows, notes: noteRows };
   const filenameDate = nowIso().slice(0, 10).replaceAll("-", "");
   if (format === "json") {
     return text(JSON.stringify(data, null, 2), 200, "application/json; charset=utf-8");
@@ -354,9 +361,9 @@ export async function exportData(request: Request, env: Env, auth: AuthContext):
   }
   if (format === "markdown") {
     const expByWork = new Map<string, any[]>();
-    for (const exp of experiences.results as any[]) expByWork.set(exp.work_id, [...(expByWork.get(exp.work_id) ?? []), exp]);
+    for (const exp of experienceRows as any[]) expByWork.set(exp.work_id, [...(expByWork.get(exp.work_id) ?? []), exp]);
     const notesByWork = new Map<string, any[]>();
-    for (const note of notes.results as any[]) notesByWork.set(note.work_id, [...(notesByWork.get(note.work_id) ?? []), note]);
+    for (const note of noteRows as any[]) notesByWork.set(note.work_id, [...(notesByWork.get(note.work_id) ?? []), note]);
     const out: string[] = [`# 作品体験ログ`, "", `書き出し日時: ${data.exported_at}`, ""];
     for (const item of decorated as Array<Record<string, any>>) {
       out.push(`## ${item.title}`, "", `- 種別: ${item.type}`, `- 作者・監督: ${item.creator ?? ""}`, `- 状態: ${item.status}`, `- 評価: ${item.rating ?? "未評価"}`, `- ジャンル: ${item.labels.genre.join("、")}`, `- テーマ: ${item.labels.theme.join("、")}`, `- タグ: ${item.labels.tag.join("、")}`, "");
