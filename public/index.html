@@ -1,32 +1,13 @@
 <!doctype html>
-<html lang="ja" class="ui-booting">
+<html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f3eee5">
   <title>作品体験ログ</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <link rel="stylesheet" href="/styles.css">
-  <link rel="stylesheet" href="/v02.css">
-  <link rel="stylesheet" href="/v05.css">
-  <link rel="stylesheet" href="/v05-polish.css">
-  <link rel="stylesheet" href="/v07.css">
-  <link rel="stylesheet" href="/v09.css">
-  <link rel="stylesheet" href="/v10.css">
-  <link rel="stylesheet" href="/v13-work-tools.css">
-  <link rel="stylesheet" href="/v14-editorial.css">
-  <link rel="stylesheet" href="/v15-genre-shelf.css">
-  <link rel="stylesheet" href="/v17-product-ui.css">
-  <style>
-    html.ui-booting body{overflow:hidden}
-    html.ui-booting #app,html.ui-booting dialog,html.ui-booting .toast-region{opacity:0!important;pointer-events:none!important}
-    html.ui-booting body::before{content:"作品体験ログ";position:fixed;inset:0;z-index:99998;display:grid;place-items:center;background:#f3eee5;color:#20231f;font:800 18px/1.2 Inter,"Hiragino Sans","Yu Gothic UI","Yu Gothic",Meiryo,system-ui,sans-serif;letter-spacing:.04em}
-    html.ui-booting body::after{content:"";position:fixed;z-index:99999;left:50%;top:calc(50% + 31px);width:76px;height:3px;border-radius:999px;background:linear-gradient(90deg,transparent,#9e3f2f,transparent);transform:translateX(-50%);animation:sakuhinBootPulse .85s ease-in-out infinite}
-    #app{transition:opacity .14s ease}
-    @keyframes sakuhinBootPulse{0%,100%{opacity:.24;transform:translateX(-50%) scaleX(.55)}50%{opacity:1;transform:translateX(-50%) scaleX(1)}}
-    @media(prefers-reduced-motion:reduce){html.ui-booting body::after{animation:none;opacity:.75}#app{transition:none}}
-  </style>
-  <script>window.__sakuhinLogBootTimer=window.setTimeout(function(){document.documentElement.classList.remove('ui-booting')},3000)</script>
+  <link rel="stylesheet" href="/styles/tokens.css">
+  <link rel="stylesheet" href="/styles/app.css">
   <script type="module" src="/app.js"></script>
 </head>
 <body>
@@ -34,16 +15,18 @@
   <div id="app" class="app-shell" data-view="home">
     <header class="topbar">
       <button class="brand" type="button" data-action="go-home" aria-label="ホームへ">
-        <span class="brand-mark" aria-hidden="true">栞</span>
-        <span><strong>作品体験ログ</strong><small>作品ではなく、作品との関係を記録する。</small></span>
+        <span class="brand-mark"><img src="/favicon.svg" alt=""></span>
+        <span><strong>作品体験ログ</strong><small>MY CULTURE ARCHIVE</small></span>
       </button>
       <label class="global-search">
         <span class="sr-only">作品を検索</span>
-        <span aria-hidden="true">⌕</span>
+        <span class="search-icon" aria-hidden="true"></span>
         <input id="globalSearch" type="search" placeholder="タイトル、作者、タグ、メモを検索" autocomplete="off">
+        <span class="search-and-hint">複数語はAND検索</span>
         <kbd>⌘K</kbd>
       </label>
       <div class="top-actions">
+        <button class="ghost-button" type="button" data-action="draw-random" title="所持・未読から1つ引く">本を引く</button>
         <button class="ghost-button" type="button" data-action="open-admin" id="adminButton" hidden>管理</button>
         <button class="primary-button compact" type="button" data-action="open-work-dialog">＋ 追加</button>
         <button class="avatar-button" type="button" data-action="open-settings" aria-label="設定"><span id="avatarInitial">U</span></button>
@@ -52,40 +35,68 @@
 
     <section id="homeView" class="home-view" aria-labelledby="homeTitle">
       <div class="hero-row">
-        <div>
-          <p class="eyebrow">YOUR CULTURE ARCHIVE</p>
-          <h1 id="homeTitle">いま触れている作品と、<br>あとで戻りたい言葉。</h1>
-          <p>読書を中心に、映画・漫画・アニメまで。同じ箱で静かに残す。</p>
+        <div class="hero-copy">
+          <p class="eyebrow">PICK FROM YOUR SHELF</p>
+          <h1 id="homeTitle">次に読むものを、<br>棚から引く。</h1>
+          <p>積んだままの本を、偶然にもう一度手元へ。</p>
+          <div class="random-controls">
+            <label><span>抽選する棚</span>
+              <select id="randomScope">
+                <option value="next">所持・未読＋読みたい</option>
+                <option value="owned_unread">所持・未読だけ</option>
+                <option value="want">読みたい本だけ</option>
+                <option value="book">すべての本</option>
+                <option value="all">すべての作品</option>
+              </select>
+            </label>
+            <button type="button" class="draw-button" data-action="draw-random">本を引く</button>
+          </div>
         </div>
-        <button class="quick-card" type="button" data-action="open-work-dialog">
-          <span>最短30秒</span>
-          <strong>作品を追加する</strong>
-          <small>タイトル・種別・状態だけでも保存可能</small>
-        </button>
+        <div id="randomStage" class="random-stage" aria-live="polite">
+          <div class="random-empty">まだ引いていません。ボタンを押すと1作品だけ現れます。</div>
+        </div>
       </div>
+
       <div id="securityBanner" class="security-banner" hidden></div>
+
+      <section id="genreShelf" class="genre-shelf" aria-labelledby="genreShelfTitle">
+        <div class="shelf-heading">
+          <div><p class="shelf-kicker">YOUR GENRE SHELF</p><h2 id="genreShelfTitle">あなたのジャンル棚</h2><p>作品数ではなく、いまの興味の厚みとして眺める棚。</p></div>
+          <div id="shelfSummary" class="shelf-summary" aria-live="polite"></div>
+        </div>
+        <div class="shelf-scope-tabs" role="tablist" aria-label="棚の対象">
+          <button type="button" role="tab" aria-selected="true" data-shelf-scope="all">すべて</button>
+          <button type="button" role="tab" aria-selected="false" data-shelf-scope="unread">未読・読みたい</button>
+          <button type="button" role="tab" aria-selected="false" data-shelf-scope="active">進行中</button>
+          <button type="button" role="tab" aria-selected="false" data-shelf-scope="completed">完了</button>
+          <button type="button" role="tab" aria-selected="false" data-shelf-scope="favorite">お気に入り</button>
+        </div>
+        <div id="shelfBody" class="shelf-body" aria-live="polite"></div>
+      </section>
+
       <div class="section-heading">
         <div><span class="section-number">01</span><h2>現在読んでいる本</h2></div>
         <button type="button" class="text-button" data-action="show-reading">すべて見る →</button>
       </div>
-      <div id="readingStrip" class="reading-strip skeleton-zone" aria-live="polite"></div>
+      <div id="readingStrip" class="reading-strip" aria-live="polite"></div>
 
       <div class="home-columns">
         <section>
           <div class="section-heading compact-heading"><div><span class="section-number">02</span><h2>最近の読書メモ</h2></div></div>
-          <div id="recentNotes" class="note-stack skeleton-zone"></div>
+          <div id="recentNotes" class="note-stack" aria-live="polite"></div>
         </section>
         <section>
           <div class="section-heading compact-heading"><div><span class="section-number">03</span><h2>最近の作品</h2></div></div>
-          <div id="recentOther" class="compact-list skeleton-zone"></div>
+          <div id="recentOther" class="compact-list" aria-live="polite"></div>
         </section>
       </div>
       <div id="statsBar" class="stats-bar"></div>
     </section>
 
     <main id="main" class="library-view" tabindex="-1">
-      <aside class="filter-panel" aria-label="絞り込み">
+      <aside class="filter-panel" aria-label="探す">
         <div class="panel-heading"><h2>探す</h2><button class="icon-button" type="button" data-action="clear-filters" aria-label="絞り込みを解除">↺</button></div>
+        <div id="shelfFilterChip" class="shelf-filter-chip" hidden></div>
         <label class="field-label">作品種別
           <select id="filterType">
             <option value="">すべて</option><option value="book">本</option><option value="manga">漫画</option><option value="movie">映画</option><option value="anime">アニメ</option><option value="drama">ドラマ</option><option value="other">その他</option>
@@ -96,33 +107,63 @@
             <option value="">すべて</option><option value="want">読みたい・見たい</option><option value="owned_unread">所持・未読</option><option value="active">進行中</option><option value="completed">完了</option><option value="paused">一時停止</option><option value="dropped">中断</option>
           </select>
         </label>
-        <label class="field-label">評価
-          <select id="filterRating">
-            <option value="">指定なし</option><option value="4">4.0以上</option><option value="3">3.0以上</option><option value="2">2.0以上</option>
-          </select>
+        <div class="form-row">
+          <label class="field-label">評価（以上）
+            <select id="filterRating"><option value="">指定なし</option><option value="5">5のみ</option><option value="4">4以上</option><option value="3">3以上</option><option value="2">2以上</option><option value="1">1以上</option></select>
+          </label>
+          <label class="field-label">評価（ぴったり）
+            <select id="filterRatingExact"><option value="">すべて</option><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option><option value="unrated">未評価</option></select>
+          </label>
+        </div>
+        <label class="field-label">お気に入り
+          <select id="filterFavorite"><option value="">すべて</option><option value="true">栞を付けた作品</option><option value="false">栞なし</option></select>
         </label>
         <label class="field-label">ジャンル・テーマ・タグ
-          <input id="filterLabel" type="text" placeholder="例：組織">
+          <input id="filterLabel" type="text" list="labelSuggestions" placeholder="例：組織">
         </label>
+        <datalist id="labelSuggestions"></datalist>
         <label class="check-row"><input id="filterNotes" type="checkbox"> メモがある作品のみ</label>
         <hr>
-        <h3>保存ビュー</h3>
+        <h3>クイックビュー</h3>
         <div class="saved-views">
           <button type="button" data-preset="reading">読書中</button>
           <button type="button" data-preset="completed">完了した作品</button>
           <button type="button" data-preset="stopped">途中で止まっている</button>
           <button type="button" data-preset="high-rating">評価4以上</button>
         </div>
+        <div class="custom-view-heading"><h3>保存ビュー</h3><button type="button" id="saveCurrentView" class="text-button">＋ 現在の条件を保存</button></div>
+        <div id="customSavedViews" class="custom-saved-views"><p class="muted">読み込み中</p></div>
       </aside>
 
       <section class="list-panel" aria-labelledby="libraryTitle">
         <div class="panel-heading list-heading">
           <div><p class="eyebrow">LIBRARY</p><h1 id="libraryTitle">作品一覧</h1><p id="resultSummary">読み込み中</p></div>
-          <div class="list-tools"><button class="ghost-button filter-toggle" type="button" data-action="toggle-filters">絞り込み</button><select id="sortSelect" aria-label="並び順"><option value="updated_desc">更新が新しい順</option><option value="title_asc">タイトル順</option><option value="rating_desc">評価が高い順</option><option value="created_desc">登録が新しい順</option></select></div>
+          <div class="list-tools">
+            <button class="ghost-button filter-toggle" type="button" data-action="toggle-filters">絞り込み</button>
+            <button class="ghost-button" type="button" id="selectionExportToggle" aria-pressed="false">選択してJSON</button>
+            <select id="sortSelect" aria-label="並び順">
+              <option value="updated_desc">更新が新しい順</option>
+              <option value="title_asc">タイトル順</option>
+              <option value="rating_desc">評価が高い順</option>
+              <option value="rating_asc">評価が低い順</option>
+              <option value="favorite_first">お気に入り・評価順</option>
+              <option value="created_desc">登録が新しい順</option>
+            </select>
+          </div>
         </div>
         <div id="activeFilters" class="active-filters" aria-live="polite"></div>
+        <div id="selectionExportBar" class="selection-bar" hidden aria-live="polite">
+          <div class="selection-summary"><strong id="selectionExportCount">0件選択中</strong><small>作品をクリックして追加・解除</small></div>
+          <div class="selection-subactions">
+            <button type="button" class="text-button" data-selection-action="visible">表示中をすべて選択</button>
+            <button type="button" class="text-button" data-selection-action="clear" disabled>選択解除</button>
+          </div>
+          <div class="selection-mainactions">
+            <button type="button" class="primary-button" data-selection-action="download" disabled>JSON書き出し</button>
+            <button type="button" class="ghost-button" data-selection-action="finish">終了</button>
+          </div>
+        </div>
         <div id="workList" class="work-list" aria-live="polite"></div>
-        <button id="loadMore" class="load-more" type="button" hidden>続きを表示</button>
       </section>
 
       <aside id="detailPanel" class="detail-panel" aria-label="作品詳細">
@@ -133,9 +174,17 @@
     <section id="settingsView" class="standalone-view" hidden>
       <div class="standalone-header"><div><p class="eyebrow">SETTINGS</p><h1>設定とデータ</h1></div><button class="ghost-button" type="button" data-action="go-home">閉じる</button></div>
       <div class="settings-grid">
+        <article class="settings-card" id="notionImportCard" hidden>
+          <h2>Notionのリストを取り込む</h2>
+          <p>整形済みの最新20件を取り込みます。元URL・登録日は作品データ内に保持します。</p>
+          <p class="notion-import-status" id="notionImportStatus">取り込み状況を確認しています…</p>
+          <div class="notion-import-actions">
+            <button class="primary-button" type="button" id="notionImportButton">Notionから取り込む</button>
+            <span class="notion-import-result" id="notionImportResult"></span>
+          </div>
+        </article>
         <article class="settings-card"><h2>アカウント</h2><dl id="accountInfo"></dl><a class="secondary-button" href="/cdn-cgi/access/logout">ログアウト</a></article>
         <article class="settings-card"><h2>データを書き出す</h2><p>作品、体験、メモ、分類をサービス外でも読める形で保存する。</p><div class="export-buttons"><button data-export="json">JSON</button><button data-export="csv">CSV</button><button data-export="markdown">Markdown</button></div></article>
-        <article class="settings-card"><h2>この実装について</h2><p>外部作品APIや表紙画像に依存せず、手入力・検索・書き出しを継続できる設計。</p><p class="muted">ローカル開発時は開発用owner、本番はCloudflare Access JWTで認証。</p></article>
       </div>
     </section>
 
@@ -150,7 +199,7 @@
 
     <nav class="mobile-nav" aria-label="主要メニュー">
       <button type="button" data-mobile-view="home"><span>⌂</span>ホーム</button>
-      <button type="button" data-mobile-view="library"><span>⌕</span>検索</button>
+      <button type="button" data-mobile-view="library"><span>⌕</span>探す</button>
       <button type="button" class="mobile-add" data-action="open-work-dialog"><span>＋</span>追加</button>
       <button type="button" data-mobile-view="records"><span>≡</span>記録</button>
       <button type="button" data-mobile-view="settings"><span>•</span>設定</button>
@@ -159,27 +208,107 @@
 
   <dialog id="workDialog" class="app-dialog">
     <form id="workForm" method="dialog" class="dialog-form">
-      <header><div><p class="eyebrow">QUICK ADD</p><h2 id="workDialogTitle">作品を追加</h2></div><button type="button" class="icon-button" data-action="close-dialog" aria-label="閉じる">×</button></header>
+      <header><div><p class="eyebrow">QUICK ADD</p><h2 id="workDialogTitle">作品を追加</h2><p class="dialog-lead">タイトル・種別・状態だけで保存できます。詳細は後から追加できます。</p></div><button type="button" class="icon-button" data-action="close-dialog" aria-label="閉じる">×</button></header>
+      <div id="workDraftNotice" class="draft-notice" hidden></div>
       <input type="hidden" name="id"><input type="hidden" name="version">
-      <label class="field-label main-field">タイトル<input name="title" required maxlength="300" autocomplete="off" placeholder="作品名"></label>
-      <div class="form-row"><label class="field-label">種別<select name="type"><option value="book">本</option><option value="manga">漫画</option><option value="movie">映画</option><option value="anime">アニメ</option><option value="drama">ドラマ</option><option value="other">その他</option></select></label><label class="field-label">状態<select name="status"><option value="want">読みたい・見たい</option><option value="active">進行中</option><option value="completed">完了</option><option value="paused">一時停止</option><option value="dropped">中断</option></select></label></div>
+      <label class="field-label main-field">タイトル<span class="required-mark">必須</span><input name="title" required maxlength="300" autocomplete="off" placeholder="作品名"></label>
+      <label class="field-label" id="creatorField">作者・監督<input name="creator" maxlength="300"></label>
+      <div class="form-row">
+        <label class="field-label">種別<span class="required-mark">必須</span><select name="type"><option value="book">本</option><option value="manga">漫画</option><option value="movie">映画</option><option value="anime">アニメ</option><option value="drama">ドラマ</option><option value="other">その他</option></select></label>
+        <label class="field-label">状態<span class="required-mark">必須</span><select name="status"><option value="want">読みたい・見たい</option><option value="owned_unread">所持・未読</option><option value="active">進行中</option><option value="completed">完了</option><option value="paused">一時停止</option><option value="dropped">中断</option></select></label>
+      </div>
       <label class="field-label">一言メモ<textarea name="short_note" maxlength="280" rows="3" placeholder="いま残しておきたいこと"></textarea><small><span data-counter="short_note">0</span>/280</small></label>
-      <details class="details-fields"><summary>詳細も追加する</summary><div class="details-inner">
-        <div class="form-row"><label class="field-label">作者・監督<input name="creator" maxlength="300"></label><label class="field-label">発表年<input name="release_year" type="number" min="0" max="3000"></label></div>
-        <label class="field-label">評価<select name="rating"><option value="">未評価</option><option>5</option><option>4.5</option><option>4</option><option>3.5</option><option>3</option><option>2.5</option><option>2</option><option>1.5</option><option>1</option><option>0.5</option></select></label>
-        <label class="field-label">ジャンル<input name="genre" placeholder="哲学, 社会"></label><label class="field-label">テーマ<input name="theme" placeholder="退屈, 消費, 自由"></label><label class="field-label">タグ<input name="tag" placeholder="再読したい, 仕事"></label>
-        <div class="form-row"><label class="field-label">進捗<input name="progress_current" type="number" step="0.1"></label><label class="field-label">全体<input name="progress_total" type="number" step="0.1"></label><label class="field-label">単位<input name="unit_label" placeholder="ページ / 話 / 巻"></label></div>
+      <details class="details-fields"><summary><span>詳細も追加する</span><small>評価・分類・進捗</small></summary><div class="details-inner">
+        <h3 class="form-section-title">作品情報</h3>
+        <div class="form-row"><label class="field-label">発表年<input name="release_year" type="number" min="0" max="3000" inputmode="numeric"></label>
+        <label class="field-label">評価<select name="rating"><option value="">未評価</option><option>5</option><option>4.5</option><option>4</option><option>3.5</option><option>3</option><option>2.5</option><option>2</option><option>1.5</option><option>1</option><option>0.5</option></select></label></div>
+        <h3 class="form-section-title">分類</h3>
+        <label class="field-label">ジャンル<input name="genre" list="labelSuggestions" placeholder="例：ビジネス・経営, ミステリー"><small class="label-help">作品の一般的な分野。1〜3件を目安にします。</small></label>
+        <label class="field-label">テーマ<input name="theme" list="labelSuggestions" placeholder="例：組織, 意思決定"><small class="label-help">作品が扱う主題や問題意識。1〜5件を目安にします。</small></label>
+        <label class="field-label">タグ<input name="tag" list="labelSuggestions" placeholder="例：再読したい, 仕事"><small class="label-help">自分用の管理印。</small></label>
+        <h3 class="form-section-title">進捗</h3>
+        <div class="form-row progress-fields"><label class="field-label" id="progressCurrentField">現在位置<input name="progress_current" type="number" step="0.1" min="0" inputmode="decimal"></label><label class="field-label" id="progressTotalField">全体<input name="progress_total" type="number" step="0.1" min="0" inputmode="decimal"></label><label class="field-label">単位<input name="unit_label" maxlength="30"></label></div>
       </div></details>
       <div id="workFormError" class="form-error" role="alert"></div>
+      <footer class="dialog-actions"><span class="shortcut-hint">Ctrl / ⌘ + Enterで保存</span><div><button type="button" class="ghost-button" data-action="close-dialog">キャンセル</button><button class="primary-button" type="submit">保存する</button></div></footer>
+    </form>
+  </dialog>
+
+  <dialog id="noteDialog" class="app-dialog small-dialog">
+    <form id="noteForm" method="dialog" class="dialog-form">
+      <header><div><p class="eyebrow" id="noteDialogEyebrow">NOTE</p><h2 id="noteDialogTitle">メモを追加</h2></div><button type="button" class="icon-button" data-action="close-dialog">×</button></header>
+      <input type="hidden" name="id"><input type="hidden" name="version"><input type="hidden" name="work_id">
+      <div class="note-type-chips" role="group" aria-label="メモ種別">
+        <button type="button" data-note-type="quick" class="is-active">一言</button>
+        <button type="button" data-note-type="summary">要約</button>
+        <button type="button" data-note-type="impression">印象</button>
+        <button type="button" data-note-type="quote">引用</button>
+        <button type="button" data-note-type="idea">自分の考え</button>
+        <button type="button" data-note-type="connection">接続</button>
+        <button type="button" data-note-type="progress">途中メモ</button>
+      </div>
+      <input type="hidden" name="note_type" value="quick">
+      <label class="field-label">内容<textarea name="content" required rows="8" placeholder="あとから戻りたい言葉を残す"></textarea></label>
+      <label class="field-label">位置・出典<input name="position" placeholder="p.128 / 第8話"></label>
+      <div class="form-error" role="alert"></div>
       <footer><button type="button" class="ghost-button" data-action="close-dialog">キャンセル</button><button class="primary-button" type="submit">保存する</button></footer>
     </form>
   </dialog>
 
-  <dialog id="noteDialog" class="app-dialog small-dialog"><form id="noteForm" method="dialog" class="dialog-form"><header><div><p class="eyebrow">NOTE</p><h2>メモを追加</h2></div><button type="button" class="icon-button" data-action="close-dialog">×</button></header><input type="hidden" name="work_id"><label class="field-label">メモ種別<select name="note_type"><option value="quick">一言</option><option value="summary">要約</option><option value="impression">印象</option><option value="quote">引用</option><option value="idea">自分の考え</option><option value="connection">仕事・生活との接続</option><option value="progress">途中メモ</option></select></label><label class="field-label">内容<textarea name="content" required rows="8" placeholder="あとから戻りたい言葉を残す"></textarea></label><label class="field-label">位置・出典<input name="position" placeholder="p.128 / 第8話"></label><div class="form-error" role="alert"></div><footer><button type="button" class="ghost-button" data-action="close-dialog">キャンセル</button><button class="primary-button" type="submit">保存する</button></footer></form></dialog>
+  <dialog id="experienceDialog" class="app-dialog small-dialog">
+    <form id="experienceForm" method="dialog" class="dialog-form">
+      <header><div><p class="eyebrow" id="experienceDialogEyebrow">EXPERIENCE</p><h2 id="experienceDialogTitle">体験を追加</h2></div><button type="button" class="icon-button" data-action="close-dialog">×</button></header>
+      <input type="hidden" name="id"><input type="hidden" name="version"><input type="hidden" name="work_id">
+      <div class="form-row"><label class="field-label">開始日<input name="started_at" type="date"></label><label class="field-label">完了日<input name="completed_at" type="date"></label></div>
+      <div class="form-row"><label class="field-label">評価<select name="rating"><option value="">未評価</option><option>5</option><option>4.5</option><option>4</option><option>3.5</option><option>3</option><option>2.5</option><option>2</option><option>1.5</option><option>1</option><option>0.5</option></select></label><label class="field-label">現在位置<input name="progress_current" type="number" step="0.1" min="0"></label><label class="field-label">全体<input name="progress_total" type="number" step="0.1" min="0"></label></div>
+      <label class="field-label">この回のメモ<textarea name="memo" rows="6"></textarea></label>
+      <div class="form-error" role="alert"></div>
+      <footer><button type="button" class="ghost-button" data-action="close-dialog">キャンセル</button><button class="primary-button" type="submit">保存する</button></footer>
+    </form>
+  </dialog>
 
-  <dialog id="experienceDialog" class="app-dialog small-dialog"><form id="experienceForm" method="dialog" class="dialog-form"><header><div><p class="eyebrow">EXPERIENCE</p><h2>体験を追加</h2></div><button type="button" class="icon-button" data-action="close-dialog">×</button></header><input type="hidden" name="work_id"><div class="form-row"><label class="field-label">開始日<input name="started_at" type="date"></label><label class="field-label">完了日<input name="completed_at" type="date"></label></div><div class="form-row"><label class="field-label">評価<select name="rating"><option value="">未評価</option><option>5</option><option>4.5</option><option>4</option><option>3.5</option><option>3</option><option>2.5</option><option>2</option><option>1.5</option><option>1</option><option>0.5</option></select></label><label class="field-label">現在位置<input name="progress_current" type="number" step="0.1"></label><label class="field-label">全体<input name="progress_total" type="number" step="0.1"></label></div><label class="field-label">この回のメモ<textarea name="memo" rows="6"></textarea></label><div class="form-error" role="alert"></div><footer><button type="button" class="ghost-button" data-action="close-dialog">キャンセル</button><button class="primary-button" type="submit">保存する</button></footer></form></dialog>
+  <dialog id="savedViewDialog" class="app-dialog small-dialog">
+    <form id="savedViewForm" method="dialog" class="dialog-form">
+      <header><div><p class="eyebrow">SAVED VIEW</p><h2>検索条件を保存</h2><p class="dialog-lead">よく使う絞り込みを、名前付きで呼び出せます。</p></div><button type="button" class="icon-button" data-action="close-dialog">×</button></header>
+      <label class="field-label">ビュー名<input name="name" required maxlength="40" placeholder="例：仕事に関係する本"></label>
+      <label class="check-row"><input name="is_default" type="checkbox"> 起動時の表示にする</label>
+      <div id="savedViewPreview" class="saved-view-preview"></div>
+      <div class="form-error" role="alert"></div>
+      <footer><button type="button" class="ghost-button" data-action="close-dialog">キャンセル</button><button type="submit" class="primary-button">保存する</button></footer>
+    </form>
+  </dialog>
 
-  <dialog id="dangerDialog" class="app-dialog small-dialog danger-dialog"><form id="dangerForm" method="dialog" class="dialog-form"><header><div><p class="eyebrow">DANGER ZONE</p><h2 id="dangerTitle">利用を停止</h2></div><button type="button" class="icon-button" data-action="close-dialog">×</button></header><input type="hidden" name="user_id"><input type="hidden" name="action"><p id="dangerDescription"></p><label class="field-label email-confirm" hidden>対象メールを再入力<input name="email_confirm"></label><label class="field-label">理由<textarea name="reason" required minlength="10" maxlength="500" rows="4"></textarea></label><label class="field-label suspend-until" hidden>停止期限<input name="suspended_until" type="datetime-local"></label><div class="form-error" role="alert"></div><footer><button type="button" class="ghost-button" data-action="close-dialog">キャンセル</button><button class="danger-button" type="submit">実行する</button></footer></form></dialog>
+  <dialog id="factDialog" class="app-dialog fact-dialog">
+    <form method="dialog" class="dialog-form">
+      <header><div><p class="eyebrow">FACT JSON</p><h2>AIで事実・分類を補完</h2><p class="dialog-lead">作者・刊行などの事実に加え、既存の分類語彙を優先してジャンル・テーマを補完します。評価・お気に入り・一言メモは変更しません。</p></div><button type="button" class="icon-button" data-action="close-dialog" aria-label="閉じる">×</button></header>
+      <section>
+        <div class="text-heading"><label for="factOutput">AIへ渡すテキスト</label><span>AIはJSONコードブロック1個だけで返答</span></div>
+        <textarea id="factOutput" readonly rows="12"></textarea>
+        <div class="copy-actions"><button type="button" class="primary-button" data-fact-copy="all">プロンプト＋JSONをコピー</button><button type="button" class="ghost-button" data-fact-copy="json">JSONだけコピー</button></div>
+      </section>
+      <section>
+        <div class="text-heading"><label for="factInput">AIから返ったJSON</label><span>ファイルではなく、ここへ貼り付け</span></div>
+        <textarea id="factInput" rows="12" spellcheck="false" placeholder="{ &quot;schema_version&quot;: 1, ... }"></textarea>
+        <p class="fact-safety">既存の分類は保持します。新しいジャンル・テーマ候補は、下の確認欄で選んだものだけを送ります。タグは既存語彙以外を取り込みません。</p>
+        <div id="factPreview" class="fact-preview" hidden></div>
+        <div class="form-error" id="factError" role="alert"></div>
+      </section>
+      <footer><button type="button" class="ghost-button" data-action="close-dialog">キャンセル</button><button type="button" class="primary-button" data-fact-import>事実情報を反映</button></footer>
+    </form>
+  </dialog>
+
+  <dialog id="dangerDialog" class="app-dialog small-dialog danger-dialog">
+    <form id="dangerForm" method="dialog" class="dialog-form">
+      <header><div><p class="eyebrow">DANGER ZONE</p><h2 id="dangerTitle">利用を停止</h2></div><button type="button" class="icon-button" data-action="close-dialog">×</button></header>
+      <input type="hidden" name="user_id"><input type="hidden" name="action">
+      <p id="dangerDescription"></p>
+      <label class="field-label email-confirm" hidden>対象メールを再入力<input name="email_confirm"></label>
+      <label class="field-label">理由<textarea name="reason" required minlength="10" maxlength="500" rows="4"></textarea></label>
+      <label class="field-label suspend-until" hidden>停止期限<input name="suspended_until" type="datetime-local"></label>
+      <div class="form-error" role="alert"></div>
+      <footer><button type="button" class="ghost-button" data-action="close-dialog">キャンセル</button><button class="danger-button" type="submit">実行する</button></footer>
+    </form>
+  </dialog>
 
   <div id="toastRegion" class="toast-region" aria-live="polite"></div>
 </body>

@@ -89,7 +89,7 @@ test('取込バッチは実行経路(browser/ci)を記録する', async () => {
 // actionable panel — not a generic "エラー ###" message — because that
 // silent failure was the root cause identified in improvement plan §1.1.
 test('取込画面はウィンドウ失効を専用の再有効化パネルで案内する', async () => {
-  const orchestrator = await read('public/app-v20-import-orchestrator.js');
+  const orchestrator = await read('public/import-center/app-v20-import-orchestrator.js');
   assert.match(orchestrator, /function importV20HandleApiError/);
   assert.match(orchestrator, /error\?\.code === 'IMPORT_CENTER_LOCKED'/);
   assert.match(orchestrator, /async function importV20Reenable/);
@@ -103,7 +103,7 @@ test('取込画面はウィンドウ失効を専用の再有効化パネルで�
 // cause / confirmed-so-far / production impact / next action — instead of
 // each operation inventing its own shape.
 test('エラー表示は原因・保存済み範囲・本番影響・次の行動の4要素を持つ', async () => {
-  const orchestrator = await read('public/app-v20-import-orchestrator.js');
+  const orchestrator = await read('public/import-center/app-v20-import-orchestrator.js');
   assert.match(orchestrator, /description:`原因：\$\{error\.message\} \$\{confirmedNote\} 次の行動：\$\{nextActionText\}`/);
   assert.match(orchestrator, /const safety = error\.safeState \|\| fallbackSafety/);
   // every mutating catch block supplies its own confirmedText/nextActionText fallback
@@ -113,7 +113,7 @@ test('エラー表示は原因・保存済み範囲・本番影響・次の行�
 });
 
 test('取込有効期限を常時カウントダウン表示する', async () => {
-  const list = await read('public/app-v09.js');
+  const list = await read('public/import-center/app-v09.js');
   assert.match(list, /function importStartCountdown\(enabledUntil\)/);
   assert.match(list, /取込有効期限 残り \$\{importFormatCountdown\(remaining\)\}/);
   assert.match(list, /importCountdownTimer = setInterval\(importUpdateCountdown, 1000\)/);

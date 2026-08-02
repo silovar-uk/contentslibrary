@@ -6,17 +6,15 @@ const root = new URL('../', import.meta.url);
 const read = (path) => readFile(new URL(path, root), 'utf8');
 
 test('書き出しはJSON変換済みオブジェクトではなく生のResponseを使う', async () => {
-  const script = await read('public/app-v101-export.js');
-  assert.doesNotThrow(() => new Function(script));
+  const script = await read('public/views/admin.js');
   assert.match(script, /await fetch\(`\/api\/export\?format=/);
   assert.match(script, /await response\.blob\(\)/);
-  assert.match(script, /event\.stopImmediatePropagation\(\)/);
-  assert.match(script, /credentials: 'same-origin'/);
+  assert.match(script, /credentials: "same-origin"/);
 });
 
-test('最新の書き出し処理をアプリから読み込む', async () => {
-  const entry = await read('public/app.js');
-  const packageJson = JSON.parse(await read('package.json'));
-  assert.match(entry, /app-v101-export\.js/);
-  assert.match(packageJson.scripts['check:frontend'], /app-v101-export\.js/);
+test('書き出しボタンはsettingsビューから呼び出せる', async () => {
+  const html = await read('public/index.html');
+  assert.match(html, /data-export="json"/);
+  assert.match(html, /data-export="csv"/);
+  assert.match(html, /data-export="markdown"/);
 });

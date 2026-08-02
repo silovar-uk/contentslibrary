@@ -6,8 +6,8 @@ const root = new URL('../', import.meta.url);
 const read = (path) => readFile(new URL(path, root), 'utf8');
 
 test('取込の4段階と進捗指標を常時表示する', async () => {
-  const script = await read('public/app-v10.js');
-  const styleLoader = await read('public/v10-style.js');
+  const script = await read('public/import-center/app-v10.js');
+  const styleLoader = await read('public/import-center/v10-style.js');
   const css = await read('public/v10.css');
   assert.doesNotThrow(() => new Function(script));
   assert.doesNotThrow(() => new Function(styleLoader));
@@ -26,7 +26,7 @@ test('取込の4段階と進捗指標を常時表示する', async () => {
 });
 
 test('ステージング・反映・取消の進行件数を解釈する', async () => {
-  const script = await read('public/app-v10.js');
+  const script = await read('public/import-center/app-v10.js');
   assert.match(script, /ステージング中/);
   assert.match(script, /反映中/);
   assert.match(script, /取消中/);

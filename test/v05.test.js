@@ -5,44 +5,35 @@ import { readFile } from 'node:fs/promises';
 const root=new URL('../',import.meta.url);
 const read=(path)=>readFile(new URL(path,root),'utf8');
 
-test('編集的なタイポグラフィと紙面設計を持つ',async()=>{
-  const css=await read('public/v05.css');
-  assert.match(css,/--serif:/);
-  assert.match(css,/--signal:/);
-  assert.match(css,/\.hero-row h1/);
-  assert.match(css,/font-family:var\(--serif\)/);
-  assert.match(css,/\.work-card::before/);
-  assert.match(css,/counter\(catalogue,decimal-leading-zero\)/);
+// v0.5の装丁レイヤー(editorial typography, 非対称グリッド)は今回の再構築で
+// 統合CSSへ吸収された。旧実装のセレクタを検証する意味は失われたため、
+// 今回のUI再構築が実際に保証すること(Observer連鎖の解消・reduced-motion対応)を検証する。
+
+test('動的コンテンツの装飾にMutationObserverを使わない', async () => {
+  const files = ['public/app.js', 'public/views/home.js', 'public/views/library.js', 'public/views/detail.js', 'public/views/admin.js', 'public/views/dialogs.js', 'public/core/store.js'];
+  for (const file of files) {
+    const source = await read(file);
+    assert.doesNotMatch(source, /MutationObserver/, `${file} にMutationObserverが含まれていない`);
+  }
 });
 
-test('均等なカードUIを崩す意図的な非対称レイアウトを持つ',async()=>{
-  const css=await read('public/v05.css');
-  assert.match(css,/\.reading-card:first-child\{grid-column:span 2/);
-  assert.match(css,/grid-template-columns:repeat\(12/);
-  assert.match(css,/clip-path:polygon/);
-  assert.match(css,/\.home-columns\{grid-template-columns:minmax\(0,1\.18fr\)/);
+test('window.fetchを乗っ取らない', async () => {
+  const files = ['public/app.js', 'public/core/api.js', 'public/views/home.js', 'public/views/library.js', 'public/views/detail.js'];
+  for (const file of files) {
+    const source = await read(file);
+    assert.doesNotMatch(source, /window\.fetch\s*=/, `${file} がwindow.fetchを再代入していない`);
+  }
 });
 
-test('動的コンテンツにも装丁と控えめなモーションを適用する',async()=>{
-  const app=await read('public/app-v05.js');
-  const css=await read('public/v05.css');
-  assert.match(app,/archive-folio/);
-  assert.match(app,/hero-editorial-note/);
-  assert.match(app,/IntersectionObserver/);
-  assert.match(app,/MutationObserver/);
-  assert.match(css,/prefers-reduced-motion/);
+test('reduced-motionに対応する', async () => {
+  const css = await read('public/styles/app.css');
+  assert.match(css, /prefers-reduced-motion/);
 });
 
-test('細部調整レイヤーでモバイルとフォーカスを補強する',async()=>{
-  const css=await read('public/v05-polish.css');
-  const app=await read('public/app-v05.js');
-  assert.match(css,/mobile-add span i/);
-  assert.match(css,/button\[aria-current\]/);
-  assert.match(css,/focus-visible/);
-  assert.match(app,/v05-polish\.css/);
-});
-
-test('v0.5の視覚レイヤーを読み込む',async()=>{
-  const entry=await read('public/app.js');
-  assert.match(entry,/app-v05\.js/);
+test('統合スタイルシートを1枚のCSSとして読み込む', async () => {
+  const html = await read('public/index.html');
+  assert.match(html, /\/styles\/tokens\.css/);
+  assert.match(html, /\/styles\/app\.css/);
+  const linkCount = (html.match(/<link rel="stylesheet"/g) || []).length;
+  assert.equal(linkCount, 2);
 });

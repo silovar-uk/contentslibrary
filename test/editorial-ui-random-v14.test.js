@@ -16,39 +16,38 @@ test('次に読む作品のランダムAPIを公開する', async () => {
 });
 
 test('ブランドアイコンをfaviconと左上で共用する', async () => {
-  const app = await read('public/app-v14.js');
+  const html = await read('public/index.html');
   const favicon = await read('public/favicon.svg');
-  assert.match(app, /V14_FAVICON = '\/favicon\.svg'/);
-  assert.match(app, /brand-mark/);
-  assert.match(app, /link\[rel="icon"\]/);
+  assert.match(html, /link rel="icon" type="image\/svg\+xml" href="\/favicon\.svg"/);
+  assert.match(html, /brand-mark"><img src="\/favicon\.svg"/);
   assert.match(favicon, /<svg/);
-  assert.match(favicon, /B34832/);
 });
 
-test('ジャンルごとの色相を一覧に適用する', async () => {
-  const app = await read('public/app-v14.js');
-  const css = await read('public/v14-editorial.css');
-  for (const genre of ['小説','漫画','ビジネス・経営','哲学・思想','IT・テクノロジー','芸術・デザイン']) {
-    assert.match(app, new RegExp(genre));
+test('ジャンルごとの色相を一覧・棚に適用する', async () => {
+  const format = await read('public/core/format.js');
+  const css = await read('public/styles/app.css');
+  for (const genre of ['小説', '漫画', 'ビジネス・経営', '哲学・思想', 'IT・テクノロジー', '芸術・デザイン']) {
+    assert.match(format, new RegExp(genre));
   }
-  assert.match(app, /--genre-color/);
+  assert.match(format, /GENRE_CATALOG/);
+  assert.match(format, /genreColorForWork/);
   assert.match(css, /var\(--genre-color\)/);
-  assert.match(css, /v14-primary-genre/);
 });
 
 test('ランダム探索をホーム・ヘッダー・スマホへ配置する', async () => {
-  const app = await read('public/app-v14.js');
-  assert.match(app, /次に読むものを/);
-  assert.match(app, /v14HeaderRandom/);
-  assert.match(app, /v14-mobile-random/);
-  assert.match(app, /所持・未読＋読みたい/);
-  assert.match(app, /読み始める/);
+  const html = await read('public/index.html');
+  const home = await read('public/views/home.js');
+  assert.match(html, /次に読むものを/);
+  assert.match(html, /data-action="draw-random"/);
+  assert.match(html, /class="mobile-add"/);
+  assert.match(html, /所持・未読＋読みたい/);
+  assert.match(home, /読み始める/);
 });
 
 test('Unicode記号ではなくSVGアイコン体系を使う', async () => {
-  const app = await read('public/app-v14.js');
-  assert.match(app, /ICONS_V14/);
-  assert.match(app, /<svg class="v14-icon"/);
-  assert.match(app, /settings/);
-  assert.match(app, /shuffle/);
+  const dom = await read('public/core/dom.js');
+  assert.match(dom, /const ICONS = /);
+  assert.match(dom, /<svg class="icon"/);
+  assert.match(dom, /settings/);
+  assert.match(dom, /shuffle/);
 });

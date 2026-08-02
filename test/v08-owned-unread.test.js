@@ -10,12 +10,12 @@ test('所持・未読をDB・API・UIで扱える', async () => {
   const types = await read('src/types.ts');
   const routes = await read('src/routes/works.ts');
   const html = await read('public/index.html');
-  const app = await read('public/app-v02.js');
+  const format = await read('public/core/format.js');
   assert.match(migration, /owned_unread/);
   assert.match(types, /"owned_unread"/);
   assert.match(routes, /"owned_unread"/);
   assert.match(html, /value="owned_unread">所持・未読/);
-  assert.match(app, /owned_unread:'所持・未読'/);
+  assert.match(format, /owned_unread: "所持・未読"/);
 });
 
 test('ステージング移行はNotionメモを検証後にnotesへ保存する', async () => {

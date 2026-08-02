@@ -1,0 +1,205 @@
+import { $, $$, esc, toast, fmtDate } from "../core/dom.js";
+import { api } from "../core/api.js";
+import { TYPE_LABELS, statusLabel, stars } from "../core/format.js";
+import { state, shelfData, subscribe, setView, selectWork } from "../core/store.js";
+import { shelfNavigateToGenre, shelfClearGenreFilter } from "./library.js";
+
+let homeData = null;
+let shelfScope = "all";
+let shelfExpanded = false;
+let activeShelfFilter = null;
+
+const RANDOM_HISTORY_KEY = "sakuhin-log-random-history-v2";
+function previousRandomIds() {
+  try { const v = JSON.parse(localStorage.getItem(RANDOM_HISTORY_KEY) || "[]"); return Array.isArray(v) ? v.slice(0, 9) : []; } catch { return []; }
+}
+function rememberRandom(id) {
+  localStorage.setItem(RANDOM_HISTORY_KEY, JSON.stringify([id, ...previousRandomIds().filter((v) => v !== id)].slice(0, 9)));
+}
+
+function randomResultMarkup(work) {
+  const genre = work.labels?.genre?.[0] || "未分類";
+  const canStart = work.type === "book" && ["want", "owned_unread"].includes(work.status);
+  return `<article class="random-result">
+    <p class="random-result-label">TODAY'S PICK</p>
+    <span class="genre-badge">${esc(genre)}</span>
+    <h2>${esc(work.title)}</h2>
+    <p class="random-result-creator">${esc(work.creator || "作者情報なし")}</p>
+    <p class="random-result-status">${esc(statusLabel(work.type, work.status))}</p>
+    <div class="random-result-actions">
+      ${canStart ? `<button type="button" class="primary-button" data-random-start="${esc(work.id)}" data-version="${Number(work.version)}">読み始める</button>` : ""}
+      <button type="button" class="secondary-button" data-work-id="${esc(work.id)}">詳細を見る</button>
+      <button type="button" class="text-button" data-action="draw-random">もう一度</button>
+    </div>
+  </article>`;
+}
+
+async function drawRandom() {
+  const stage = $("#randomStage");
+  const scope = $("#randomScope").value;
+  stage.innerHTML = '<div class="random-loading">棚をたどっています…</div>';
+  try {
+    const exclude = previousRandomIds().join(",");
+    const data = await api(`/api/random-work?scope=${encodeURIComponent(scope)}&exclude=${encodeURIComponent(exclude)}`);
+    if (!data.item) {
+      stage.innerHTML = '<div class="random-empty">この棚には候補がありません。抽選する棚を切り替えるか、作品を追加してください。</div>';
+      return;
+    }
+    rememberRandom(String(data.item.id));
+    stage.innerHTML = randomResultMarkup(data.item);
+  } catch (error) {
+    stage.innerHTML = `<div class="random-empty is-error">作品を引けませんでした。${esc(error.message)}</div>`;
+  }
+}
+
+async function startFromRandom(button) {
+  const id = button.dataset.randomStart;
+  const version = Number(button.dataset.version);
+  button.disabled = true;
+  try {
+    const data = await api(`/api/works/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify({ version, status: "active" }) });
+    if (data.work) state.works.set(String(data.work.id), data.work);
+    button.textContent = "読み始めました";
+    toast("読書中に変更しました。");
+  } catch (error) { button.disabled = false; toast(error.message, "error"); }
+}
+
+function shelfItemMarkup(genre, maxCount, index) {
+  const percent = Math.round((genre.share || 0) * 100);
+  const spineCount = Math.max(2, Math.min(8, Math.round(2 + Math.sqrt(genre.count / maxCount) * 6)));
+  const span = genre.count / maxCount >= 0.72 ? 4 : genre.count / maxCount >= 0.38 ? 3 : 2;
+  const spines = Array.from({ length: spineCount }, () => "<i></i>").join("");
+  return `<button type="button" class="shelf-item ${index >= 6 ? "is-secondary" : ""}" data-genre-id="${esc(genre.id)}" style="--genre-color:${esc(genre.color)};--shelf-span:${span}">
+    <span class="spines">${spines}</span>
+    <span class="shelf-item-copy"><strong>${esc(genre.name)}</strong><small>${genre.count}作品・${percent}%</small></span>
+  </button>`;
+}
+
+function renderShelf() {
+  const body = $("#shelfBody");
+  const summary = $("#shelfSummary");
+  const data = shelfData(shelfScope);
+  summary.innerHTML = `<span><strong>${data.total}</strong>対象作品</span><span><strong>${data.classified}</strong>分類済み</span><span><strong>${data.unclassified}</strong>未分類</span>`;
+  const maxCount = Math.max(1, ...data.genres.map((g) => g.count));
+  const items = data.genres.map((g, i) => shelfItemMarkup(g, maxCount, i)).join("");
+  const unclassifiedItem = data.unclassified
+    ? `<button type="button" class="shelf-item is-unclassified" data-genre-id="unclassified" style="--genre-color:#858681;--shelf-span:2"><span class="spines"><i></i><i></i></span><span class="shelf-item-copy"><strong>未分類</strong><small>${data.unclassified}作品・整理前の棚</small></span></button>`
+    : "";
+  body.innerHTML = items || unclassifiedItem
+    ? `<div class="shelf-grid ${shelfExpanded ? "is-expanded" : ""}">${items}${unclassifiedItem}</div><button type="button" class="shelf-expand" data-shelf-expand>${shelfExpanded ? "棚をたたむ" : "ほかの棚も見る"}</button>`
+    : '<div class="shelf-empty">この条件の作品はまだありません。</div>';
+  $$("[data-shelf-scope]").forEach((btn) => btn.setAttribute("aria-selected", String(btn.dataset.shelfScope === shelfScope)));
+}
+
+function renderShelfFilterChip() {
+  const chip = $("#shelfFilterChip");
+  if (!activeShelfFilter) { chip.hidden = true; chip.innerHTML = ""; return; }
+  chip.hidden = false;
+  chip.innerHTML = `<span>棚から絞り込み：<strong>${esc(activeShelfFilter.name)}</strong></span><button type="button" data-clear-shelf-filter aria-label="解除">×</button>`;
+}
+
+function shelfScopeStatuses(scope) {
+  if (scope === "unread") return ["want", "owned_unread"];
+  if (scope === "active") return ["active"];
+  if (scope === "completed") return ["completed"];
+  return [];
+}
+
+export function renderHome() {
+  const h = homeData || {};
+  $("#readingStrip").innerHTML = (h.reading || []).length
+    ? h.reading.map((work) => `
+    <button class="reading-card" data-work-id="${esc(work.id)}">
+      <div class="type-status"><span class="type-pill">${TYPE_LABELS[work.type]}</span><span>${statusLabel(work.type, work.status)}</span><span class="rating">${stars(work.rating)}</span></div>
+      <h3>${esc(work.title)}</h3><div class="creator">${esc(work.creator || "")}</div>
+      <p class="short-note">${esc(work.short_note || "一言メモはまだありません。")}</p>
+      ${work.progress_total ? `<div class="progress-track"><span style="width:${Math.min(100, Math.max(0, ((work.progress_current || 0) / work.progress_total) * 100))}%"></span></div>` : ""}
+    </button>`).join("")
+    : '<div class="empty-state">現在読書中の本はありません。<br><button class="text-button" data-action="open-work-dialog">本を追加する</button></div>';
+
+  $("#recentNotes").innerHTML = (h.recentNotes || []).length
+    ? h.recentNotes.map((n) => `<button class="note-item" data-work-id="${esc(n.work_id)}"><time>${fmtDate(n.updated_at)}</time><strong>${esc(n.title)}</strong><p>${esc(n.content).slice(0, 150)}</p></button>`).join("")
+    : '<div class="empty-state">読書メモはまだありません。</div>';
+
+  $("#recentOther").innerHTML = (h.recentOther || []).length
+    ? h.recentOther.map((w) => `<button class="compact-item" data-work-id="${esc(w.id)}"><span class="type-pill">${TYPE_LABELS[w.type]}</span><span><strong>${esc(w.title)}</strong><p>${esc(w.short_note || statusLabel(w.type, w.status))}</p></span><time>${fmtDate(w.updated_at)}</time></button>`).join("")
+    : '<div class="empty-state">映画・漫画・アニメの記録はまだありません。</div>';
+
+  const s = h.stats || {};
+  $("#statsBar").innerHTML = [["全作品", s.total || 0], ["読了した本", s.completed_books || 0], ["進行中", s.active_count || 0], ["停止・中断", s.stopped_count || 0]]
+    .map(([label, value]) => `<div class="stat"><strong>${value}</strong><span>${label}</span></div>`).join("");
+
+  const banner = $("#securityBanner");
+  if (h.openSecurityCount > 0) { banner.hidden = false; banner.innerHTML = `<strong>要確認のセキュリティイベントが ${h.openSecurityCount} 件あります。</strong> <button class="text-button" data-action="open-admin">確認する →</button>`; }
+  else banner.hidden = true;
+
+  renderShelf();
+  renderShelfFilterChip();
+}
+
+export async function loadHome() {
+  homeData = await api("/api/home");
+  renderHome();
+}
+
+async function setupNotionImport() {
+  if (!["owner", "admin"].includes(state.me?.role)) return;
+  const card = $("#notionImportCard");
+  card.hidden = false;
+  const status = $("#notionImportStatus");
+  const button = $("#notionImportButton");
+  async function refresh() {
+    try {
+      const data = await api("/api/admin/notion-import");
+      status.textContent = `${data.available}件中 ${data.imported}件を取り込み済み。残り ${data.remaining}件。`;
+      button.disabled = data.remaining === 0;
+      button.textContent = data.remaining === 0 ? "取り込み済み" : "Notionから取り込む";
+    } catch (error) { status.textContent = error.message; button.disabled = true; }
+  }
+  button.addEventListener("click", async () => {
+    if (!confirm("Notionの最新20件を作品一覧へ取り込みます。すでに取り込んだ項目は自動でスキップします。")) return;
+    button.disabled = true;
+    button.textContent = "取り込み中…";
+    const result = $("#notionImportResult");
+    try {
+      const data = await api("/api/admin/notion-import", { method: "POST", body: "{}" });
+      result.textContent = `${data.inserted}件追加、${data.skipped}件スキップしました。`;
+      await refresh();
+      document.dispatchEvent(new CustomEvent("app:reload-snapshot"));
+    } catch (error) { result.textContent = error.message; button.disabled = false; button.textContent = "Notionから取り込む"; }
+  });
+  await refresh();
+}
+
+export function initHome() {
+  subscribe(renderShelf);
+  $("#randomScope").addEventListener("change", drawRandom);
+  document.addEventListener("click", (event) => {
+    if (event.target.closest("[data-action='draw-random']")) { event.preventDefault(); void drawRandom(); return; }
+    const start = event.target.closest("[data-random-start]");
+    if (start) { event.preventDefault(); void startFromRandom(start); return; }
+
+    const scope = event.target.closest("[data-shelf-scope]")?.dataset.shelfScope;
+    if (scope) { shelfScope = scope; shelfExpanded = false; renderShelf(); return; }
+    if (event.target.closest("[data-shelf-expand]")) { shelfExpanded = !shelfExpanded; renderShelf(); return; }
+    const genreButton = event.target.closest("[data-genre-id]");
+    if (genreButton) {
+      const genreId = genreButton.dataset.genreId;
+      const data = shelfData(shelfScope);
+      const name = genreId === "unclassified" ? "未分類" : data.genres.find((g) => g.id === genreId)?.name || genreId;
+      activeShelfFilter = { name, genreId };
+      renderShelfFilterChip();
+      shelfNavigateToGenre(genreId, shelfScopeStatuses(shelfScope), shelfScope === "favorite");
+      return;
+    }
+    if (event.target.closest("[data-clear-shelf-filter]")) {
+      activeShelfFilter = null;
+      renderShelfFilterChip();
+      shelfClearGenreFilter();
+    }
+    if (event.target.closest("[data-action='show-reading']")) {
+      document.dispatchEvent(new CustomEvent("app:apply-preset", { detail: "reading" }));
+    }
+  });
+  void setupNotionImport();
+}

@@ -3,10 +3,9 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 const server = readFileSync(new URL('../src/routes/work-tools-v21.ts', import.meta.url), 'utf8');
-const frontend = readFileSync(new URL('../public/app-v21-ai-classification.js', import.meta.url), 'utf8');
-const reviewSafety = readFileSync(new URL('../public/app-v211-classification-review-safety.js', import.meta.url), 'utf8');
-const appEntry = readFileSync(new URL('../public/app.js', import.meta.url), 'utf8');
-const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+const detail = readFileSync(new URL('../public/views/detail.js', import.meta.url), 'utf8');
+const html = readFileSync(new URL('../public/index.html', import.meta.url), 'utf8');
+const dialogs = readFileSync(new URL('../public/views/dialogs.js', import.meta.url), 'utf8');
 const plan = readFileSync(new URL('../docs/bulk-unclassified-classification-plan.md', import.meta.url), 'utf8');
 
 test('AI prompt requests one JSON code block and includes classification', () => {
@@ -35,35 +34,35 @@ test('classification import preserves existing factual fields and rebuilds label
 });
 
 test('frontend shows classification review and blocks unknown tags', () => {
-  assert.match(frontend, /v21ClassificationPreview/);
-  assert.match(frontend, /新規候補は初期OFF/);
-  assert.match(frontend, /kind === 'tag' && !known && !current/);
-  assert.match(frontend, /sanitizeFactLabelsV21/);
+  assert.match(html, /id="factPreview"/);
+  assert.match(detail, /kind === "tag" && !known && !current/);
+  assert.match(detail, /function sanitizeFactLabels/);
 });
 
+// v211の後付けパッチ(描画後にtextContentを検査して非対象をuncheckする)は
+// 再構築で不要になった。checked状態を描画時点で正しく計算するため、
+// 「現在使用中以外は初期OFF」を直接検証する。
 test('every classification not already on the work requires explicit approval', () => {
-  assert.match(reviewSafety, /isCurrent = state\.textContent\.trim\(\) === '現在使用中'/);
-  assert.match(reviewSafety, /if \(!isCurrent\) input\.checked = false/);
-  assert.match(reviewSafety, /既存語彙・確認して追加/);
-  assert.match(reviewSafety, /新規候補・確認して追加/);
+  assert.match(detail, /const checked = current; \/\/ 新規候補は初期OFF/);
+  assert.match(detail, /既存語彙・確認して追加/);
+  assert.match(detail, /新規候補・確認して追加/);
 });
 
+// 旧app-v21がJSでtitleLabelの後ろへcreatorLabelを差し込んでいた処理は、
+// 静的HTMLで最初から作者欄をタイトル欄の直後に置くことで不要になった。
 test('creator field is promoted and classifications are displayed by kind', () => {
-  assert.match(frontend, /titleLabel\.after\(creatorLabel\)/);
-  assert.match(frontend, /classificationGroupV21\('genre'/);
-  assert.match(frontend, /classificationGroupV21\('theme'/);
-  assert.match(frontend, /classificationGroupV21\('tag'/);
+  const titleIndex = html.indexOf('name="title"');
+  const creatorIndex = html.indexOf('id="creatorField"');
+  assert.ok(titleIndex >= 0 && creatorIndex > titleIndex && creatorIndex - titleIndex < 400);
+  assert.match(detail, /group\("genre", "ジャンル"\)/);
+  assert.match(detail, /group\("theme", "テーマ"\)/);
+  assert.match(detail, /group\("tag", "タグ"\)/);
 });
 
-test('V21 safety modules load before import orchestration and are syntax-checked', () => {
-  const v21 = appEntry.indexOf("import './app-v21-ai-classification.js';");
-  const v211 = appEntry.indexOf("import './app-v211-classification-review-safety.js';");
-  const v20 = appEntry.indexOf("import './app-v20-import-orchestrator.js';");
-  assert.ok(v21 >= 0);
-  assert.ok(v211 > v21);
-  assert.ok(v20 > v211);
-  assert.match(packageJson.scripts['check:frontend'], /app-v21-ai-classification\.js/);
-  assert.match(packageJson.scripts['check:frontend'], /app-v211-classification-review-safety\.js/);
+test('作品ダイアログとAI分類フォームはlabelSuggestions datalistを共有する', () => {
+  assert.match(html, /id="labelSuggestions"/);
+  assert.match(html, /name="genre" list="labelSuggestions"/);
+  assert.match(dialogs, /formLabels/);
 });
 
 test('bulk unclassified plan requires staged, resumable, reviewed updates', () => {

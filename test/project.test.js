@@ -39,12 +39,14 @@ test('主要UIとエクスポート形式が存在する', async () => {
 });
 
 test('媒体別の入力支援とPCクイック編集を持つ', async () => {
-  const app = await read('public/app-v02.js');
-  assert.match(app, /const MEDIA_CONFIG/);
-  for (const unit of ['ページ','巻','分','話']) assert.match(app, new RegExp(unit));
-  assert.match(app, /quickEditForm/);
-  assert.match(app, /creatorLabelText/);
-  assert.match(app, /workDraftNotice/);
+  const format = await read('public/core/format.js');
+  const detail = await read('public/views/detail.js');
+  const dialogs = await read('public/views/dialogs.js');
+  assert.match(format, /export const MEDIA_CONFIG/);
+  for (const unit of ['ページ', '巻', '分', '話']) assert.match(format, new RegExp(unit));
+  assert.match(detail, /quickEditForm/);
+  assert.match(dialogs, /creatorField/);
+  assert.match(dialogs, /workDraftNotice/);
 });
 
 test('進捗の矛盾をサーバー側でも拒否する', async () => {

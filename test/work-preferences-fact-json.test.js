@@ -30,30 +30,32 @@ test('AIのJSON取込は事実情報だけをホワイトリスト化する', as
 });
 
 test('個別JSONはファイルではなくコピーと貼り付けで扱う', async () => {
-  const source = await read('public/app-v13.js');
-  assert.match(source, /プロンプト＋JSONをコピー/);
-  assert.match(source, /AIから返ったJSON/);
+  const source = await read('public/views/detail.js');
+  const html = await read('public/index.html');
+  assert.match(html, /プロンプト＋JSONをコピー/);
+  assert.match(html, /AIから返ったJSON/);
   assert.match(source, /navigator\.clipboard/);
-  assert.match(source, /data-v13-fact-import/);
-  assert.doesNotMatch(source, /type=["']file["']/);
+  assert.match(source, /data-fact-import/);
+  assert.doesNotMatch(html, /type=["']file["']/);
 });
 
 test('お気に入りと評価で絞り込みと並び替えができる', async () => {
   const route = await read('src/routes/library-v13.ts');
-  const frontend = await read('public/app-v13.js');
+  const store = await read('public/core/store.js');
+  const html = await read('public/index.html');
   assert.match(route, /json_extract\(w\.metadata_json, '\$\.favorite'\)/);
   assert.match(route, /favorite_first/);
   assert.match(route, /rating_exact/);
   assert.match(route, /rating_asc/);
-  assert.match(frontend, /filterFavorite/);
-  assert.match(frontend, /filterRatingExact/);
-  assert.match(frontend, /お気に入り・評価順/);
+  assert.match(html, /filterFavorite/);
+  assert.match(html, /filterRatingExact/);
+  assert.match(html, /お気に入り・評価順/);
+  assert.match(store, /favorite_first: /);
 });
 
 test('一覧は評価の温度とお気に入りの栞で色分けする', async () => {
-  const css = await read('public/v13-work-tools.css');
-  assert.match(css, /v13-rating-1/);
-  assert.match(css, /v13-rating-5/);
-  assert.match(css, /v13-favorite-mark/);
-  assert.match(css, /棚の温度|temperature-legend/);
+  const css = await read('public/styles/app.css');
+  assert.match(css, /\.rating\{/);
+  assert.match(css, /\.favorite-mark\{/);
+  assert.match(css, /\.rating-picker button\.is-on/);
 });

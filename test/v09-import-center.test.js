@@ -34,7 +34,7 @@ test('APIは作成・アップロード・検証・反映・取消を分離す�
 });
 
 test('設定画面でSHA-256確認後に分割アップロードする', async () => {
-  const app = await read('public/app-v09.js');
+  const app = await read('public/import-center/app-v09.js');
   assert.match(app, /crypto\.subtle\.digest\('SHA-256'/);
   assert.match(app, /IMPORT_CHUNK_SIZE = 25/);
   assert.match(app, /ステージングへ送る/);

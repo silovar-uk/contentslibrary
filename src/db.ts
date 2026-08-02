@@ -1,3 +1,4 @@
+import { normalizeText as normalizeTextShared } from "../public/shared/normalize.js";
 import type { Env, LabelKind, Member } from "./types";
 
 export const nowIso = (): string => new Date().toISOString();
@@ -7,14 +8,7 @@ export function normalizeEmail(value: string): string {
   return value.trim().toLowerCase();
 }
 
-export function normalizeText(value: string): string {
-  return value
-    .normalize("NFKC")
-    .toLowerCase()
-    .replace(/[ァ-ヶ]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0x60))
-    .replace(/\s+/g, " ")
-    .trim();
-}
+export const normalizeText = normalizeTextShared;
 
 export function escapeLike(value: string): string {
   return value.replace(/[\\%_]/g, (m) => `\\${m}`);

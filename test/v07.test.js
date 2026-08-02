@@ -5,16 +5,13 @@ import { readFile } from 'node:fs/promises';
 const root=new URL('../',import.meta.url);
 const read=(path)=>readFile(new URL(path,root),'utf8');
 
-test('v0.7の実用UIレイヤーを最後に読み込む',async()=>{
-  const entry=await read('public/app.js');
-  const css=await read('public/v07.css');
-  const app=await read('public/app-v07.js');
-  assert.match(entry,/app-v07\.js/);
-  assert.match(css,/practical daily-use layer/);
-  assert.match(css,/\.reading-card,\.reading-card:first-child/);
-  assert.match(css,/border-left:4px solid var\(--v07-accent\)/);
-  assert.match(app,/Notionのリストを取り込む/);
-  assert.match(app,/v07-card-footer/);
+test('ホームはNotion単発取込と作品カードの進捗表示を持つ',async()=>{
+  const home=await read('public/views/home.js');
+  const html=await read('public/index.html');
+  const library=await read('public/views/library.js');
+  assert.match(html,/Notionのリストを取り込む/);
+  assert.match(home,/\/api\/admin\/notion-import/);
+  assert.match(library,/card-footer/);
 });
 
 test('Notion最新20件を整形済みデータとして保持する',async()=>{

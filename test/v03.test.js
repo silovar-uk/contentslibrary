@@ -22,9 +22,10 @@ test('保存ビューは所有者条件と既知の検索キーに限定され�
 });
 
 test('検索UIは保存ビューと分類候補を持つ', async () => {
-  const source = await read('public/app-v03.js');
+  const source = await read('public/views/library.js');
+  const html = await read('public/index.html');
   assert.match(source, /saveCurrentView/);
   assert.match(source, /\/api\/saved-views/);
   assert.match(source, /\/api\/labels/);
-  assert.match(source, /複数語はAND検索/);
+  assert.match(html, /複数語はAND検索/);
 });

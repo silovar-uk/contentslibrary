@@ -6,7 +6,7 @@ const root = new URL('../', import.meta.url);
 const read = (path) => readFile(new URL(path, root), 'utf8');
 
 test('ステージングは25件ずつ最後まで自動で進み、100件ごとに休止する', async () => {
-  const source = await read('public/app-v20-import-orchestrator.js');
+  const source = await read('public/import-center/app-v20-import-orchestrator.js');
   assert.match(source, /IMPORT_V20_CHECKPOINT_SIZE = 100/);
   assert.match(source, /IMPORT_V20_STAGE_CHUNK = 25/);
   assert.match(source, /IMPORT_V20_CHECKPOINT_DELAY_MS/);
@@ -16,14 +16,14 @@ test('ステージングは25件ずつ最後まで自動で進み、100件ごと
 });
 
 test('本番反映は20件ずつ最大100件で確認を挟む', async () => {
-  const source = await read('public/app-v20-import-orchestrator.js');
+  const source = await read('public/import-center/app-v20-import-orchestrator.js');
   assert.match(source, /IMPORT_V20_COMMIT_CHUNK = 20/);
   assert.match(source, /IMPORT_V20_COMMIT_CALLS/);
   assert.match(source, /call<IMPORT_V20_COMMIT_CALLS/);
 });
 
 test('通信待ちを無期限にせず、保存位置から再開する', async () => {
-  const source = await read('public/app-v20-import-orchestrator.js');
+  const source = await read('public/import-center/app-v20-import-orchestrator.js');
   assert.match(source, /AbortController/);
   assert.match(source, /IMPORT_V20_REQUEST_TIMEOUT = 30_000/);
   assert.match(source, /batch\.staged_works/);
@@ -32,7 +32,7 @@ test('通信待ちを無期限にせず、保存位置から再開する', async
 });
 
 test('一時停止、描画待機、操作中表示を備える', async () => {
-  const source = await read('public/app-v20-import-orchestrator.js');
+  const source = await read('public/import-center/app-v20-import-orchestrator.js');
   assert.match(source, /pauseImportChunk/);
   assert.match(source, /現在処理中の\$\{unit\}が終わり次第停止/);
   assert.match(source, /requestAnimationFrame/);
@@ -42,9 +42,8 @@ test('一時停止、描画待機、操作中表示を備える', async () => {
 
 test('旧制御を読み込まず統合制御だけを使う', async () => {
   const app = await read('public/app.js');
-  const ui = app.indexOf("import './app-v18-refined-ui.js'");
-  const style = app.indexOf("import './v20-import-style.js'");
-  const orchestrator = app.indexOf("import './app-v20-import-orchestrator.js'");
-  const bootstrap = app.indexOf("import './app-v16-bootstrap.js'");
-  assert.ok(ui >= 0 && style > ui && orchestrator > style && bootstrap > orchestrator);
+  const style = app.indexOf('import "./import-center/v20-import-style.js"');
+  const orchestrator = app.indexOf('import "./import-center/app-v20-import-orchestrator.js"');
+  assert.ok(style >= 0 && orchestrator > style);
+  assert.ok(!app.includes("app-v18-refined-ui") && !app.includes("app-v16-bootstrap"));
 });

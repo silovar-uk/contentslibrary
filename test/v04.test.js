@@ -38,12 +38,12 @@ test('メモの手動並び替えAPIを所有者単位で持つ',async()=>{
 });
 
 test('詳細ペインに編集削除と評価差分表示を追加する',async()=>{
-  const app=await read('public/app-v04.js');
-  assert.match(app,/data-v4-edit-note/);
-  assert.match(app,/data-v4-delete-note/);
-  assert.match(app,/data-v4-edit-experience/);
-  assert.match(app,/data-v4-delete-experience/);
+  const app=await read('public/views/detail.js');
+  assert.match(app,/data-edit-note/);
+  assert.match(app,/data-delete-note/);
+  assert.match(app,/data-edit-experience/);
+  assert.match(app,/data-delete-experience/);
   assert.match(app,/ratingDelta/);
   assert.match(app,/初回 .*最新/);
-  assert.match(app,/data-v4-move-note/);
+  assert.match(app,/data-move-note/);
 });

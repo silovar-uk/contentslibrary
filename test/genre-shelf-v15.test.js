@@ -48,23 +48,23 @@ test('棚から主ジャンルと複数状態で作品一覧を絞り込む', as
 });
 
 test('ジャンル棚をホームに表示し一覧へ接続する', async () => {
-  const app = await read('public/app-v15-genre-shelf.js');
-  const entry = await read('public/app.js');
-  const css = await read('public/v15-genre-shelf.css');
-  assert.match(entry, /app-v15-genre-shelf\.js/);
-  assert.match(app, /あなたのジャンル棚/);
-  assert.match(app, /\/api\/insights\/genres\?scope=/);
-  assert.match(app, /genre_id/);
-  assert.match(app, /want,owned_unread/);
-  assert.match(app, /v15-shelf-filter-chip/);
-  assert.match(css, /v15-shelf-grid/);
+  const html = await read('public/index.html');
+  const home = await read('public/views/home.js');
+  const store = await read('public/core/store.js');
+  const css = await read('public/styles/app.css');
+  assert.match(html, /あなたのジャンル棚/);
+  // 全件常駐しているため、棚の集計はサーバー往復せずクライアント側で計算する。
+  assert.match(store, /export function shelfData/);
+  assert.match(home, /shelfNavigateToGenre/);
+  assert.match(home, /shelfFilterChip/);
+  assert.match(css, /\.shelf-grid/);
   assert.match(css, /var\(--genre-color\)/);
   assert.match(css, /prefers-reduced-motion/);
 });
 
 test('作品数分のDOMを作らず象徴的な背表紙数へ制限する', async () => {
-  const app = await read('public/app-v15-genre-shelf.js');
-  assert.match(app, /Math\.min\(8/);
-  assert.match(app, /spineCountV15/);
-  assert.doesNotMatch(app, /Array\.from\(\{ length: genre\.count/);
+  const home = await read('public/views/home.js');
+  assert.match(home, /Math\.min\(8/);
+  assert.match(home, /spineCount/);
+  assert.doesNotMatch(home, /Array\.from\(\{ length: genre\.count/);
 });

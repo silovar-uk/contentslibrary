@@ -1,0 +1,25 @@
+/* デザイントークン。--line/--muted等の名前はimport-center(v09/v10/v20)のCSSが
+   フォールバック付きvar()で参照しているため、名前を変えない。 */
+:root {
+  --bg: #f4f1ea;
+  --surface: #fffdfa;
+  --surface-2: #ece8de;
+  --ink: #201f1c;
+  --muted: #6c7068;
+  --line: #d8d2c5;
+  --accent: #295f4e;
+  --accent-2: #dce9e1;
+  --warm: #a66b2d;
+  --danger: #9a342e;
+  --danger-bg: #f6e3df;
+  --shadow: 0 18px 55px rgba(39, 41, 35, 0.1);
+  --shadow-sm: 0 6px 20px rgba(39, 41, 35, 0.07);
+  --radius: 18px;
+  --radius-sm: 11px;
+  --topbar: 76px;
+  --mobile-nav: 74px;
+  font-family: "Inter", "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", Meiryo, system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+  font-synthesis: none;
+}

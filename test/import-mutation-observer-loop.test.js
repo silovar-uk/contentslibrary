@@ -44,7 +44,7 @@ function runScript(window, source) {
 const tick = (window, ms = 0) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
 test('取込センターの行装飾は自己発火せず収束する(app-v20-import-orchestrator.js)', async () => {
-  const source = await read('public/app-v20-import-orchestrator.js');
+  const source = await read('public/import-center/app-v20-import-orchestrator.js');
   const dom = new JSDOM(`<!doctype html><body>
     <div id="importCenterCard">
       <div class="import-actions"></div>
@@ -86,7 +86,7 @@ test('取込センターの行装飾は自己発火せず収束する(app-v20-im
 });
 
 test('取込進捗パネルの更新は自己発火せず収束する(app-v10.js)', async () => {
-  const source = await read('public/app-v10.js');
+  const source = await read('public/import-center/app-v10.js');
   // messageを「反映中…」にしてstate:'committing'の分岐へ導く。この分岐だけが
   // progressStartedAtをセットし、progressTick()のelapsed.textContent更新
   // (else if(progressStartedAt)側、signatureの対象外なので発火のたびに

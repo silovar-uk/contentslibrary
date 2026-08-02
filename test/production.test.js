@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { createHash } from 'node:crypto';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -86,12 +85,14 @@ test('本番必須値が欠けている場合は設定生成を停止する',asy
   }finally{await rm(cwd,{recursive:true,force:true});}
 });
 
-test('起動用インラインスクリプトのCSPハッシュが実コードと一致する',async()=>{
+test('起動時のインラインスクリプトを持たず、CSPにハッシュ許可を残さない',async()=>{
+  // 旧起動画面の帳尻合わせスクリプト(インライン<script>)は再構築で廃止した。
+  // インラインスクリプトが無くなった以上、CSPにsha256ハッシュ許可を残す理由もない。
   const [html,http]=await Promise.all([read('public/index.html'),read('src/http.ts')]);
   const inlineScripts=[...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)];
-  assert.equal(inlineScripts.length,1,'許可対象外のインラインスクリプトを増やさない');
-  const hash=createHash('sha256').update(inlineScripts[0][1],'utf8').digest('base64');
-  assert.match(http,new RegExp(`script-src 'self' 'sha256-${hash.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}'`));
+  assert.equal(inlineScripts.length,0,'インラインスクリプトを持たない');
+  assert.match(http,/script-src 'self'/);
+  assert.doesNotMatch(http,/script-src[^\n]*sha256/);
   assert.doesNotMatch(http,/script-src[^\n]*unsafe-inline/);
 });
 
