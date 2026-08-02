@@ -1,7 +1,7 @@
 import { $, $$, esc, toast, fmtDate, fmtDateTime, setBusy } from "../core/dom.js";
 import { api } from "../core/api.js";
-import { TYPE_LABELS, NOTE_LABELS, mediaConfig, statusLabel, stars } from "../core/format.js";
-import { state, setSelectedDetail, closeDetail, toggleQuickEdit, subscribe, removeWorkFromStore } from "../core/store.js";
+import { TYPE_LABELS, NOTE_LABELS, mediaConfig, statusLabel, stars, ratingLevel } from "../core/format.js";
+import { state, setSelectedDetail, selectWork, setView, closeDetail, toggleQuickEdit, subscribe, removeWorkFromStore } from "../core/store.js";
 import { openWorkDialog, openNoteDialog, openExperienceDialog } from "./dialogs.js";
 
 let noteSort = "manual";
@@ -9,6 +9,8 @@ let experienceSort = "desc";
 let factContext = null;
 
 export async function openDetail(id) {
+  selectWork(id);
+  setView("library");
   try {
     const data = await api(`/api/works/${encodeURIComponent(id)}`);
     setSelectedDetail(data);
@@ -64,10 +66,6 @@ function notesMarkup(notes) {
     <div class="note-item-list">${items.length ? items.map((note, index) => `<article class="note-block" data-note-id="${esc(note.id)}"><header><div><span class="note-kind">${esc(NOTE_LABELS[note.note_type] || note.note_type)}</span>${note.position ? `<span>${esc(note.position)}</span>` : ""}<time>${fmtDateTime(note.updated_at)}</time></div><div class="item-actions">${noteSort === "manual" ? `<button type="button" data-move-note="up" data-note-id="${esc(note.id)}" ${index === 0 ? "disabled" : ""} aria-label="上へ移動">↑</button><button type="button" data-move-note="down" data-note-id="${esc(note.id)}" ${index === items.length - 1 ? "disabled" : ""} aria-label="下へ移動">↓</button>` : ""}<button type="button" data-edit-note="${esc(note.id)}">編集</button><button type="button" class="danger-link" data-delete-note="${esc(note.id)}">削除</button></div></header><p>${esc(note.content)}</p></article>`).join("") : '<p class="muted">メモはまだありません。</p>'}</div>`;
 }
 
-function ratingLevel(work) {
-  const value = Number(work?.rating);
-  return Number.isFinite(value) && value > 0 ? Math.min(5, Math.max(1, Math.round(value))) : 0;
-}
 function preferenceMarkup(work) {
   const favorite = work?.metadata?.favorite === true;
   const level = ratingLevel(work);
@@ -343,9 +341,6 @@ export function initDetail() {
   subscribe(renderDetail);
 
   document.addEventListener("click", async (event) => {
-    const workId = event.target.closest("[data-work-id]")?.dataset.workId;
-    if (workId && !event.target.closest("#workList")) { document.dispatchEvent(new CustomEvent("app:open-work", { detail: workId })); }
-
     if (event.target.closest("[data-action='toggle-quick-edit']")) { toggleQuickEdit(); if (state.quickEditOpen) setTimeout(() => $('#quickEditForm select[name="status"]')?.focus(), 20); }
     if (event.target.closest("[data-action='add-experience']")) openExperienceDialog(state.selectedId);
     if (event.target.closest("[data-action='delete-work']")) void deleteSelectedWork();
@@ -395,5 +390,4 @@ export function initDetail() {
   });
 
   document.addEventListener("app:refresh-detail", (event) => { if (event.detail) void openDetail(event.detail); });
-  document.addEventListener("app:open-work", (event) => { if (event.detail) void openDetail(event.detail); });
 }

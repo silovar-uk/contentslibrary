@@ -27,5 +27,5 @@ test('CSSは<head>で通常のlinkとして先読みする(JSによる段階的�
 
 test('作品カードは選択中だけ強調し、通常時は浮かせない', async () => {
   const css = await read('public/styles/app.css');
-  assert.match(css, /\.work-card\[aria-current="true"\]\{border-color:var\(--accent\);box-shadow:inset 4px 0 var\(--accent\)\}/);
+  assert.match(css, /\.work-card\.is-current\{border-color:var\(--accent\);box-shadow:inset 4px 0 var\(--accent\)\}/);
 });

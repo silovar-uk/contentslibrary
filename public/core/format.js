@@ -1,3 +1,5 @@
+import { esc } from "./dom.js";
+
 export const TYPE_LABELS = { book: "本", manga: "漫画", movie: "映画", anime: "アニメ", drama: "ドラマ", other: "その他" };
 export const STATUS_LABELS = { want: "読みたい・見たい", owned_unread: "所持・未読", active: "進行中", completed: "完了", paused: "一時停止", dropped: "中断" };
 export const NOTE_LABELS = { quick: "一言", summary: "要約", impression: "印象", quote: "引用", idea: "自分の考え", connection: "接続", progress: "途中メモ" };
@@ -14,6 +16,20 @@ export const MEDIA_CONFIG = {
 export const mediaConfig = (type) => MEDIA_CONFIG[type] || MEDIA_CONFIG.other;
 export const statusLabel = (type, status) => mediaConfig(type).statuses[status] || STATUS_LABELS[status] || status;
 export const stars = (rating) => (rating ? `★ ${Number(rating).toFixed(1)}` : "未評価");
+
+export function ratingLevel(work) {
+  const value = Number(work?.rating);
+  return Number.isFinite(value) && value > 0 ? Math.min(5, Math.max(1, Math.round(value))) : 0;
+}
+
+// カード上で詳細を開かずに5段階評価を付けられるようにする、一覧・ホーム共通のミニ★コントロール。
+export function cardRatingMarkup(work) {
+  const level = ratingLevel(work);
+  const id = esc(work.id);
+  return `<div class="card-rating" role="group" aria-label="評価">${[1, 2, 3, 4, 5]
+    .map((v) => `<button type="button" class="card-star ${v <= level ? "is-on" : ""}" data-card-rating="${id}" data-rating-value="${v}" aria-label="評価 ${v}" aria-pressed="${level === v}">★</button>`)
+    .join("")}</div>`;
+}
 
 // src/domain/genre-catalog-v15.ts と同じ23ジャンル・同じ色。ジャンル棚とラベル色分けの両方で使う。
 export const GENRE_CATALOG = [

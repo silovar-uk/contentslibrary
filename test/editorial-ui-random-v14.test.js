@@ -5,14 +5,16 @@ import { readFile } from 'node:fs/promises';
 const root = new URL('../', import.meta.url);
 const read = (path) => readFile(new URL(path, root), 'utf8');
 
-test('次に読む作品のランダムAPIを公開する', async () => {
+// v14時点ではサーバーAPI(/api/random-work)で1件だけ抽選していたが、全件常駐化に伴い
+// クライアント側のpickRandomWorks(store.js)へ移した。サーバー往復がなくなり待ち時間ゼロになる。
+test('次に読む作品の抽選はサーバー往復せずクライアント側で行う', async () => {
   const index = await read('src/index.ts');
-  const route = await read('src/routes/random-v14.ts');
-  assert.match(index, /\/api\/random-work/);
-  assert.match(index, /getRandomWorkV14/);
-  assert.match(route, /owned_unread','want/);
-  assert.match(route, /ORDER BY RANDOM\(\) LIMIT 1/);
-  assert.match(route, /exclude/);
+  const store = await read('public/core/store.js');
+  const home = await read('public/views/home.js');
+  assert.doesNotMatch(index, /\/api\/random-work/);
+  assert.match(store, /export function pickRandomWorks/);
+  assert.match(home, /export function drawRandomPicks/);
+  assert.match(home, /pickRandomWorks/);
 });
 
 test('ブランドアイコンをfaviconと左上で共用する', async () => {

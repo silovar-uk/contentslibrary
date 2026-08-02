@@ -1,9 +1,10 @@
 import { $, $$ } from "./core/dom.js";
 import { api } from "./core/api.js";
 import { toast } from "./core/dom.js";
-import { state, loadSnapshot, subscribe, setView, closeDetail, toggleQuickEdit } from "./core/store.js";
+import { ratingLevel } from "./core/format.js";
+import { state, loadSnapshot, setWorkRating, subscribe, setView, closeDetail, toggleQuickEdit } from "./core/store.js";
 import { renderAccount, loadAdmin } from "./views/admin.js";
-import { initHome, loadHome } from "./views/home.js";
+import { initHome, loadHome, drawRandomPicks } from "./views/home.js";
 import { initLibrary, renderWorkList } from "./views/library.js";
 import { initDetail, openDetail } from "./views/detail.js";
 import { initDialogs, openWorkDialog } from "./views/dialogs.js";
@@ -25,6 +26,22 @@ function bindShell() {
     if (action === "open-settings") setView("settings");
     if (action === "open-admin") { setView("admin"); await loadAdmin(); }
 
+    const openWork = event.target.closest("[data-open-work]")?.dataset.openWork;
+    if (openWork) { void openDetail(openWork); return; }
+
+    const ratingButton = event.target.closest("[data-card-rating]");
+    if (ratingButton) {
+      const id = ratingButton.dataset.cardRating;
+      const clickedValue = Number(ratingButton.dataset.ratingValue);
+      const current = ratingLevel(state.works.get(id));
+      const nextValue = clickedValue === current ? null : clickedValue;
+      try {
+        await setWorkRating(id, nextValue);
+        toast(nextValue == null ? "評価を未設定にしました。" : `評価を${nextValue}にしました。`);
+      } catch (error) { toast(error.message, "error"); }
+      return;
+    }
+
     const mobile = event.target.closest("[data-mobile-view]")?.dataset.mobileView;
     if (mobile === "home") setView("home");
     if (mobile === "library") { setView("library"); $("#globalSearch").focus(); }
@@ -36,7 +53,7 @@ function bindShell() {
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") { event.preventDefault(); $("#globalSearch").focus(); }
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
       const form = document.activeElement?.closest("form");
-      if (form && ["workForm", "quickEditForm", "noteForm", "inlineNoteForm", "experienceForm"].includes(form.id)) { event.preventDefault(); form.requestSubmit(); }
+      if (form && (["workForm", "quickEditForm", "noteForm", "inlineNoteForm", "experienceForm"].includes(form.id) || form.hasAttribute("data-card-note-form"))) { event.preventDefault(); form.requestSubmit(); }
     }
     if (!typing && !event.metaKey && !event.ctrlKey && event.key.toLowerCase() === "n") { event.preventDefault(); openWorkDialog(false); }
     if (!typing && !event.metaKey && !event.ctrlKey && event.key.toLowerCase() === "e" && state.selected) {
@@ -68,6 +85,7 @@ async function init() {
 
     await Promise.all([loadHome(), loadSnapshot()]);
     renderWorkList();
+    drawRandomPicks();
     applyView();
   } catch (error) {
     toast(error.message, "error");

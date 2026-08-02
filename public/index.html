@@ -26,7 +26,7 @@
         <kbd>⌘K</kbd>
       </label>
       <div class="top-actions">
-        <button class="ghost-button" type="button" data-action="draw-random" title="所持・未読から1つ引く">本を引く</button>
+        <button class="ghost-button" type="button" data-action="draw-random" title="所持・未読から5冊引き直す">引き直す</button>
         <button class="ghost-button" type="button" data-action="open-admin" id="adminButton" hidden>管理</button>
         <button class="primary-button compact" type="button" data-action="open-work-dialog">＋ 追加</button>
         <button class="avatar-button" type="button" data-action="open-settings" aria-label="設定"><span id="avatarInitial">U</span></button>
@@ -49,12 +49,12 @@
                 <option value="all">すべての作品</option>
               </select>
             </label>
-            <button type="button" class="draw-button" data-action="draw-random">本を引く</button>
+            <button type="button" class="draw-button" data-action="draw-random">引き直す</button>
           </div>
         </div>
-        <div id="randomStage" class="random-stage" aria-live="polite">
-          <div class="random-empty">まだ引いていません。ボタンを押すと1作品だけ現れます。</div>
-        </div>
+      </div>
+      <div id="randomStage" class="random-stage" aria-live="polite">
+        <div class="random-empty">読み込み中…</div>
       </div>
 
       <div id="securityBanner" class="security-banner" hidden></div>

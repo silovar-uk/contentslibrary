@@ -6,7 +6,6 @@ import { addExperience, addNote, createWork, deleteWork, getWork, updateWork } f
 import { exportDataV12 } from "./routes/export-v12";
 import { getWorkFactPackageV21, importWorkFactsV21 } from "./routes/work-tools-v21";
 import { updateWorkPreferenceV131 } from "./routes/work-preference-v131";
-import { getRandomWorkV14 } from "./routes/random-v14";
 import { getGenreInsightsV15 } from "./routes/genre-insights-v15";
 import { createSavedView, deleteSavedView, listLabelSuggestions, listSavedViews, updateSavedView } from "./routes/library-v03";
 import { listWorksV13 } from "./routes/library-v13";
@@ -56,7 +55,6 @@ async function handleApi(request: Request, env: Env, auth: AuthContext): Promise
   if (request.method === "GET" && path === "/api/works") return listWorksV13(request, env, auth);
   if (request.method === "GET" && path === "/api/library/snapshot") return getLibrarySnapshot(env, auth);
   if (request.method === "POST" && path === "/api/works") return createWork(request, env, auth);
-  if (request.method === "GET" && path === "/api/random-work") return getRandomWorkV14(request, env, auth);
   if (request.method === "GET" && path === "/api/insights/genres") return getGenreInsightsV15(request, env, auth);
   if (["GET", "POST"].includes(request.method) && path === "/api/export") return exportDataV12(request, env, auth);
   if (request.method === "GET" && path === "/api/labels") return listLabelSuggestions(request, env, auth);

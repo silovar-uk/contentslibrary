@@ -39,6 +39,28 @@ export function upsertWork(work) {
   notify();
 }
 
+// カード上の★から呼ぶ。詳細パネル用のupdatePreference(detail.js)とは別に、
+// 選択中でない作品の評価も更新できるようにする(state.selectedを巻き込まない)。
+export async function setWorkRating(workId, rating) {
+  const work = state.works.get(String(workId));
+  if (!work) return;
+  try {
+    const data = await api(`/api/works/${encodeURIComponent(workId)}/preferences`, {
+      method: "PATCH",
+      body: JSON.stringify({ version: Number(work.version), rating })
+    });
+    upsertWork(data.work);
+    if (state.selectedId === String(workId) && state.selected) {
+      state.selected = { ...state.selected, work: data.work };
+      notify();
+    }
+    return data.work;
+  } catch (error) {
+    if (error.status === 409) await loadSnapshot();
+    throw error;
+  }
+}
+
 export function removeWorkFromStore(id) {
   state.works.delete(String(id));
   if (state.selectedId === id) {
@@ -70,9 +92,15 @@ export function selectWork(id) {
   notify();
 }
 
+// /api/works/:id はスナップショット専用の計算列(has_notes/experience_count)を持たないSELECT *を返す。
+// そのまま素通しすると、詳細を開いただけで一覧側のhas_notesが消える(既存バグ)。
+// 同じレスポンスに含まれるnotes/experiencesの件数から都度計算し直すことで、往復なしに正しい値へ揃える。
 export function setSelectedDetail(detail) {
   state.selected = detail;
-  if (detail?.work) state.works.set(String(detail.work.id), detail.work);
+  if (detail?.work) {
+    const work = { ...detail.work, has_notes: (detail.notes?.length ?? 0) > 0, experience_count: detail.experiences?.length ?? 0 };
+    state.works.set(String(work.id), work);
+  }
   notify();
 }
 
@@ -210,6 +238,25 @@ export function shelfData(scope = "all") {
     }))
     .sort((a, b) => b.count - a.count || (catalogOrder.get(a.id) ?? 999) - (catalogOrder.get(b.id) ?? 999));
   return { scope, total, classified: total - unclassified, unclassified, genres };
+}
+
+const RANDOM_PICK_PREDICATE = {
+  next: (w) => w.type === "book" && ["owned_unread", "want"].includes(w.status),
+  owned_unread: (w) => w.type === "book" && w.status === "owned_unread",
+  want: (w) => w.type === "book" && w.status === "want",
+  book: (w) => w.type === "book",
+  all: () => true
+};
+
+// 全件常駐のため、ホームの自動抽選もサーバー往復なしでクライアント側から選ぶ(待ち時間ゼロ)。
+// 除外込みで母数が足りない場合は、直近履歴を無視して母数いっぱいから選び直す(空表示を避ける)。
+export function pickRandomWorks(scope = "next", count = 5, excludeIds = []) {
+  const predicate = RANDOM_PICK_PREDICATE[scope] || RANDOM_PICK_PREDICATE.next;
+  const pool = allWorks().filter(predicate);
+  const excluded = new Set(excludeIds.map(String));
+  const fresh = pool.filter((w) => !excluded.has(String(w.id)));
+  const source = fresh.length >= Math.min(count, pool.length) ? fresh : pool;
+  return [...source].sort(() => Math.random() - 0.5).slice(0, count);
 }
 
 // ジャンル棚とは別に、テーマ(1作品が複数持つ)は先頭1件だけを見ずに全件をカウントする。

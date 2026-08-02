@@ -53,9 +53,10 @@ test('お気に入りと評価で絞り込みと並び替えができる', async
   assert.match(store, /favorite_first: /);
 });
 
-test('一覧は評価の温度とお気に入りの栞で色分けする', async () => {
+test('一覧はカード上の★とお気に入りの栞で色分けする', async () => {
   const css = await read('public/styles/app.css');
-  assert.match(css, /\.rating\{/);
+  assert.match(css, /\.card-star\{/);
+  assert.match(css, /\.card-star\.is-on/);
   assert.match(css, /\.favorite-mark\{/);
   assert.match(css, /\.rating-picker button\.is-on/);
 });

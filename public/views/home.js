@@ -1,7 +1,7 @@
 import { $, $$, esc, toast, fmtDate } from "../core/dom.js";
 import { api } from "../core/api.js";
-import { TYPE_LABELS, statusLabel, stars } from "../core/format.js";
-import { state, shelfData, themeData, subscribe, setView, selectWork } from "../core/store.js";
+import { TYPE_LABELS, statusLabel, cardRatingMarkup } from "../core/format.js";
+import { state, shelfData, themeData, pickRandomWorks, subscribe, setView } from "../core/store.js";
 import { shelfNavigateToGenre, shelfClearGenreFilter, themeNavigate } from "./library.js";
 
 let homeData = null;
@@ -9,48 +9,45 @@ let shelfScope = "all";
 let shelfExpanded = false;
 let activeShelfFilter = null;
 let themeExpanded = false;
+let randomPicks = [];
 
 const RANDOM_HISTORY_KEY = "sakuhin-log-random-history-v2";
 function previousRandomIds() {
   try { const v = JSON.parse(localStorage.getItem(RANDOM_HISTORY_KEY) || "[]"); return Array.isArray(v) ? v.slice(0, 9) : []; } catch { return []; }
 }
-function rememberRandom(id) {
-  localStorage.setItem(RANDOM_HISTORY_KEY, JSON.stringify([id, ...previousRandomIds().filter((v) => v !== id)].slice(0, 9)));
+function rememberRandom(ids) {
+  const merged = [...ids, ...previousRandomIds().filter((v) => !ids.includes(v))].slice(0, 9);
+  localStorage.setItem(RANDOM_HISTORY_KEY, JSON.stringify(merged));
 }
 
-function randomResultMarkup(work) {
+function randomPickMarkup(work) {
   const genre = work.labels?.genre?.[0] || "未分類";
   const canStart = work.type === "book" && ["want", "owned_unread"].includes(work.status);
-  return `<article class="random-result">
-    <p class="random-result-label">TODAY'S PICK</p>
-    <span class="genre-badge">${esc(genre)}</span>
-    <h2>${esc(work.title)}</h2>
-    <p class="random-result-creator">${esc(work.creator || "作者情報なし")}</p>
-    <p class="random-result-status">${esc(statusLabel(work.type, work.status))}</p>
-    <div class="random-result-actions">
-      ${canStart ? `<button type="button" class="primary-button" data-random-start="${esc(work.id)}" data-version="${Number(work.version)}">読み始める</button>` : ""}
-      <button type="button" class="secondary-button" data-work-id="${esc(work.id)}">詳細を見る</button>
-      <button type="button" class="text-button" data-action="draw-random">もう一度</button>
-    </div>
+  return `<article class="random-pick-card">
+    <button type="button" class="random-pick-main" data-open-work="${esc(work.id)}">
+      <span class="genre-badge">${esc(genre)}</span>
+      <h3>${esc(work.title)}</h3>
+      <p class="random-pick-creator">${esc(work.creator || "作者情報なし")}</p>
+      <p class="random-pick-status">${esc(statusLabel(work.type, work.status))}</p>
+    </button>
+    ${canStart ? `<button type="button" class="text-button" data-random-start="${esc(work.id)}" data-version="${Number(work.version)}">読み始める</button>` : ""}
   </article>`;
 }
 
-async function drawRandom() {
+function renderRandomPicks() {
   const stage = $("#randomStage");
+  stage.innerHTML = randomPicks.length
+    ? `<div class="random-pick-grid">${randomPicks.map(randomPickMarkup).join("")}</div>`
+    : '<div class="random-empty">この棚には候補がありません。抽選する棚を切り替えるか、作品を追加してください。</div>';
+}
+
+// ホーム表示のたびに呼ばれる棚と違い、これは初回読み込みと「引き直す」を押したときだけ呼ぶ。
+// ★の変更などstate全体のnotifyに反応してしまうと、そのたびに5冊の顔ぶれが変わってしまうため。
+export function drawRandomPicks() {
   const scope = $("#randomScope").value;
-  stage.innerHTML = '<div class="random-loading">棚をたどっています…</div>';
-  try {
-    const exclude = previousRandomIds().join(",");
-    const data = await api(`/api/random-work?scope=${encodeURIComponent(scope)}&exclude=${encodeURIComponent(exclude)}`);
-    if (!data.item) {
-      stage.innerHTML = '<div class="random-empty">この棚には候補がありません。抽選する棚を切り替えるか、作品を追加してください。</div>';
-      return;
-    }
-    rememberRandom(String(data.item.id));
-    stage.innerHTML = randomResultMarkup(data.item);
-  } catch (error) {
-    stage.innerHTML = `<div class="random-empty is-error">作品を引けませんでした。${esc(error.message)}</div>`;
-  }
+  randomPicks = pickRandomWorks(scope, 5, previousRandomIds());
+  if (randomPicks.length) rememberRandom(randomPicks.map((w) => String(w.id)));
+  renderRandomPicks();
 }
 
 async function startFromRandom(button) {
@@ -123,22 +120,27 @@ function shelfScopeStatuses(scope) {
 
 export function renderHome() {
   const h = homeData || {};
+  // ★はstate.worksを直接更新する(home.jsのデータはloadHome時点のスナップショット)ため、
+  // 描画のたびにstate.worksから引き直して最新の評価を表示する。
   $("#readingStrip").innerHTML = (h.reading || []).length
-    ? h.reading.map((work) => `
-    <button class="reading-card" data-work-id="${esc(work.id)}">
-      <div class="type-status"><span class="type-pill">${TYPE_LABELS[work.type]}</span><span>${statusLabel(work.type, work.status)}</span><span class="rating">${stars(work.rating)}</span></div>
-      <h3>${esc(work.title)}</h3><div class="creator">${esc(work.creator || "")}</div>
-      <p class="short-note">${esc(work.short_note || "一言メモはまだありません。")}</p>
-      ${work.progress_total ? `<div class="progress-track"><span style="width:${Math.min(100, Math.max(0, ((work.progress_current || 0) / work.progress_total) * 100))}%"></span></div>` : ""}
-    </button>`).join("")
+    ? h.reading.map((item) => state.works.get(String(item.id)) || item).map((work) => `
+    <article class="reading-card" data-work-id="${esc(work.id)}">
+      <button type="button" class="reading-card-main" data-open-work="${esc(work.id)}">
+        <div class="type-status"><span class="type-pill">${TYPE_LABELS[work.type]}</span><span>${statusLabel(work.type, work.status)}</span></div>
+        <h3>${esc(work.title)}</h3><div class="creator">${esc(work.creator || "")}</div>
+        <p class="short-note">${esc(work.short_note || "一言メモはまだありません。")}</p>
+        ${work.progress_total ? `<div class="progress-track"><span style="width:${Math.min(100, Math.max(0, ((work.progress_current || 0) / work.progress_total) * 100))}%"></span></div>` : ""}
+      </button>
+      ${cardRatingMarkup(work)}
+    </article>`).join("")
     : '<div class="empty-state">現在読書中の本はありません。<br><button class="text-button" data-action="open-work-dialog">本を追加する</button></div>';
 
   $("#recentNotes").innerHTML = (h.recentNotes || []).length
-    ? h.recentNotes.map((n) => `<button class="note-item" data-work-id="${esc(n.work_id)}"><time>${fmtDate(n.updated_at)}</time><strong>${esc(n.title)}</strong><p>${esc(n.content).slice(0, 150)}</p></button>`).join("")
+    ? h.recentNotes.map((n) => `<button class="note-item" data-open-work="${esc(n.work_id)}"><time>${fmtDate(n.updated_at)}</time><strong>${esc(n.title)}</strong><p>${esc(n.content).slice(0, 150)}</p></button>`).join("")
     : '<div class="empty-state">読書メモはまだありません。</div>';
 
   $("#recentOther").innerHTML = (h.recentOther || []).length
-    ? h.recentOther.map((w) => `<button class="compact-item" data-work-id="${esc(w.id)}"><span class="type-pill">${TYPE_LABELS[w.type]}</span><span><strong>${esc(w.title)}</strong><p>${esc(w.short_note || statusLabel(w.type, w.status))}</p></span><time>${fmtDate(w.updated_at)}</time></button>`).join("")
+    ? h.recentOther.map((w) => `<button class="compact-item" data-open-work="${esc(w.id)}"><span class="type-pill">${TYPE_LABELS[w.type]}</span><span><strong>${esc(w.title)}</strong><p>${esc(w.short_note || statusLabel(w.type, w.status))}</p></span><time>${fmtDate(w.updated_at)}</time></button>`).join("")
     : '<div class="empty-state">映画・漫画・アニメの記録はまだありません。</div>';
 
   const s = h.stats || {};
@@ -189,11 +191,11 @@ async function setupNotionImport() {
 }
 
 export function initHome() {
-  subscribe(renderShelf);
-  subscribe(renderThemeShelf);
-  $("#randomScope").addEventListener("change", drawRandom);
+  // renderHome()は末尾でrenderShelf/renderThemeShelfも呼ぶため、個別の購読は不要(二重描画を避ける)。
+  subscribe(renderHome);
+  $("#randomScope").addEventListener("change", drawRandomPicks);
   document.addEventListener("click", (event) => {
-    if (event.target.closest("[data-action='draw-random']")) { event.preventDefault(); void drawRandom(); return; }
+    if (event.target.closest("[data-action='draw-random']")) { event.preventDefault(); drawRandomPicks(); return; }
     const start = event.target.closest("[data-random-start]");
     if (start) { event.preventDefault(); void startFromRandom(start); return; }
 

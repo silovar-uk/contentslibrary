@@ -1,12 +1,13 @@
-import { $, $$, esc, toast } from "../core/dom.js";
+import { $, $$, esc, toast, setBusy } from "../core/dom.js";
 import { api } from "../core/api.js";
-import { TYPE_LABELS, STATUS_LABELS, stars, statusLabel } from "../core/format.js";
-import { state, setFilters, clearFilters as clearStoreFilters, filteredWorks, subscribe, setView, selectWork } from "../core/store.js";
+import { TYPE_LABELS, STATUS_LABELS, statusLabel, cardRatingMarkup } from "../core/format.js";
+import { state, setFilters, clearFilters as clearStoreFilters, filteredWorks, subscribe, setView, upsertWork } from "../core/store.js";
 
 let savedViews = [];
 let defaultApplied = false;
 const selectedWorkIds = new Set();
 let selectionMode = false;
+const openNoteCardIds = new Set();
 
 function syncControlsFromState() {
   $("#filterType").value = state.filters.type;
@@ -46,6 +47,18 @@ function progressText(work) {
   return `${work.progress_current}${total}${work.unit_label ? ` ${work.unit_label}` : ""}`;
 }
 
+// メモ入力欄は既定で閉じておく(全作品分を開くと一覧が読めなくなるため)。「メモ」ボタンで開く。
+function cardNoteMarkup(work) {
+  const open = openNoteCardIds.has(work.id);
+  return `<div class="card-note-row">
+    <button type="button" class="text-button" data-toggle-card-note="${esc(work.id)}">${open ? "閉じる" : work.has_notes ? "メモを見る・書き足す" : "＋ メモ"}</button>
+    ${open ? `<form class="card-note-form" data-card-note-form="${esc(work.id)}">
+      <textarea name="content" rows="2" placeholder="あとから戻りたい言葉を残す(Ctrl/⌘+Enterで保存)"></textarea>
+      <button type="submit" class="primary-button">書き足す</button>
+    </form>` : ""}
+  </div>`;
+}
+
 export function renderWorkList() {
   const list = $("#workList");
   const works = filteredWorks();
@@ -54,15 +67,20 @@ export function renderWorkList() {
         const labels = [...(work.labels?.genre || []), ...(work.labels?.theme || []), ...(work.labels?.tag || [])];
         const favorite = work.metadata?.favorite === true;
         const selected = selectedWorkIds.has(work.id);
+        const isCurrent = state.selectedId === work.id;
         return `
-    <button class="work-card ${selectionMode ? "is-selectable" : ""} ${selectionMode && selected ? "is-selected" : ""}" data-work-id="${esc(work.id)}" aria-current="${state.selectedId === work.id}" ${selectionMode ? `aria-pressed="${selected}"` : ""}>
-      ${selectionMode ? `<span class="select-mark" aria-hidden="true">${selected ? "✓" : ""}</span>` : ""}
-      <div class="work-card-top"><div class="type-status"><span class="type-pill">${TYPE_LABELS[work.type]}</span><span>${statusLabel(work.type, work.status)}</span></div><span class="rating">${favorite ? "<span class=\"favorite-mark\">栞</span>" : ""}${stars(work.rating)}</span></div>
-      <h3>${esc(work.title)}</h3><div class="creator">${esc(work.creator || "")}</div>
-      ${work.short_note ? `<p class="short-note">${esc(work.short_note)}</p>` : ""}
-      <div class="label-row">${labels.slice(0, 6).map(labelChip).join("")}</div>
-      <div class="card-footer"><span>${progressText(work) ? esc(progressText(work)) : "進捗未設定"}</span></div>
-    </button>`;
+    <article class="work-card ${selectionMode ? "is-selectable" : ""} ${selectionMode && selected ? "is-selected" : ""} ${isCurrent ? "is-current" : ""}" data-work-id="${esc(work.id)}">
+      <button type="button" class="work-card-main" data-open-work="${esc(work.id)}" aria-current="${isCurrent}" ${selectionMode ? `aria-pressed="${selected}"` : ""}>
+        ${selectionMode ? `<span class="select-mark" aria-hidden="true">${selected ? "✓" : ""}</span>` : ""}
+        <div class="work-card-top"><div class="type-status"><span class="type-pill">${TYPE_LABELS[work.type]}</span><span>${statusLabel(work.type, work.status)}</span></div>${favorite ? '<span class="favorite-mark">栞</span>' : ""}</div>
+        <h3>${esc(work.title)}</h3><div class="creator">${esc(work.creator || "")}</div>
+        ${work.short_note ? `<p class="short-note">${esc(work.short_note)}</p>` : ""}
+        <div class="label-row">${labels.slice(0, 6).map(labelChip).join("")}</div>
+        <div class="card-footer"><span>${progressText(work) ? esc(progressText(work)) : "進捗未設定"}</span></div>
+      </button>
+      ${cardRatingMarkup(work)}
+      ${cardNoteMarkup(work)}
+    </article>`;
       }).join("")
     : '<div class="empty-state">条件に合う作品がありません。<br>検索条件を減らすか、新しい作品を追加してください。</div>';
   $("#resultSummary").textContent = `${works.length}件を表示`;
@@ -318,19 +336,16 @@ export function initLibrary() {
     if (action === "finish") setSelectionMode(false);
   });
 
+  // 選択モード中はカード内のどこを押しても選択トグルにする(★・メモ操作も含めて)。
+  // 通常時はここでは何もせず、data-open-workの委譲(app.js)にクリックを委ねる。
   $("#workList").addEventListener("click", (event) => {
     const card = event.target.closest(".work-card[data-work-id]");
-    if (!card) return;
-    if (selectionMode) {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      const id = card.dataset.workId;
-      if (selectedWorkIds.has(id)) selectedWorkIds.delete(id); else selectedWorkIds.add(id);
-      renderWorkList();
-      return;
-    }
-    setView("library");
-    selectWork(card.dataset.workId);
+    if (!card || !selectionMode) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const id = card.dataset.workId;
+    if (selectedWorkIds.has(id)) selectedWorkIds.delete(id); else selectedWorkIds.add(id);
+    renderWorkList();
   }, true);
 
   document.addEventListener("keydown", (event) => {
@@ -356,6 +371,30 @@ export function initLibrary() {
       setView("library");
     }
     if (event.target.closest("[data-action='toggle-filters']")) $(".filter-panel").classList.toggle("is-open");
+
+    const toggleNote = event.target.closest("[data-toggle-card-note]")?.dataset.toggleCardNote;
+    if (toggleNote) {
+      const opening = !openNoteCardIds.has(toggleNote);
+      if (opening) openNoteCardIds.add(toggleNote); else openNoteCardIds.delete(toggleNote);
+      renderWorkList();
+      if (opening) setTimeout(() => $(`[data-card-note-form="${toggleNote}"] textarea`)?.focus(), 20);
+    }
+  });
+
+  document.addEventListener("submit", async (event) => {
+    const workId = event.target.closest("[data-card-note-form]")?.dataset.cardNoteForm;
+    if (!workId) return;
+    event.preventDefault();
+    const form = event.target;
+    if (!form.content.value.trim()) { form.content.focus(); return; }
+    const button = $('[type="submit"]', form);
+    setBusy(button, true, "書き足し中…");
+    try {
+      await api(`/api/works/${encodeURIComponent(workId)}/notes`, { method: "POST", body: JSON.stringify({ note_type: "quick", content: form.content.value }) });
+      const work = state.works.get(workId);
+      if (work) upsertWork({ ...work, has_notes: true });
+      toast("メモを書き足しました。");
+    } catch (e) { toast(e.message, "error"); setBusy(button, false); }
   });
 
   syncControlsFromState();
