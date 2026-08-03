@@ -6,6 +6,7 @@ import { addExperience, addNote, createWork, deleteWork, getWork, updateWork } f
 import { exportDataV12 } from "./routes/export-v12";
 import { getWorkFactPackageV21, importWorkFactsV21 } from "./routes/work-tools-v21";
 import { updateWorkPreferenceV131 } from "./routes/work-preference-v131";
+import { updateWorkCover } from "./routes/work-cover";
 import { getGenreInsightsV15 } from "./routes/genre-insights-v15";
 import { createSavedView, deleteSavedView, listLabelSuggestions, listSavedViews, updateSavedView } from "./routes/library-v03";
 import { listWorksV13 } from "./routes/library-v13";
@@ -77,6 +78,8 @@ async function handleApi(request: Request, env: Env, auth: AuthContext): Promise
   }
   m = match(path, /^\/api\/works\/([^/]+)\/preferences$/);
   if (m && request.method === "PATCH") return updateWorkPreferenceV131(request, env, auth, decodeURIComponent(m[1]!));
+  m = match(path, /^\/api\/works\/([^/]+)\/cover$/);
+  if (m && request.method === "PATCH") return updateWorkCover(request, env, auth, decodeURIComponent(m[1]!));
   m = match(path, /^\/api\/works\/([^/]+)\/fact-package$/);
   if (m && request.method === "GET") return getWorkFactPackageV21(env, auth, decodeURIComponent(m[1]!));
   m = match(path, /^\/api\/works\/([^/]+)\/facts$/);

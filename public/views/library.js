@@ -2,6 +2,7 @@ import { $, $$, esc, toast, skeletonCards } from "../core/dom.js";
 import { api } from "../core/api.js";
 import { TYPE_LABELS, STATUS_LABELS, statusLabel, cardRatingMarkup, cardNoteMarkup } from "../core/format.js";
 import { state, setFilters, clearFilters as clearStoreFilters, filteredWorks, subscribe, setView, openNoteCardIds } from "../core/store.js";
+import { isAllowedCoverUrl, coverThumbUrl } from "../core/cover.js";
 
 let savedViews = [];
 let defaultApplied = false;
@@ -67,15 +68,22 @@ export function renderWorkList() {
         const favorite = work.metadata?.favorite === true;
         const selected = selectedWorkIds.has(work.id);
         const isCurrent = state.selectedId === work.id;
+        const cover = work.metadata?.cover_url;
+        const coverImg = cover && isAllowedCoverUrl(cover)
+          ? `<img class="work-cover-thumb" src="${esc(coverThumbUrl(cover))}" alt="" loading="lazy" decoding="async" width="44" height="62">`
+          : "";
         return `
     <article class="work-card ${selectionMode ? "is-selectable" : ""} ${selectionMode && selected ? "is-selected" : ""} ${isCurrent ? "is-current" : ""}" data-work-id="${esc(work.id)}">
       <button type="button" class="work-card-main" data-open-work="${esc(work.id)}" aria-current="${isCurrent}" ${selectionMode ? `aria-pressed="${selected}"` : ""}>
         ${selectionMode ? `<span class="select-mark" aria-hidden="true">${selected ? "✓" : ""}</span>` : ""}
-        <div class="work-card-top"><div class="type-status"><span class="type-pill">${TYPE_LABELS[work.type]}</span><span>${statusLabel(work.type, work.status)}</span></div>${favorite ? '<span class="favorite-mark">栞</span>' : ""}</div>
-        <h3>${esc(work.title)}</h3><div class="creator">${esc(work.creator || "")}</div>
-        ${work.short_note ? `<p class="short-note">${esc(work.short_note)}</p>` : ""}
-        <div class="label-row">${labels.slice(0, 6).map(labelChip).join("")}</div>
-        <div class="card-footer"><span>${progressText(work) ? esc(progressText(work)) : "進捗未設定"}</span></div>
+        ${coverImg}
+        <div class="work-card-body">
+          <div class="work-card-top"><div class="type-status"><span class="type-pill">${TYPE_LABELS[work.type]}</span><span>${statusLabel(work.type, work.status)}</span></div>${favorite ? '<span class="favorite-mark">栞</span>' : ""}</div>
+          <h3>${esc(work.title)}</h3><div class="creator">${esc(work.creator || "")}</div>
+          ${work.short_note ? `<p class="short-note">${esc(work.short_note)}</p>` : ""}
+          <div class="label-row">${labels.slice(0, 6).map(labelChip).join("")}</div>
+          <div class="card-footer"><span>${progressText(work) ? esc(progressText(work)) : "進捗未設定"}</span></div>
+        </div>
       </button>
       ${cardRatingMarkup(work)}
       ${cardNoteMarkup(work, openNoteCardIds.has(work.id))}

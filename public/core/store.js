@@ -61,6 +61,27 @@ export async function setWorkRating(workId, rating) {
   }
 }
 
+// 表紙URLの設定・削除(coverUrl=nullで削除)。setWorkRatingと同じ形。
+export async function setWorkCover(workId, coverUrl) {
+  const work = state.works.get(String(workId));
+  if (!work) return;
+  try {
+    const data = await api(`/api/works/${encodeURIComponent(workId)}/cover`, {
+      method: "PATCH",
+      body: JSON.stringify({ version: Number(work.version), cover_url: coverUrl })
+    });
+    upsertWork(data.work);
+    if (state.selectedId === String(workId) && state.selected) {
+      state.selected = { ...state.selected, work: data.work };
+      notify();
+    }
+    return data.work;
+  } catch (error) {
+    if (error.status === 409) await loadSnapshot();
+    throw error;
+  }
+}
+
 // カード上の「メモ」開閉状態。一覧・ホームの両方のカードで共有する(同じ作品は同じ開閉状態にする)。
 export const openNoteCardIds = new Set();
 

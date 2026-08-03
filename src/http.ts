@@ -34,7 +34,7 @@ const SECURITY_HEADERS: Record<string, string> = {
     "default-src 'self'",
     "script-src 'self'",
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data:",
+    "img-src 'self' data: https://m.media-amazon.com https://images-na.ssl-images-amazon.com",
     "font-src 'self'",
     "connect-src 'self'",
     "object-src 'none'",

@@ -1,7 +1,8 @@
 import { $, $$, esc, toast, fmtDate, fmtDateTime, setBusy } from "../core/dom.js";
 import { api } from "../core/api.js";
 import { TYPE_LABELS, NOTE_LABELS, mediaConfig, statusLabel, stars, ratingLevel } from "../core/format.js";
-import { state, setSelectedDetail, selectWork, setView, closeDetail, toggleQuickEdit, subscribe, removeWorkFromStore } from "../core/store.js";
+import { state, setSelectedDetail, selectWork, setView, closeDetail, toggleQuickEdit, subscribe, removeWorkFromStore, setWorkCover } from "../core/store.js";
+import { isAllowedCoverUrl, candidateCoverUrlFromWork, extractAsinFromProductUrl, amazonCoverUrlFromIsbn10, probeCoverImage } from "../core/cover.js";
 import { openWorkDialog, openNoteDialog, openExperienceDialog } from "./dialogs.js";
 
 let noteSort = "manual";
@@ -64,6 +65,28 @@ function notesMarkup(notes) {
   const items = sortedNotes(notes);
   return `<div class="section-heading-row"><h3>メモ</h3><label>並び順<select id="noteSortSelect"><option value="manual" ${noteSort === "manual" ? "selected" : ""}>自分の順番</option><option value="newest" ${noteSort === "newest" ? "selected" : ""}>更新が新しい順</option><option value="oldest" ${noteSort === "oldest" ? "selected" : ""}>作成が古い順</option><option value="type" ${noteSort === "type" ? "selected" : ""}>メモ種別順</option></select></label></div>
     <div class="note-item-list">${items.length ? items.map((note, index) => `<article class="note-block" data-note-id="${esc(note.id)}"><header><div><span class="note-kind">${esc(NOTE_LABELS[note.note_type] || note.note_type)}</span>${note.position ? `<span>${esc(note.position)}</span>` : ""}<time>${fmtDateTime(note.updated_at)}</time></div><div class="item-actions">${noteSort === "manual" ? `<button type="button" data-move-note="up" data-note-id="${esc(note.id)}" ${index === 0 ? "disabled" : ""} aria-label="上へ移動">↑</button><button type="button" data-move-note="down" data-note-id="${esc(note.id)}" ${index === items.length - 1 ? "disabled" : ""} aria-label="下へ移動">↓</button>` : ""}<button type="button" data-edit-note="${esc(note.id)}">編集</button><button type="button" class="danger-link" data-delete-note="${esc(note.id)}">削除</button></div></header><p>${esc(note.content)}</p></article>`).join("") : '<p class="muted">メモはまだありません。</p>'}</div>`;
+}
+
+// 表紙はAmazon商品画像への直リンク(個人の記録用途)。本・漫画はISBNがあれば1クリックで取得でき、
+// それ以外は商品ページURL/画像URLを貼る。取得の可否は貼り付け側(cover.jsのprobeCoverImage)で確認する。
+function coverMarkup(work) {
+  const cover = work?.metadata?.cover_url;
+  if (cover && isAllowedCoverUrl(cover)) {
+    return `<section class="detail-section cover-section">
+      <div class="cover-current"><img src="${esc(cover)}" alt="" loading="lazy" decoding="async" class="detail-cover-image"><button type="button" class="ghost-button" data-action="remove-cover">表紙を削除</button></div>
+    </section>`;
+  }
+  const candidate = candidateCoverUrlFromWork(work);
+  return `<section class="detail-section cover-section">
+    <h3>表紙</h3>
+    <p class="muted">Amazonの商品画像を登録できます(個人の記録用)。</p>
+    ${candidate ? `<button type="button" class="secondary-button" data-action="fetch-cover-from-isbn" data-cover-candidate="${esc(candidate)}">ISBNから表紙を取得</button>` : ""}
+    <form class="cover-form" data-cover-form>
+      <input type="text" name="cover_input" placeholder="Amazon商品ページURL、または画像URLを貼り付け">
+      <button type="submit" class="primary-button">設定</button>
+    </form>
+    <div class="form-error cover-error" role="alert"></div>
+  </section>`;
 }
 
 function preferenceMarkup(work) {
@@ -146,6 +169,7 @@ export function renderDetail() {
       <h2>${esc(w.title)}</h2><div class="creator">${esc(w.creator || "")}</div>
       <div class="detail-actions"><button class="ghost-button desktop-only" data-action="toggle-quick-edit">${state.quickEditOpen ? "編集を閉じる" : "クイック編集"}</button><button class="ghost-button" data-action="edit-work">すべて編集</button><button class="ghost-button" data-action="open-fact-dialog">AIで事実を補完</button><button class="ghost-button" data-action="close-detail">閉じる</button></div>
     </div>
+    ${coverMarkup(w)}
     ${preferenceMarkup(w)}
     ${quickEditMarkup(w)}
     ${inlineNoteFormMarkup(w.id)}
@@ -183,6 +207,53 @@ async function updatePreference(changes) {
     setSelectedDetail(data);
     toast(changes.favorite !== undefined ? (changes.favorite ? "お気に入りに追加しました。" : "お気に入りを外しました。") : changes.rating == null ? "評価を未設定にしました。" : `評価を${changes.rating}にしました。`);
   } catch (error) { toast(error.message, "error"); }
+}
+
+// 表紙が無いISBN/ASINは200・43バイトの透明GIFを返す(onerrorが発火しない)ため、
+// 保存する前に一度実際に読み込んで確認する(cover.jsのprobeCoverImage)。
+async function applyCoverUrl(workId, candidateUrl, statusEl, button) {
+  statusEl.textContent = "";
+  setBusy(button, true, "確認中…");
+  try {
+    const ok = await probeCoverImage(candidateUrl);
+    if (!ok) {
+      statusEl.textContent = "この画像は取得できませんでした。商品ページで画像を右クリックし「画像アドレスをコピー」から貼り付けてください。";
+      return;
+    }
+    await setWorkCover(workId, candidateUrl);
+    toast("表紙を設定しました。");
+  } catch (e) {
+    statusEl.textContent = e.message;
+  } finally {
+    setBusy(button, false);
+  }
+}
+
+async function submitCoverForm(form) {
+  const workId = state.selectedId;
+  const raw = form.cover_input.value.trim();
+  const errorEl = $(".cover-error", form.closest(".cover-section"));
+  errorEl.textContent = "";
+  if (!raw) { errorEl.textContent = "URLを入力してください。"; return; }
+  const button = $('[type="submit"]', form);
+
+  if (isAllowedCoverUrl(raw)) { await applyCoverUrl(workId, raw, errorEl, button); return; }
+  const asin = extractAsinFromProductUrl(raw);
+  if (asin) {
+    const candidate = amazonCoverUrlFromIsbn10(asin);
+    if (candidate) { await applyCoverUrl(workId, candidate, errorEl, button); return; }
+    // ASINの抽出自体は成功したが、書籍のISBN-10形式(数字10桁)ではない = 映像作品など自動化できない対象。
+    errorEl.textContent = "この商品は自動で取得できません。商品ページで画像を右クリックし「画像アドレスをコピー」から貼り付けてください。";
+    return;
+  }
+  errorEl.textContent = "Amazonの商品ページURL、またはAmazon画像のURLを貼り付けてください。";
+}
+
+async function removeCover() {
+  const work = state.selected?.work;
+  if (!work) return;
+  try { await setWorkCover(work.id, null); toast("表紙を削除しました。"); }
+  catch (e) { toast(e.message, "error"); }
 }
 
 async function submitInlineNote(form) {
@@ -346,6 +417,12 @@ export function initDetail() {
     if (event.target.closest("[data-action='delete-work']")) void deleteSelectedWork();
     if (event.target.closest("[data-action='close-detail']")) closeDetail();
     if (event.target.closest("[data-action='open-fact-dialog']")) void openFactDialog();
+    if (event.target.closest("[data-action='remove-cover']")) void removeCover();
+    const fetchCoverButton = event.target.closest("[data-action='fetch-cover-from-isbn']");
+    if (fetchCoverButton) {
+      const errorEl = $(".cover-error", fetchCoverButton.closest(".cover-section"));
+      void applyCoverUrl(state.selectedId, fetchCoverButton.dataset.coverCandidate, errorEl, fetchCoverButton);
+    }
 
     const editNote = event.target.closest("[data-edit-note]")?.dataset.editNote;
     if (editNote) { const note = (state.selected?.notes || []).find((n) => n.id === editNote); if (note) openNoteDialog(state.selectedId, note); }
@@ -377,6 +454,7 @@ export function initDetail() {
   document.addEventListener("submit", (event) => {
     if (event.target.id === "quickEditForm") { event.preventDefault(); submitQuickEdit(event.target); }
     if (event.target.id === "inlineNoteForm") { event.preventDefault(); submitInlineNote(event.target); }
+    if (event.target.hasAttribute("data-cover-form")) { event.preventDefault(); void submitCoverForm(event.target); }
   });
 
   document.addEventListener("input", (event) => {
