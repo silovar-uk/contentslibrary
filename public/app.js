@@ -8,6 +8,7 @@ import { initHome, loadHome, drawRandomPicks } from "./views/home.js";
 import { initLibrary, renderWorkList } from "./views/library.js";
 import { initDetail, openDetail } from "./views/detail.js";
 import { initDialogs, openWorkDialog } from "./views/dialogs.js";
+import { initBulkAdd } from "./views/bulk-add.js";
 import "./views/admin.js";
 
 function applyView() {
@@ -101,6 +102,7 @@ async function init() {
 
     bindShell();
     initDialogs();
+    initBulkAdd();
     initLibrary();
     initHome();
     initDetail();
