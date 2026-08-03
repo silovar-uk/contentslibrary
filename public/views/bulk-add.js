@@ -2,6 +2,7 @@ import { $, $$, toast } from "../core/dom.js";
 import { api } from "../core/api.js";
 import { state, loadSnapshot, setView } from "../core/store.js";
 import { normalizeText } from "../shared/normalize.js";
+import { requestCloseDialog } from "./dialogs.js";
 
 const MAX_TITLES = 10;
 const MAX_TITLE_LENGTH = 300;
@@ -204,12 +205,25 @@ function setBulkAddBusy(busy, progressText = "") {
   if (!busy) renderBulkAddPreview();
 }
 
-function openBulkAddDialog() {
+async function openBulkAddDialog() {
   const dialog = $("#bulkAddDialog");
   const form = $("#bulkAddForm");
   if (!dialog || !form || bulkAddBusy) return;
+
   const singleDialog = $("#workDialog");
-  if (singleDialog?.open) singleDialog.close();
+  if (singleDialog?.open) {
+    requestCloseDialog(singleDialog);
+    if (singleDialog.open) return;
+  }
+
+  if (!state.loaded) {
+    try { await loadSnapshot(); }
+    catch (error) {
+      toast(`登録済みタイトルを確認できませんでした。${error.message}`, "error");
+      return;
+    }
+  }
+
   form.reset();
   const draft = readDraft();
   if (draft) {
@@ -240,6 +254,7 @@ async function submitBulkAdd(form) {
   const status = form.status.value;
   const failures = [];
   let created = 0;
+  let refreshError = null;
   setBulkAddBusy(true, `追加中 0 / ${analysis.candidates.length}`);
 
   for (const [index, item] of analysis.candidates.entries()) {
@@ -259,7 +274,10 @@ async function submitBulkAdd(form) {
     setBulkAddBusy(true, `追加中 ${index + 1} / ${analysis.candidates.length}`);
   }
 
-  if (created) await loadSnapshot();
+  if (created) {
+    try { await loadSnapshot(); }
+    catch (error) { refreshError = error; }
+  }
   setBulkAddBusy(false);
 
   if (!failures.length) {
@@ -268,14 +286,15 @@ async function submitBulkAdd(form) {
     $("#bulkAddDialog").close();
     setView("library");
     const excluded = analysis.items.length - analysis.candidates.length;
-    toast(`${created}件を追加しました。${excluded ? `${excluded}件は重複などのため除外しました。` : ""}`);
+    if (refreshError) toast(`${created}件を追加しました。一覧の更新に失敗したため、画面を再読み込みしてください。`, "error");
+    else toast(`${created}件を追加しました。${excluded ? `${excluded}件は重複などのため除外しました。` : ""}`);
     return;
   }
 
   form.titles.value = failures.map((item) => item.title).join("\n");
   saveDraft(form);
-  $("#bulkAddError").textContent = `${created}件を追加し、${failures.length}件は追加できませんでした。失敗したタイトルだけ残しています。`;
   renderBulkAddPreview();
+  $("#bulkAddError").textContent = `${created}件を追加し、${failures.length}件は追加できませんでした。失敗したタイトルだけ残しています。`;
   toast(`${created}件を追加、${failures.length}件は要確認です。`, "error");
 }
 
@@ -296,7 +315,7 @@ export function initBulkAdd() {
   document.addEventListener("click", (event) => {
     if (event.target.closest("[data-action='open-bulk-add']")) {
       event.preventDefault();
-      openBulkAddDialog();
+      void openBulkAddDialog();
     }
   });
 }
