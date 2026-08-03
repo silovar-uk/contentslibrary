@@ -76,7 +76,7 @@ function bindShell() {
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") { event.preventDefault(); $("#globalSearch").focus(); }
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
       const form = document.activeElement?.closest("form");
-      if (form && (["workForm", "quickEditForm", "noteForm", "inlineNoteForm", "experienceForm"].includes(form.id) || form.hasAttribute("data-card-note-form"))) { event.preventDefault(); form.requestSubmit(); }
+      if (form && (["workForm", "bulkAddForm", "quickEditForm", "noteForm", "inlineNoteForm", "experienceForm"].includes(form.id) || form.hasAttribute("data-card-note-form"))) { event.preventDefault(); form.requestSubmit(); }
     }
     if (!typing && !event.metaKey && !event.ctrlKey && event.key.toLowerCase() === "n") { event.preventDefault(); openWorkDialog(false); }
     if (!typing && !event.metaKey && !event.ctrlKey && event.key.toLowerCase() === "e" && state.selected) {
