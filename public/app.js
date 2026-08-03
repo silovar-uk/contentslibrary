@@ -8,6 +8,7 @@ import { initHome, loadHome, drawRandomPicks } from "./views/home.js";
 import { initLibrary, renderWorkList } from "./views/library.js";
 import { initDetail, openDetail } from "./views/detail.js";
 import { initDialogs, openWorkDialog } from "./views/dialogs.js";
+import { initBulkAdd } from "./views/bulk-add.js";
 import "./views/admin.js";
 
 function applyView() {
@@ -75,7 +76,7 @@ function bindShell() {
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") { event.preventDefault(); $("#globalSearch").focus(); }
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
       const form = document.activeElement?.closest("form");
-      if (form && (["workForm", "quickEditForm", "noteForm", "inlineNoteForm", "experienceForm"].includes(form.id) || form.hasAttribute("data-card-note-form"))) { event.preventDefault(); form.requestSubmit(); }
+      if (form && (["workForm", "bulkAddForm", "quickEditForm", "noteForm", "inlineNoteForm", "experienceForm"].includes(form.id) || form.hasAttribute("data-card-note-form"))) { event.preventDefault(); form.requestSubmit(); }
     }
     if (!typing && !event.metaKey && !event.ctrlKey && event.key.toLowerCase() === "n") { event.preventDefault(); openWorkDialog(false); }
     if (!typing && !event.metaKey && !event.ctrlKey && event.key.toLowerCase() === "e" && state.selected) {
@@ -101,6 +102,7 @@ async function init() {
 
     bindShell();
     initDialogs();
+    initBulkAdd();
     initLibrary();
     initHome();
     initDetail();
