@@ -53,6 +53,15 @@ export function icon(name) {
   return `<svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[name] || ICONS.bookmark}</svg>`;
 }
 
+// 読み込み中に「該当なし」の空表示を誤って出さないための、カード形のスケルトンプレースホルダー。
+export function skeletonCards(count) {
+  return Array.from({ length: count }, () => '<article class="skeleton-card"><div class="skeleton-line is-title"></div><div class="skeleton-line"></div><div class="skeleton-line is-short"></div></article>').join("");
+}
+
+export function skeletonShelf(count) {
+  return Array.from({ length: count }, () => '<div class="skeleton-line skeleton-shelf"></div>').join("");
+}
+
 export const fmtDate = (value) =>
   value ? new Intl.DateTimeFormat("ja-JP", { year: "numeric", month: "short", day: "numeric" }).format(new Date(value)) : "";
 

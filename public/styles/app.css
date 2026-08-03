@@ -67,6 +67,8 @@ a{color:inherit}
 .random-pick-creator{color:var(--muted);margin:0 0 4px;font-size:13px}
 .random-pick-status{font-size:12px;color:var(--muted);margin:0}
 .random-pick-card>[data-random-start]{margin:0 18px 18px}
+.random-pick-card>.card-rating{margin-left:18px;margin-right:18px}
+.random-pick-card>.card-note-row{margin:0 18px 18px}
 
 .security-banner{background:var(--danger-bg);border:1px solid #dca59d;color:#6f2924;border-radius:14px;padding:14px 18px;margin-bottom:26px}
 
@@ -182,7 +184,7 @@ a{color:inherit}
 .selection-subactions,.selection-mainactions{display:flex;gap:8px;flex-wrap:wrap}
 
 .work-list{display:flex;flex-direction:column;gap:10px}
-.work-card{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:15px;padding:17px;transition:.15s ease;position:relative}
+.work-card{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:15px;padding:17px;transition:.15s ease;position:relative;content-visibility:auto;contain-intrinsic-size:auto 320px}
 .work-card.is-current{border-color:var(--accent);box-shadow:inset 4px 0 var(--accent)}
 .work-card.is-selectable{padding-left:44px}
 .select-mark{position:absolute;left:14px;top:14px;width:22px;height:22px;border:2px solid var(--line);border-radius:6px;display:grid;place-items:center;font-size:13px;font-weight:800;color:var(--accent)}
@@ -366,6 +368,17 @@ a{color:inherit}
 .toast{background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:11px;box-shadow:var(--shadow);font-size:13px;max-width:360px}
 .toast.error{background:var(--danger);color:#fff}
 .empty-state{border:1px dashed var(--line);border-radius:14px;padding:28px;text-align:center;color:var(--muted)}
+.load-more-button{width:100%;min-height:46px;margin-top:4px;border:1px dashed var(--line);border-radius:12px;background:none;color:var(--muted);font-weight:700}
+.load-more-button:hover{border-color:var(--accent);color:var(--accent)}
+
+/* --- 読み込み中のスケルトン --- */
+@keyframes skeleton-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skeleton-line{background:linear-gradient(90deg,var(--surface-2) 25%,var(--surface) 50%,var(--surface-2) 75%);background-size:200% 100%;animation:skeleton-shimmer 1.4s ease-in-out infinite;border-radius:6px;height:14px}
+.skeleton-line.is-title{height:18px;width:70%}
+.skeleton-line.is-short{width:40%}
+.skeleton-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;display:flex;flex-direction:column;gap:10px}
+.skeleton-shelf{border-radius:14px}
+.skeleton-shelf.skeleton-line{height:92px}
 
 /* --- レスポンシブ --- */
 @media(max-width:1199px){
@@ -428,4 +441,4 @@ a{color:inherit}
   .security-event>button{grid-column:2}
   .admin-table{min-width:720px}
 }
-@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation:none!important}}

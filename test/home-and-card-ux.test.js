@@ -35,11 +35,14 @@ test('openDetailは一覧表示へ切り替えたうえで詳細を取得する'
 
 test('作品カードは<article>+ボタンに分離し、★とメモ入力をボタンの外に置く', async () => {
   const library = await read('public/views/library.js');
+  const format = await read('public/core/format.js');
   assert.match(library, /<article class="work-card/);
   assert.match(library, /class="work-card-main"/);
   assert.match(library, /cardRatingMarkup\(work\)/);
-  assert.match(library, /data-toggle-card-note/);
-  assert.match(library, /data-card-note-form/);
+  assert.match(library, /cardNoteMarkup\(work, openNoteCardIds\.has\(work\.id\)\)/);
+  // カードのメモ入力は一覧・ホーム(抽選)共通のため、core/format.jsへ共有する
+  assert.match(format, /data-toggle-card-note/);
+  assert.match(format, /data-card-note-form/);
 });
 
 test('カードの★は選択モード中の作品選択トグルと衝突しない(捕捉フェーズはselectionMode時だけ介入する)', async () => {

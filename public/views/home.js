@@ -1,7 +1,7 @@
-import { $, $$, esc, toast, fmtDate } from "../core/dom.js";
+import { $, $$, esc, toast, fmtDate, skeletonCards, skeletonShelf } from "../core/dom.js";
 import { api } from "../core/api.js";
-import { TYPE_LABELS, statusLabel, cardRatingMarkup } from "../core/format.js";
-import { state, shelfData, themeData, pickRandomWorks, subscribe, setView } from "../core/store.js";
+import { TYPE_LABELS, statusLabel, cardRatingMarkup, cardNoteMarkup } from "../core/format.js";
+import { state, shelfData, themeData, pickRandomWorks, subscribe, setView, openNoteCardIds } from "../core/store.js";
 import { shelfNavigateToGenre, shelfClearGenreFilter, themeNavigate } from "./library.js";
 
 let homeData = null;
@@ -9,7 +9,7 @@ let shelfScope = "all";
 let shelfExpanded = false;
 let activeShelfFilter = null;
 let themeExpanded = false;
-let randomPicks = [];
+let randomPickIds = []; // ★を押しても顔ぶれが変わらないよう、IDだけ保持し表示のたびstate.worksから引く
 
 const RANDOM_HISTORY_KEY = "sakuhin-log-random-history-v2";
 function previousRandomIds() {
@@ -31,22 +31,29 @@ function randomPickMarkup(work) {
       <p class="random-pick-status">${esc(statusLabel(work.type, work.status))}</p>
     </button>
     ${canStart ? `<button type="button" class="text-button" data-random-start="${esc(work.id)}" data-version="${Number(work.version)}">読み始める</button>` : ""}
+    ${cardRatingMarkup(work)}
+    ${cardNoteMarkup(work, openNoteCardIds.has(work.id))}
   </article>`;
 }
 
+// randomPickIdsが指すIDをstate.worksから引き直して描画するだけの関数。抽選のやり直しはしない。
+// renderHome()の末尾から呼ぶことで、表示中(state.view==="home")のときだけ動く一括描画に乗せる。
 function renderRandomPicks() {
   const stage = $("#randomStage");
-  stage.innerHTML = randomPicks.length
-    ? `<div class="random-pick-grid">${randomPicks.map(randomPickMarkup).join("")}</div>`
+  if (!state.loaded) { stage.innerHTML = `<div class="random-pick-grid">${skeletonCards(5)}</div>`; return; }
+  const picks = randomPickIds.map((id) => state.works.get(id)).filter(Boolean);
+  stage.innerHTML = picks.length
+    ? `<div class="random-pick-grid">${picks.map(randomPickMarkup).join("")}</div>`
     : '<div class="random-empty">この棚には候補がありません。抽選する棚を切り替えるか、作品を追加してください。</div>';
 }
 
-// ホーム表示のたびに呼ばれる棚と違い、これは初回読み込みと「引き直す」を押したときだけ呼ぶ。
-// ★の変更などstate全体のnotifyに反応してしまうと、そのたびに5冊の顔ぶれが変わってしまうため。
+// ホーム表示のたびに呼ばれるrenderHome()と違い、抽選のやり直しは初回読み込みと
+// 「引き直す」を押したときだけ行う。★の変更などstate全体のnotifyに反応してしまうと、
+// そのたびに5冊の顔ぶれが変わってしまうため。
 export function drawRandomPicks() {
   const scope = $("#randomScope").value;
-  randomPicks = pickRandomWorks(scope, 5, previousRandomIds());
-  if (randomPicks.length) rememberRandom(randomPicks.map((w) => String(w.id)));
+  randomPickIds = pickRandomWorks(scope, 5, previousRandomIds()).map((w) => String(w.id));
+  if (randomPickIds.length) rememberRandom(randomPickIds);
   renderRandomPicks();
 }
 
@@ -76,6 +83,7 @@ function shelfItemMarkup(genre, maxCount, index) {
 function renderShelf() {
   const body = $("#shelfBody");
   const summary = $("#shelfSummary");
+  if (!state.loaded) { summary.innerHTML = ""; body.innerHTML = `<div class="shelf-grid">${skeletonShelf(8)}</div>`; return; }
   const data = shelfData(shelfScope);
   summary.innerHTML = `<span><strong>${data.total}</strong>対象作品</span><span><strong>${data.classified}</strong>分類済み</span><span><strong>${data.unclassified}</strong>未分類</span>`;
   const maxCount = Math.max(1, ...data.genres.map((g) => g.count));
@@ -96,6 +104,10 @@ function themeChipMarkup(theme) {
 function renderThemeShelf() {
   const body = $("#themeShelfBody");
   if (!body) return;
+  if (!state.loaded) {
+    body.innerHTML = `<div class="theme-chip-grid">${Array.from({ length: 6 }, () => '<div class="skeleton-line" style="width:80px;height:28px;border-radius:999px"></div>').join("")}</div>`;
+    return;
+  }
   const themes = themeData("all");
   if (!themes.length) { body.innerHTML = '<div class="shelf-empty">テーマが設定された作品はまだありません。</div>'; return; }
   const visible = themeExpanded ? themes : themes.slice(0, 12);
@@ -119,6 +131,7 @@ function shelfScopeStatuses(scope) {
 }
 
 export function renderHome() {
+  if (state.view !== "home") return; // 非表示ビューの再描画はしない
   const h = homeData || {};
   // ★はstate.worksを直接更新する(home.jsのデータはloadHome時点のスナップショット)ため、
   // 描画のたびにstate.worksから引き直して最新の評価を表示する。
@@ -154,6 +167,7 @@ export function renderHome() {
   renderShelf();
   renderShelfFilterChip();
   renderThemeShelf();
+  renderRandomPicks(); // 抽選のやり直しはしない。★・メモ変更時の表示更新だけをここに乗せる
 }
 
 export async function loadHome() {

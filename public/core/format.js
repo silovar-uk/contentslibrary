@@ -31,6 +31,18 @@ export function cardRatingMarkup(work) {
     .join("")}</div>`;
 }
 
+// メモ入力欄は既定で閉じておく(全カード分を開くと読めなくなるため)。「メモ」ボタンで開く。
+// 開閉状態はcore/store.jsのopenNoteCardIdsで一覧・ホーム共通に持つため、ここではisOpenを受け取るだけにする。
+export function cardNoteMarkup(work, isOpen) {
+  return `<div class="card-note-row">
+    <button type="button" class="text-button" data-toggle-card-note="${esc(work.id)}">${isOpen ? "閉じる" : work.has_notes ? "メモを見る・書き足す" : "＋ メモ"}</button>
+    ${isOpen ? `<form class="card-note-form" data-card-note-form="${esc(work.id)}">
+      <textarea name="content" rows="2" placeholder="あとから戻りたい言葉を残す(Ctrl/⌘+Enterで保存)"></textarea>
+      <button type="submit" class="primary-button">書き足す</button>
+    </form>` : ""}
+  </div>`;
+}
+
 // src/domain/genre-catalog-v15.ts と同じ23ジャンル・同じ色。ジャンル棚とラベル色分けの両方で使う。
 export const GENRE_CATALOG = [
   { id: "fiction", name: "小説", color: "#8E3B46" },

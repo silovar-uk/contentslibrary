@@ -54,7 +54,13 @@
         </div>
       </div>
       <div id="randomStage" class="random-stage" aria-live="polite">
-        <div class="random-empty">読み込み中…</div>
+        <div class="random-pick-grid">
+          <article class="skeleton-card"><div class="skeleton-line is-title"></div><div class="skeleton-line"></div><div class="skeleton-line is-short"></div></article>
+          <article class="skeleton-card"><div class="skeleton-line is-title"></div><div class="skeleton-line"></div><div class="skeleton-line is-short"></div></article>
+          <article class="skeleton-card"><div class="skeleton-line is-title"></div><div class="skeleton-line"></div><div class="skeleton-line is-short"></div></article>
+          <article class="skeleton-card"><div class="skeleton-line is-title"></div><div class="skeleton-line"></div><div class="skeleton-line is-short"></div></article>
+          <article class="skeleton-card"><div class="skeleton-line is-title"></div><div class="skeleton-line"></div><div class="skeleton-line is-short"></div></article>
+        </div>
       </div>
 
       <div id="securityBanner" class="security-banner" hidden></div>
@@ -71,14 +77,26 @@
           <button type="button" role="tab" aria-selected="false" data-shelf-scope="completed">完了</button>
           <button type="button" role="tab" aria-selected="false" data-shelf-scope="favorite">お気に入り</button>
         </div>
-        <div id="shelfBody" class="shelf-body" aria-live="polite"></div>
+        <div id="shelfBody" class="shelf-body" aria-live="polite">
+          <div class="shelf-grid">
+            <div class="skeleton-line skeleton-shelf"></div><div class="skeleton-line skeleton-shelf"></div><div class="skeleton-line skeleton-shelf"></div>
+            <div class="skeleton-line skeleton-shelf"></div><div class="skeleton-line skeleton-shelf"></div><div class="skeleton-line skeleton-shelf"></div>
+          </div>
+        </div>
       </section>
 
       <section id="themeShelf" class="theme-shelf" aria-labelledby="themeShelfTitle">
         <div class="shelf-heading">
           <div><p class="shelf-kicker">CROSS-GENRE THEMES</p><h2 id="themeShelfTitle">テーマで横断する</h2><p>ジャンルをまたいで、いま気になっている主題から探す。</p></div>
         </div>
-        <div id="themeShelfBody" class="shelf-body" aria-live="polite"></div>
+        <div id="themeShelfBody" class="shelf-body" aria-live="polite">
+          <div class="theme-chip-grid">
+            <div class="skeleton-line" style="width:80px;height:28px;border-radius:999px"></div>
+            <div class="skeleton-line" style="width:64px;height:28px;border-radius:999px"></div>
+            <div class="skeleton-line" style="width:96px;height:28px;border-radius:999px"></div>
+            <div class="skeleton-line" style="width:72px;height:28px;border-radius:999px"></div>
+          </div>
+        </div>
       </section>
 
       <div class="section-heading">
@@ -170,7 +188,11 @@
             <button type="button" class="ghost-button" data-selection-action="finish">終了</button>
           </div>
         </div>
-        <div id="workList" class="work-list" aria-live="polite"></div>
+        <div id="workList" class="work-list" aria-live="polite">
+          <article class="skeleton-card"><div class="skeleton-line is-title"></div><div class="skeleton-line"></div><div class="skeleton-line is-short"></div></article>
+          <article class="skeleton-card"><div class="skeleton-line is-title"></div><div class="skeleton-line"></div><div class="skeleton-line is-short"></div></article>
+          <article class="skeleton-card"><div class="skeleton-line is-title"></div><div class="skeleton-line"></div><div class="skeleton-line is-short"></div></article>
+        </div>
       </section>
 
       <aside id="detailPanel" class="detail-panel" aria-label="作品詳細">

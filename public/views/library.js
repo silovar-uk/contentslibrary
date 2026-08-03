@@ -1,13 +1,18 @@
-import { $, $$, esc, toast, setBusy } from "../core/dom.js";
+import { $, $$, esc, toast, skeletonCards } from "../core/dom.js";
 import { api } from "../core/api.js";
-import { TYPE_LABELS, STATUS_LABELS, statusLabel, cardRatingMarkup } from "../core/format.js";
-import { state, setFilters, clearFilters as clearStoreFilters, filteredWorks, subscribe, setView, upsertWork } from "../core/store.js";
+import { TYPE_LABELS, STATUS_LABELS, statusLabel, cardRatingMarkup, cardNoteMarkup } from "../core/format.js";
+import { state, setFilters, clearFilters as clearStoreFilters, filteredWorks, subscribe, setView, openNoteCardIds } from "../core/store.js";
 
 let savedViews = [];
 let defaultApplied = false;
 const selectedWorkIds = new Set();
 let selectionMode = false;
-const openNoteCardIds = new Set();
+
+// 604件規模だと毎回全件描画が重い(実測: レイアウトだけで600ms超)ため、既定では先頭だけ描画し
+// 「もっと見る」で追加表示する。絞り込み・並び替えが変わったら先頭からやり直す。
+const PAGE_SIZE = 60;
+let visibleCount = PAGE_SIZE;
+let lastFiltersKey = "";
 
 function syncControlsFromState() {
   $("#filterType").value = state.filters.type;
@@ -47,23 +52,17 @@ function progressText(work) {
   return `${work.progress_current}${total}${work.unit_label ? ` ${work.unit_label}` : ""}`;
 }
 
-// メモ入力欄は既定で閉じておく(全作品分を開くと一覧が読めなくなるため)。「メモ」ボタンで開く。
-function cardNoteMarkup(work) {
-  const open = openNoteCardIds.has(work.id);
-  return `<div class="card-note-row">
-    <button type="button" class="text-button" data-toggle-card-note="${esc(work.id)}">${open ? "閉じる" : work.has_notes ? "メモを見る・書き足す" : "＋ メモ"}</button>
-    ${open ? `<form class="card-note-form" data-card-note-form="${esc(work.id)}">
-      <textarea name="content" rows="2" placeholder="あとから戻りたい言葉を残す(Ctrl/⌘+Enterで保存)"></textarea>
-      <button type="submit" class="primary-button">書き足す</button>
-    </form>` : ""}
-  </div>`;
-}
-
 export function renderWorkList() {
+  if (state.view !== "library") return; // 非表示ビューの全件再描画はしない(実測: 600件で600ms超)
   const list = $("#workList");
+  if (!state.loaded) { list.innerHTML = skeletonCards(6); $("#resultSummary").textContent = "読み込み中…"; return; }
+  const filtersKey = JSON.stringify(state.filters);
+  if (filtersKey !== lastFiltersKey) { lastFiltersKey = filtersKey; visibleCount = PAGE_SIZE; }
   const works = filteredWorks();
-  list.innerHTML = works.length
-    ? works.map((work) => {
+  const visible = works.slice(0, visibleCount);
+  const remaining = works.length - visible.length;
+  list.innerHTML = visible.length
+    ? visible.map((work) => {
         const labels = [...(work.labels?.genre || []), ...(work.labels?.theme || []), ...(work.labels?.tag || [])];
         const favorite = work.metadata?.favorite === true;
         const selected = selectedWorkIds.has(work.id);
@@ -79,11 +78,11 @@ export function renderWorkList() {
         <div class="card-footer"><span>${progressText(work) ? esc(progressText(work)) : "進捗未設定"}</span></div>
       </button>
       ${cardRatingMarkup(work)}
-      ${cardNoteMarkup(work)}
+      ${cardNoteMarkup(work, openNoteCardIds.has(work.id))}
     </article>`;
-      }).join("")
+      }).join("") + (remaining > 0 ? `<button type="button" class="load-more-button" data-action="load-more-works">もっと見る(残り${remaining}件)</button>` : "")
     : '<div class="empty-state">条件に合う作品がありません。<br>検索条件を減らすか、新しい作品を追加してください。</div>';
-  $("#resultSummary").textContent = `${works.length}件を表示`;
+  $("#resultSummary").textContent = remaining > 0 ? `${visible.length}件を表示(全${works.length}件)` : `${works.length}件を表示`;
   renderActiveFilters();
   updateSelectionUi();
 }
@@ -257,9 +256,10 @@ export function initLibrary() {
 
   let timer;
   $("#globalSearch").addEventListener("input", (e) => {
+    const value = e.target.value;
     clearTimeout(timer);
-    setFilters({ q: e.target.value });
-    timer = setTimeout(() => setView("library"), 0);
+    // 打鍵ごとに604件を再描画すると重い(実測145ms/回)ため、指を止めてから反映する。
+    timer = setTimeout(() => { setFilters({ q: value }); setView("library"); }, 80);
   });
   ["#filterType", "#filterStatus", "#filterRating", "#filterRatingExact", "#filterFavorite", "#filterNotes", "#sortSelect"].forEach((sel) => {
     $(sel).addEventListener("change", readControlsIntoFilters);
@@ -372,29 +372,7 @@ export function initLibrary() {
     }
     if (event.target.closest("[data-action='toggle-filters']")) $(".filter-panel").classList.toggle("is-open");
 
-    const toggleNote = event.target.closest("[data-toggle-card-note]")?.dataset.toggleCardNote;
-    if (toggleNote) {
-      const opening = !openNoteCardIds.has(toggleNote);
-      if (opening) openNoteCardIds.add(toggleNote); else openNoteCardIds.delete(toggleNote);
-      renderWorkList();
-      if (opening) setTimeout(() => $(`[data-card-note-form="${toggleNote}"] textarea`)?.focus(), 20);
-    }
-  });
-
-  document.addEventListener("submit", async (event) => {
-    const workId = event.target.closest("[data-card-note-form]")?.dataset.cardNoteForm;
-    if (!workId) return;
-    event.preventDefault();
-    const form = event.target;
-    if (!form.content.value.trim()) { form.content.focus(); return; }
-    const button = $('[type="submit"]', form);
-    setBusy(button, true, "書き足し中…");
-    try {
-      await api(`/api/works/${encodeURIComponent(workId)}/notes`, { method: "POST", body: JSON.stringify({ note_type: "quick", content: form.content.value }) });
-      const work = state.works.get(workId);
-      if (work) upsertWork({ ...work, has_notes: true });
-      toast("メモを書き足しました。");
-    } catch (e) { toast(e.message, "error"); setBusy(button, false); }
+    if (event.target.closest("[data-action='load-more-works']")) { visibleCount += PAGE_SIZE; renderWorkList(); }
   });
 
   syncControlsFromState();

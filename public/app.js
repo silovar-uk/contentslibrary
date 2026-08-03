@@ -1,8 +1,8 @@
 import { $, $$ } from "./core/dom.js";
 import { api } from "./core/api.js";
-import { toast } from "./core/dom.js";
+import { toast, setBusy } from "./core/dom.js";
 import { ratingLevel } from "./core/format.js";
-import { state, loadSnapshot, setWorkRating, subscribe, setView, closeDetail, toggleQuickEdit } from "./core/store.js";
+import { state, loadSnapshot, setWorkRating, subscribe, setView, closeDetail, toggleQuickEdit, openNoteCardIds, toggleCardNote, submitCardNote } from "./core/store.js";
 import { renderAccount, loadAdmin } from "./views/admin.js";
 import { initHome, loadHome, drawRandomPicks } from "./views/home.js";
 import { initLibrary, renderWorkList } from "./views/library.js";
@@ -42,10 +42,32 @@ function bindShell() {
       return;
     }
 
+    const toggleNote = event.target.closest("[data-toggle-card-note]")?.dataset.toggleCardNote;
+    if (toggleNote) {
+      const opening = !openNoteCardIds.has(toggleNote);
+      toggleCardNote(toggleNote);
+      if (opening) setTimeout(() => $(`[data-card-note-form="${toggleNote}"] textarea`)?.focus(), 20);
+      return;
+    }
+
     const mobile = event.target.closest("[data-mobile-view]")?.dataset.mobileView;
     if (mobile === "home") setView("home");
     if (mobile === "library") { setView("library"); $("#globalSearch").focus(); }
     if (mobile === "settings") setView("settings");
+  });
+
+  document.addEventListener("submit", async (event) => {
+    const workId = event.target.closest("[data-card-note-form]")?.dataset.cardNoteForm;
+    if (!workId) return;
+    event.preventDefault();
+    const form = event.target;
+    if (!form.content.value.trim()) { form.content.focus(); return; }
+    const button = $('[type="submit"]', form);
+    setBusy(button, true, "書き足し中…");
+    try {
+      await submitCardNote(workId, form.content.value);
+      toast("メモを書き足しました。");
+    } catch (e) { toast(e.message, "error"); setBusy(button, false); }
   });
 
   document.addEventListener("keydown", (event) => {

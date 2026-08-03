@@ -61,6 +61,20 @@ export async function setWorkRating(workId, rating) {
   }
 }
 
+// カード上の「メモ」開閉状態。一覧・ホームの両方のカードで共有する(同じ作品は同じ開閉状態にする)。
+export const openNoteCardIds = new Set();
+
+export function toggleCardNote(workId) {
+  if (openNoteCardIds.has(workId)) openNoteCardIds.delete(workId); else openNoteCardIds.add(workId);
+  notify();
+}
+
+export async function submitCardNote(workId, content) {
+  await api(`/api/works/${encodeURIComponent(workId)}/notes`, { method: "POST", body: JSON.stringify({ note_type: "quick", content }) });
+  const work = state.works.get(String(workId));
+  if (work) upsertWork({ ...work, has_notes: true });
+}
+
 export function removeWorkFromStore(id) {
   state.works.delete(String(id));
   if (state.selectedId === id) {
