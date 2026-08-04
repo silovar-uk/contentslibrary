@@ -5,6 +5,7 @@ import { ratingLevel } from "./core/format.js";
 import { state, loadSnapshot, setWorkRating, subscribe, setView, closeDetail, toggleQuickEdit, openNoteCardIds, toggleCardNote, submitCardNote } from "./core/store.js";
 import { renderAccount, loadAdmin } from "./views/admin.js";
 import { initHome, loadHome, drawRandomPicks } from "./views/home.js";
+import { initHomeExperience } from "./views/home-experience.js";
 import { initLibrary, renderWorkList } from "./views/library.js";
 import { initDetail, openDetail } from "./views/detail.js";
 import { initDialogs, openWorkDialog } from "./views/dialogs.js";
@@ -111,6 +112,7 @@ async function init() {
     initBulkJsonAdd();
     initLibrary();
     initHome();
+    initHomeExperience();
     initDetail();
 
     await Promise.all([loadHome(), loadSnapshot()]);
