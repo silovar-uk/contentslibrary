@@ -13,6 +13,7 @@ import { initDialogs, openWorkDialog } from "./views/dialogs.js";
 import { initMobileSearch } from "./views/mobile-search.js";
 import { initBulkAdd } from "./views/bulk-add.js";
 import { initBulkJsonAdd } from "./views/bulk-json-add.js";
+import { initBulkJsonOpenFix } from "./views/bulk-json-open-fix.js";
 import "./views/admin.js";
 
 function applyView() {
@@ -111,6 +112,7 @@ async function init() {
     initMobileSearch();
     initBulkAdd();
     initBulkJsonAdd();
+    initBulkJsonOpenFix();
     initLibrary();
     initHome();
     initHomeExperience();
