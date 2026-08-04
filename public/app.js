@@ -9,6 +9,7 @@ import { initHomeExperience } from "./views/home-experience.js";
 import { initLibrary, renderWorkList } from "./views/library.js";
 import { initDetail, openDetail } from "./views/detail.js";
 import { initAmazonTitleSearch } from "./views/amazon-title-search.js";
+import { initCoverResolution } from "./views/cover-resolution.js";
 import { initDialogs, openWorkDialog } from "./views/dialogs.js";
 import { initMobileSearch } from "./views/mobile-search.js";
 import { initBulkAdd } from "./views/bulk-add.js";
@@ -118,6 +119,7 @@ async function init() {
     initHomeExperience();
     initDetail();
     initAmazonTitleSearch();
+    initCoverResolution();
 
     await Promise.all([loadHome(), loadSnapshot()]);
     renderWorkList();
