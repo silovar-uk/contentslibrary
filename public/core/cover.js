@@ -29,7 +29,7 @@ export function amazonCoverUrlFromIsbn10(isbn10) {
   // ISBN-10は数字9桁+チェックディジット(0-9またはX)。英字混じりのASIN(映像作品など)は
   // ここでnullになり、呼び出し側で「自動取得できない」案内に回る(意図した挙動)。
   if (!/^[0-9]{9}[0-9X]$/.test(clean)) return null;
-  return `https://m.media-amazon.com/images/P/${clean}.09.MZZZZZZZ.jpg`;
+  return `https://m.media-amazon.com/images/P/${clean}.09.LZZZZZZZ.jpg`;
 }
 
 // 作品のai_facts(AI事実補完・detail.js)からISBNを拾い、候補URLを組み立てる。本・漫画のみ当たる。
@@ -54,14 +54,25 @@ export function extractAsinFromProductUrl(pageUrl) {
   }
 }
 
-// 一覧のサムネイルは詳細より小さいサイズを使う(実測: 中サイズ6.3KB→サムネ2.1KB)。
-// 保存形式(work-cover.tsのnormalizeCoverUrl)に対応する2パターンだけ変換し、
-// それ以外はそのまま返す(保存時に弾いているため通常はここへ来ない)。
-export function coverThumbUrl(url) {
+// 既存データには旧仕様の中サイズ(MZZZZZZZ/SL300)が残っている。
+// DBを一括更新しなくても、詳細表示だけは高解像度候補へ引き上げる。
+export function coverDisplayUrl(url) {
   if (!url) return "";
-  if (url.includes(".MZZZZZZZ.")) return url.replace(".MZZZZZZZ.", ".THUMBZZZ.");
-  if (url.includes("._SL300_")) return url.replace("._SL300_", "._SL110_");
+  if (url.includes(".THUMBZZZ.")) return url.replace(".THUMBZZZ.", ".LZZZZZZZ.");
+  if (url.includes(".MZZZZZZZ.")) return url.replace(".MZZZZZZZ.", ".LZZZZZZZ.");
+  if (url.includes("._SL110_")) return url.replace("._SL110_", "._SL800_");
+  if (url.includes("._SL300_")) return url.replace("._SL300_", "._SL800_");
   return url;
+}
+
+// 一覧・ホームは詳細用画像をそのまま読むと重いため、中解像度へ落とす。
+// 旧仕様の極小THUMB/SL110は使わず、Retina表示でも粗くなりにくいサイズを選ぶ。
+export function coverThumbUrl(url) {
+  const displayUrl = coverDisplayUrl(url);
+  if (!displayUrl) return "";
+  if (displayUrl.includes(".LZZZZZZZ.")) return displayUrl.replace(".LZZZZZZZ.", ".MZZZZZZZ.");
+  if (displayUrl.includes("._SL800_")) return displayUrl.replace("._SL800_", "._SL320_");
+  return displayUrl;
 }
 
 // 表紙が無いISBN/ASINは404ではなく「200・43バイトの透明1x1 GIF」を返すためonerrorが発火しない。
