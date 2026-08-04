@@ -37,8 +37,8 @@ function versionField(value: unknown): number {
 }
 
 // クライアントは候補URLを一度自分で読み込んで確認してから送ってくる(空の1x1 GIFを弾くため)。
-// サーバー側はさらに、既知の画像URL形式であることを確認したうえでサイズ指定を正規化する
-// (実測: サイズ指定次第で同じ画像が2KB〜42KBまで変わるため、ここが軽さの本体)。
+// サーバー側はさらに、既知の画像URL形式であることを確認したうえで高解像度版へ正規化する。
+// 一覧・ホームではクライアント側で中解像度へ落とし、詳細だけ高解像度を使う。
 function normalizeCoverUrl(raw: string): string {
   let url: URL;
   try {
@@ -53,16 +53,16 @@ function normalizeCoverUrl(raw: string): string {
     throw new HttpError(422, "VALIDATION_ERROR", "表紙URLはAmazonの画像URLのみ使用できます。", { field: "cover_url" });
   }
 
-  // /images/P/<ISBN等>.<edition>.<SIZE>.jpg 形式(主に書籍)。サイズ指定を中サイズへ正規化する。
+  // /images/P/<ISBN等>.<edition>.<SIZE>.jpg 形式(主に書籍)。大サイズへ正規化する。
   const productMatch = url.pathname.match(/^\/images\/P\/([^./]+)\.(\d+)\.[A-Za-z0-9]+\.jpg$/);
   if (productMatch) {
-    return `https://${url.hostname}/images/P/${productMatch[1]}.${productMatch[2]}.MZZZZZZZ.jpg`;
+    return `https://${url.hostname}/images/P/${productMatch[1]}.${productMatch[2]}.LZZZZZZZ.jpg`;
   }
 
-  // /images/I/<画像ID>[._SIZE_].jpg 形式(商品ページから貼った画像URL)。300px相当へ正規化する。
+  // /images/I/<画像ID>[._SIZE_].jpg 形式(商品ページから貼った画像URL)。長辺800px相当へ正規化する。
   const itemMatch = url.pathname.match(/^\/images\/I\/([^._]+)(?:\._[A-Za-z0-9,_]+_)?\.jpg$/);
   if (itemMatch) {
-    return `https://${url.hostname}/images/I/${itemMatch[1]}._SL300_.jpg`;
+    return `https://${url.hostname}/images/I/${itemMatch[1]}._SL800_.jpg`;
   }
 
   throw new HttpError(422, "VALIDATION_ERROR", "認識できないAmazon画像URLの形式です。", { field: "cover_url" });
