@@ -40,7 +40,7 @@ test("JSONで追加ボタンを押すとダイアログが実際に開く", asyn
     initBulkJsonOpenFix();
 
     dom.window.document.querySelector("#bulkJsonTopButton").click();
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    await new Promise((resolve) => setTimeout(resolve, 80));
 
     const dialog = dom.window.document.querySelector("#bulkJsonAddDialog");
     assert.equal(dialog.open, true);
