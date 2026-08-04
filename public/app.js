@@ -8,6 +8,7 @@ import { initHome, loadHome, drawRandomPicks } from "./views/home.js";
 import { initLibrary, renderWorkList } from "./views/library.js";
 import { initDetail, openDetail } from "./views/detail.js";
 import { initDialogs, openWorkDialog } from "./views/dialogs.js";
+import { initMobileSearch } from "./views/mobile-search.js";
 import { initBulkAdd } from "./views/bulk-add.js";
 import { initBulkJsonAdd } from "./views/bulk-json-add.js";
 import "./views/admin.js";
@@ -18,7 +19,9 @@ function applyView() {
   $("#homeView").hidden = view !== "home";
   $("#settingsView").hidden = view !== "settings";
   $("#adminView").hidden = view !== "admin";
-  if (view === "library") $("#main").focus({ preventScroll: true });
+  // 検索や評価などの状態更新でもapplyViewは呼ばれる。
+  // ここで#mainへフォーカスするとモバイルIMEの変換中文字が確定するため、
+  // フォーカス移動はナビゲーション側の明示操作にだけ任せる。
 }
 
 function bindShell() {
@@ -103,6 +106,7 @@ async function init() {
 
     bindShell();
     initDialogs();
+    initMobileSearch();
     initBulkAdd();
     initBulkJsonAdd();
     initLibrary();
