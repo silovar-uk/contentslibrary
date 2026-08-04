@@ -7,7 +7,7 @@ const read = (path) => readFile(new URL(path, root), 'utf8');
 
 // 表紙画像(docs/COVER-IMAGE-PLAN.md参照)。Amazon商品画像への直リンクを個人の記録用に登録する。
 // 実測で確定した前提: (1)CSPのimg-srcが外部画像を全ブロックしていた (2)サイズ指定次第で
-// 同じ画像が2KB〜42KBまで変わる (3)表紙が無いISBNは404ではなく200+43バイトの透明GIFを返す
+// 同じ画像の容量・解像度が大きく変わる (3)表紙が無いISBNは404ではなく200+43バイトの透明GIFを返す
 // (4)ISBN形式のURLは書籍でしか当たらない。
 
 test('CSPのimg-srcはAmazonの2ホストだけを許可し、ワイルドカードにしない', async () => {
@@ -16,15 +16,15 @@ test('CSPのimg-srcはAmazonの2ホストだけを許可し、ワイルドカー
   assert.doesNotMatch(http, /img-src[^\n]*https:\s*[;"]/); // "https:" 単独のワイルドカード許可を入れない
 });
 
-test('表紙保存APIはCSPと同じホストだけを許可し、サイズ指定を正規化する', async () => {
+test('表紙保存APIはCSPと同じホストだけを許可し、高解像度へ正規化する', async () => {
   const route = await read('src/routes/work-cover.ts');
   const index = await read('src/index.ts');
   assert.match(index, /updateWorkCover\(request, env, auth, decodeURIComponent\(m\[1\]!\)\)/);
   assert.match(route, /ALLOWED_HOSTS = new Set\(\["m\.media-amazon\.com", "images-na\.ssl-images-amazon\.com"\]\)/);
   assert.match(route, /url\.protocol !== "https:"/);
-  // /images/P/形式は中サイズ(MZZZZZZZ)へ、/images/I/形式は300px相当へ正規化する
-  assert.match(route, /MZZZZZZZ\.jpg`/);
-  assert.match(route, /_SL300_\.jpg`/);
+  // /images/P/形式は大サイズ(LZZZZZZZ)へ、/images/I/形式は800px相当へ正規化する
+  assert.match(route, /LZZZZZZZ\.jpg`/);
+  assert.match(route, /_SL800_\.jpg`/);
 });
 
 test('cover.jsはonerrorが発火しない透明GIFをnaturalWidthで判定する', async () => {
