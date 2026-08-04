@@ -8,6 +8,7 @@ import { initHome, loadHome, drawRandomPicks } from "./views/home.js";
 import { initHomeExperience } from "./views/home-experience.js";
 import { initLibrary, renderWorkList } from "./views/library.js";
 import { initDetail, openDetail } from "./views/detail.js";
+import { initAmazonTitleSearch } from "./views/amazon-title-search.js";
 import { initDialogs, openWorkDialog } from "./views/dialogs.js";
 import { initMobileSearch } from "./views/mobile-search.js";
 import { initBulkAdd } from "./views/bulk-add.js";
@@ -114,6 +115,7 @@ async function init() {
     initHome();
     initHomeExperience();
     initDetail();
+    initAmazonTitleSearch();
 
     await Promise.all([loadHome(), loadSnapshot()]);
     renderWorkList();
