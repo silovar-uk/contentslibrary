@@ -1,0 +1,20 @@
+.amazon-title-search-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-height: 40px;
+  margin-top: 12px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.cover-section > .amazon-title-search-link + .cover-form {
+  margin-top: 12px;
+}
+
+@media (max-width: 767px) {
+  .amazon-title-search-link {
+    width: 100%;
+  }
+}
