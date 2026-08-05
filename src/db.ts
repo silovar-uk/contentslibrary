@@ -111,18 +111,36 @@ export async function syncLabels(
   await env.DB.batch(statements);
 }
 
+function wordMemosFromMetadata(value: string | null): string[] {
+  if (!value) return [];
+  try {
+    const metadata = JSON.parse(value) as Record<string, unknown>;
+    const words = metadata?.word_memos;
+    if (!Array.isArray(words)) return [];
+    return words
+      .filter((word): word is string => typeof word === "string")
+      .map((word) => word.trim())
+      .filter(Boolean)
+      .slice(0, 50);
+  } catch {
+    return [];
+  }
+}
+
 export async function rebuildWorkSearchText(env: Env, workId: string, ownerId: string): Promise<void> {
-  const work = await env.DB.prepare("SELECT title, creator, short_note FROM works WHERE id = ? AND owner_id = ?").bind(workId, ownerId).first<{
+  const work = await env.DB.prepare("SELECT title, creator, short_note, metadata_json FROM works WHERE id = ? AND owner_id = ?").bind(workId, ownerId).first<{
     title: string;
     creator: string | null;
     short_note: string | null;
+    metadata_json: string | null;
   }>();
   if (!work) return;
   const labels = await env.DB.prepare(
     "SELECT l.name FROM labels l JOIN work_labels wl ON wl.label_id = l.id WHERE wl.work_id = ? ORDER BY l.kind, wl.position, l.name"
   ).bind(workId).all<{ name: string }>();
   const notes = await env.DB.prepare("SELECT content FROM notes WHERE work_id = ? ORDER BY updated_at DESC LIMIT 100").bind(workId).all<{ content: string }>();
-  const text = [work.title, work.creator ?? "", work.short_note ?? "", ...labels.results.map((x) => x.name), ...notes.results.map((x) => x.content)].join(" ");
+  const wordMemos = wordMemosFromMetadata(work.metadata_json);
+  const text = [work.title, work.creator ?? "", work.short_note ?? "", ...wordMemos, ...labels.results.map((x) => x.name), ...notes.results.map((x) => x.content)].join(" ");
   await env.DB.prepare("UPDATE works SET search_text = ? WHERE id = ? AND owner_id = ?").bind(normalizeText(text), workId, ownerId).run();
 }
 
