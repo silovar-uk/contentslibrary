@@ -1,0 +1,25 @@
+.word-memo-section{display:grid;gap:12px}
+.word-memo-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.word-memo-heading h3{margin:0 0 4px}
+.word-memo-heading p{margin:0;color:var(--muted);font-size:12px;line-height:1.6}
+.word-memo-heading>span{flex:none;border:1px solid var(--line);border-radius:999px;padding:4px 9px;background:var(--surface-2);color:var(--muted);font-size:11px;font-weight:700}
+.word-memo-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+.word-memo-form input{min-width:0;height:44px;border:1px solid var(--line);border-radius:11px;background:var(--surface);padding:0 13px;font-size:16px;outline:0}
+.word-memo-form input:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 14%,transparent)}
+.word-memo-form button{min-height:44px;padding-inline:18px}
+.word-memo-hint{margin:-3px 0 0;color:var(--muted);font-size:11px;line-height:1.55}
+.word-memo-chips{display:flex;flex-wrap:wrap;gap:7px;min-height:31px}
+.word-memo-chip{display:inline-flex;align-items:stretch;max-width:100%;border:1px solid color-mix(in srgb,var(--accent) 24%,var(--line));border-radius:999px;background:color-mix(in srgb,var(--accent) 7%,var(--surface));overflow:hidden}
+.word-memo-search,.word-memo-remove{border:0;background:transparent;color:inherit}
+.word-memo-search{min-width:0;padding:7px 6px 7px 12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:700;text-align:left}
+.word-memo-search:hover{color:var(--accent)}
+.word-memo-remove{width:30px;display:grid;place-items:center;color:var(--muted);font-size:16px;line-height:1}
+.word-memo-remove:hover{background:color-mix(in srgb,var(--danger) 8%,transparent);color:var(--danger)}
+.word-memo-empty{color:var(--muted);font-size:12px;padding:4px 0}
+.word-memo-error:empty{display:none}
+@media(max-width:760px){
+  .word-memo-form{grid-template-columns:1fr}
+  .word-memo-form button{width:100%}
+  .word-memo-search{min-height:38px}
+  .word-memo-remove{width:36px}
+}
