@@ -10,6 +10,7 @@ import { initLibrary, renderWorkList } from "./views/library.js";
 import { initDetail, openDetail } from "./views/detail.js";
 import { initAmazonTitleSearch } from "./views/amazon-title-search.js";
 import { initCoverResolution } from "./views/cover-resolution.js";
+import { initWordMemos } from "./views/word-memos.js";
 import { initDialogs, openWorkDialog } from "./views/dialogs.js";
 import { initMobileSearch } from "./views/mobile-search.js";
 import { initBulkAdd } from "./views/bulk-add.js";
@@ -120,6 +121,7 @@ async function init() {
     initDetail();
     initAmazonTitleSearch();
     initCoverResolution();
+    initWordMemos();
 
     await Promise.all([loadHome(), loadSnapshot()]);
     renderWorkList();
