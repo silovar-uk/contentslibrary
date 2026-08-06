@@ -1,0 +1,9 @@
+.word-memo-selection-tools{display:flex;align-items:center;gap:6px;margin-left:auto}
+.word-memo-selection-tools button{min-height:30px;padding:0 10px;border-radius:999px;font-size:11px;white-space:nowrap}
+.word-memo-selection-tools button:disabled{opacity:.42;cursor:default}
+
+@media(max-width:760px){
+  .word-memo-preview-heading{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start}
+  .word-memo-selection-tools{grid-column:1/-1;grid-row:2;margin:4px 0 0;width:100%}
+  .word-memo-selection-tools button{flex:1;min-height:36px}
+}
