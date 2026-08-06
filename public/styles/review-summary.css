@@ -1,0 +1,45 @@
+.review-summary-section{display:grid;gap:12px}
+.review-summary-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.review-summary-heading h3{margin:0 0 4px}
+.review-summary-heading p{margin:0;color:var(--muted);font-size:12px;line-height:1.6}
+.review-summary-heading>span{flex:none;border:1px solid var(--line);border-radius:999px;padding:4px 9px;background:var(--surface-2);color:var(--muted);font-size:11px;font-weight:700}
+.review-summary-section form{display:grid;gap:10px}
+.review-summary-section textarea,.review-summary-research-block textarea{width:100%;resize:vertical;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:13px;font:inherit;line-height:1.75;outline:0}
+.review-summary-section textarea{min-height:132px;font-size:14px}
+.review-summary-section textarea:focus,.review-summary-research-block textarea:focus{border-color:#6856a8;box-shadow:0 0 0 3px color-mix(in srgb,#6856a8 13%,transparent)}
+.review-summary-section.is-ai-origin textarea{border-color:color-mix(in srgb,#6f5ab5 42%,var(--line));background:linear-gradient(135deg,color-mix(in srgb,#8067c5 7%,var(--surface)),var(--surface))}
+.review-summary-section.is-ai-edited textarea{border-left:3px solid color-mix(in srgb,#6f5ab5 48%,var(--line))}
+.review-summary-form-actions{display:flex;gap:8px;justify-content:flex-end}
+
+.review-summary-research-block{display:grid;gap:10px;border:1px solid color-mix(in srgb,#6f5ab5 36%,var(--line));border-radius:14px;padding:14px;background:linear-gradient(135deg,color-mix(in srgb,#8067c5 10%,var(--surface)),color-mix(in srgb,#576fc4 5%,var(--surface)))}
+.review-summary-research-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.review-summary-research-heading label{display:flex;align-items:center;gap:7px;color:#493a78;font-size:13px;font-weight:800}
+.review-summary-research-heading input{width:18px;height:18px;accent-color:#6856a8}
+.review-summary-research-heading span{font-size:11px;color:var(--muted);font-weight:700}
+.review-summary-research-block textarea{min-height:118px;background:color-mix(in srgb,#fff 66%,var(--surface));font-size:13px}
+.review-summary-research-block.is-outside-target textarea{border-color:color-mix(in srgb,#b77a35 48%,var(--line))}
+.review-summary-version-notice{border-left:3px solid #6f5ab5;border-radius:8px;background:color-mix(in srgb,#6f5ab5 8%,var(--surface));padding:9px 11px;color:#514184;font-size:12px;line-height:1.6}
+.review-summary-research-sources{font-size:11px;color:var(--muted)}
+.review-summary-research-sources p{margin:0}
+.review-summary-research-sources summary{cursor:pointer;color:#594792;font-weight:700}
+.review-summary-research-sources ul{margin:8px 0 0;padding-left:18px;display:grid;gap:6px}
+.review-summary-research-sources li{line-height:1.45}
+.review-summary-research-sources li small{display:block;color:var(--muted)}
+.review-summary-research-sources a{color:var(--accent);overflow-wrap:anywhere}
+.review-summary-research-block>[data-review-summary-save-only]{justify-self:start}
+
+.review-summary-card{margin:7px 0 0;color:var(--ink);font-size:12px;line-height:1.65;text-align:left;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+.review-summary-card--library{padding-left:9px;border-left:2px solid color-mix(in srgb,#6856a8 35%,var(--line));color:color-mix(in srgb,var(--ink) 86%,var(--muted))}
+.review-summary-card--random{margin-top:8px;color:var(--muted)}
+.review-summary-card--recent{margin:6px 0 2px;font-size:11px;color:var(--muted)}
+.review-summary-card--reading{margin-top:7px;color:var(--muted)}
+
+@media(max-width:760px){
+  .review-summary-heading{align-items:flex-start}
+  .review-summary-form-actions{display:grid;grid-template-columns:1fr 1fr}
+  .review-summary-form-actions button{width:100%}
+  .review-summary-card{-webkit-line-clamp:2}
+  .review-summary-card--recent{font-size:10px}
+  .review-summary-research-heading{align-items:flex-start}
+  .review-summary-research-block>[data-review-summary-save-only]{width:100%}
+}

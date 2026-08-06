@@ -11,6 +11,8 @@ import { initDetail, openDetail } from "./views/detail.js";
 import { initAmazonTitleSearch } from "./views/amazon-title-search.js";
 import { initCoverResolution } from "./views/cover-resolution.js";
 import { initWordMemos } from "./views/word-memos.js";
+import { initReviewSummary } from "./views/review-summary.js";
+import { initReviewSummaryStability } from "./views/review-summary-stability.js";
 import { initDialogs, openWorkDialog } from "./views/dialogs.js";
 import { initMobileSearch } from "./views/mobile-search.js";
 import { initBulkAdd } from "./views/bulk-add.js";
@@ -85,7 +87,7 @@ function bindShell() {
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") { event.preventDefault(); $("#globalSearch").focus(); }
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
       const form = document.activeElement?.closest("form");
-      if (form && (["workForm", "bulkAddForm", "quickEditForm", "noteForm", "inlineNoteForm", "experienceForm", "bulkJsonAddForm"].includes(form.id) || form.hasAttribute("data-card-note-form"))) { event.preventDefault(); form.requestSubmit(); }
+      if (form && (["workForm", "bulkAddForm", "quickEditForm", "noteForm", "inlineNoteForm", "experienceForm", "bulkJsonAddForm", "reviewSummaryForm"].includes(form.id) || form.hasAttribute("data-card-note-form"))) { event.preventDefault(); form.requestSubmit(); }
     }
     if (!typing && !event.metaKey && !event.ctrlKey && event.key.toLowerCase() === "n") { event.preventDefault(); openWorkDialog(false); }
     if (!typing && !event.metaKey && !event.ctrlKey && event.key.toLowerCase() === "e" && state.selected) {
@@ -122,6 +124,8 @@ async function init() {
     initAmazonTitleSearch();
     initCoverResolution();
     initWordMemos();
+    initReviewSummaryStability();
+    initReviewSummary();
 
     await Promise.all([loadHome(), loadSnapshot()]);
     renderWorkList();

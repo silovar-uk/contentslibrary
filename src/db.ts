@@ -111,25 +111,40 @@ export async function syncLabels(
   await env.DB.batch(statements);
 }
 
-function wordMemosFromMetadata(value: string | null): string[] {
-  if (!value) return [];
+function metadataRecord(value: string | null): Record<string, unknown> {
+  if (!value) return {};
   try {
-    const metadata = JSON.parse(value) as Record<string, unknown>;
-    const words = metadata?.word_memos;
-    if (!Array.isArray(words)) return [];
-    return words
-      .map((word) => {
-        if (typeof word === "string") return word.trim();
-        if (word && typeof word === "object" && !Array.isArray(word) && typeof (word as Record<string, unknown>).text === "string") {
-          return String((word as Record<string, unknown>).text).trim();
-        }
-        return "";
-      })
-      .filter(Boolean)
-      .slice(0, 50);
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
   } catch {
-    return [];
+    return {};
   }
+}
+
+function wordMemosFromMetadata(value: string | null): string[] {
+  const metadata = metadataRecord(value);
+  const words = metadata.word_memos;
+  if (!Array.isArray(words)) return [];
+  return words
+    .map((word) => {
+      if (typeof word === "string") return word.trim();
+      if (word && typeof word === "object" && !Array.isArray(word) && typeof (word as Record<string, unknown>).text === "string") {
+        return String((word as Record<string, unknown>).text).trim();
+      }
+      return "";
+    })
+    .filter(Boolean)
+    .slice(0, 50);
+}
+
+function reviewSummaryFromMetadata(value: string | null): string {
+  const metadata = metadataRecord(value);
+  const summary = metadata.review_summary;
+  if (typeof summary === "string") return summary.trim().slice(0, 220);
+  if (summary && typeof summary === "object" && !Array.isArray(summary) && typeof (summary as Record<string, unknown>).text === "string") {
+    return String((summary as Record<string, unknown>).text).trim().slice(0, 220);
+  }
+  return "";
 }
 
 export async function rebuildWorkSearchText(env: Env, workId: string, ownerId: string): Promise<void> {
@@ -145,7 +160,8 @@ export async function rebuildWorkSearchText(env: Env, workId: string, ownerId: s
   ).bind(workId).all<{ name: string }>();
   const notes = await env.DB.prepare("SELECT content FROM notes WHERE work_id = ? ORDER BY updated_at DESC LIMIT 100").bind(workId).all<{ content: string }>();
   const wordMemos = wordMemosFromMetadata(work.metadata_json);
-  const text = [work.title, work.creator ?? "", work.short_note ?? "", ...wordMemos, ...labels.results.map((x) => x.name), ...notes.results.map((x) => x.content)].join(" ");
+  const reviewSummary = reviewSummaryFromMetadata(work.metadata_json);
+  const text = [work.title, work.creator ?? "", work.short_note ?? "", reviewSummary, ...wordMemos, ...labels.results.map((x) => x.name), ...notes.results.map((x) => x.content)].join(" ");
   await env.DB.prepare("UPDATE works SET search_text = ? WHERE id = ? AND owner_id = ?").bind(normalizeText(text), workId, ownerId).run();
 }
 
