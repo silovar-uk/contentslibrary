@@ -118,8 +118,13 @@ function wordMemosFromMetadata(value: string | null): string[] {
     const words = metadata?.word_memos;
     if (!Array.isArray(words)) return [];
     return words
-      .filter((word): word is string => typeof word === "string")
-      .map((word) => word.trim())
+      .map((word) => {
+        if (typeof word === "string") return word.trim();
+        if (word && typeof word === "object" && !Array.isArray(word) && typeof (word as Record<string, unknown>).text === "string") {
+          return String((word as Record<string, unknown>).text).trim();
+        }
+        return "";
+      })
       .filter(Boolean)
       .slice(0, 50);
   } catch {
