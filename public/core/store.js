@@ -275,13 +275,34 @@ export function shelfData(scope = "all") {
   return { scope, total, classified: total - unclassified, unclassified, genres };
 }
 
+function hasCover(work) {
+  return Boolean(String(work?.metadata?.cover_url || "").trim());
+}
+
+export const RANDOM_PICK_SCOPES = [
+  { value: "next", label: "所持・未読＋読みたい" },
+  { value: "owned_unread", label: "所持・未読だけ" },
+  { value: "want", label: "読みたい本だけ" },
+  { value: "book", label: "すべての本" },
+  { value: "has_cover", label: "表紙あり" },
+  { value: "no_cover", label: "表紙なし" },
+  { value: "all", label: "すべての作品" }
+];
+
 const RANDOM_PICK_PREDICATE = {
   next: (w) => w.type === "book" && ["owned_unread", "want"].includes(w.status),
   owned_unread: (w) => w.type === "book" && w.status === "owned_unread",
   want: (w) => w.type === "book" && w.status === "want",
   book: (w) => w.type === "book",
+  has_cover: (w) => hasCover(w),
+  no_cover: (w) => !hasCover(w),
   all: () => true
 };
+
+export function randomScopeCounts() {
+  const works = allWorks();
+  return Object.fromEntries(RANDOM_PICK_SCOPES.map(({ value }) => [value, works.filter(RANDOM_PICK_PREDICATE[value]).length]));
+}
 
 // 全件常駐のため、ホームの自動抽選もサーバー往復なしでクライアント側から選ぶ(待ち時間ゼロ)。
 // 除外込みで母数が足りない場合は、直近履歴を無視して母数いっぱいから選び直す(空表示を避ける)。
