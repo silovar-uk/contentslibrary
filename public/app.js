@@ -9,6 +9,7 @@ import { initRandomScopeOptions } from "./views/random-scope-options.js";
 import { initHomeExperience } from "./views/home-experience.js";
 import { initLibrary, renderWorkList } from "./views/library.js";
 import { initReadingPriority } from "./views/reading-priority.js";
+import { initReadingPrioritySurfaces } from "./views/reading-priority-surfaces.js";
 import { initDetail, openDetail } from "./views/detail.js";
 import { initAmazonTitleSearch } from "./views/amazon-title-search.js";
 import { initCoverResolution } from "./views/cover-resolution.js";
@@ -124,6 +125,7 @@ async function init() {
     initReadingPriority();
     initHome();
     initRandomScopeOptions();
+    initReadingPrioritySurfaces();
     initHomeExperience();
     initDetail();
     initAmazonTitleSearch();
