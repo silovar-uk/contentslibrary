@@ -65,6 +65,12 @@ test("フィルター・ソート・整理モード・カード操作の導線�
   assert.match(source, /delete metadata\.reading_priority/);
 });
 
+test("同じ優先度のカードはDOMを置換せず再描画ループを防ぐ", async () => {
+  const source = await read("public/views/reading-priority.js");
+  assert.match(source, /data-reading-priority-value/);
+  assert.match(source, /current\?\.dataset\.readingPriorityValue === value/);
+});
+
 test("アプリ起動へ接続し、モバイルでも整理モードを操作できる", async () => {
   const app = await read("public/app.js");
   const css = await read("public/styles/reading-priority.css");
