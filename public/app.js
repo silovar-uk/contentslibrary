@@ -7,6 +7,7 @@ import { renderAccount, loadAdmin } from "./views/admin.js";
 import { initHome, loadHome, drawRandomPicks } from "./views/home.js";
 import { initHomeExperience } from "./views/home-experience.js";
 import { initLibrary, renderWorkList } from "./views/library.js";
+import { initReadingPriority } from "./views/reading-priority.js";
 import { initDetail, openDetail } from "./views/detail.js";
 import { initAmazonTitleSearch } from "./views/amazon-title-search.js";
 import { initCoverResolution } from "./views/cover-resolution.js";
@@ -70,7 +71,7 @@ function bindShell() {
   });
 
   document.addEventListener("submit", async (event) => {
-    const workId = event.target.closest("[data-card-note-form]")?.dataset.cardNoteForm;
+    const workId = event.target.closest("[data-card-note-form]")?.dataset.toggleCardNote;
     if (!workId) return;
     event.preventDefault();
     const form = event.target;
@@ -119,6 +120,7 @@ async function init() {
     initBulkJsonAdd();
     initBulkJsonOpenFix();
     initLibrary();
+    initReadingPriority();
     initHome();
     initHomeExperience();
     initDetail();
