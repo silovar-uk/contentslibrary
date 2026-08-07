@@ -71,7 +71,7 @@ function bindShell() {
   });
 
   document.addEventListener("submit", async (event) => {
-    const workId = event.target.closest("[data-card-note-form]")?.dataset.toggleCardNote;
+    const workId = event.target.closest("[data-card-note-form]")?.dataset.cardNoteForm;
     if (!workId) return;
     event.preventDefault();
     const form = event.target;
