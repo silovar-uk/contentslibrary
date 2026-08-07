@@ -23,9 +23,9 @@ test("読む優先度は一覧・抽選・詳細の3か所へ同じチップUI�
   assert.match(source, /decorateLibraryCards/);
   assert.match(source, /decorateRandomCards/);
   assert.match(source, /decorateDetail/);
-  assert.match(source, /reading-priority-surface-library/);
-  assert.match(source, /reading-priority-surface-random/);
-  assert.match(source, /reading-priority-surface-detail/);
+  assert.match(source, /syncSurface\(card, work, "library"/);
+  assert.match(source, /syncSurface\(card, work, "random"/);
+  assert.match(source, /surfaceMarkup\(work, "detail"\)/);
   assert.match(source, /data-reading-priority-set/);
   assert.match(source, /data-work-id/);
   assert.match(source, /最優先/);
