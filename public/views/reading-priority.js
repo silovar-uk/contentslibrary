@@ -120,7 +120,7 @@ function controlMarkup(work) {
   const value = readingPriority(work);
   const label = priorityLabel(value);
   const next = priorityLabel(nextReadingPriority(value));
-  return `<button type="button" class="reading-priority-card-control is-${value || "unset"}" data-reading-priority-cycle="${esc(work.id)}" title="クリックで ${esc(next)} へ変更" aria-label="読む優先度 ${esc(label)}。クリックで${esc(next)}へ変更"><span>読む優先度</span><strong>${esc(label)}</strong></button>`;
+  return `<button type="button" class="reading-priority-card-control is-${value || "unset"}" data-reading-priority-cycle="${esc(work.id)}" data-reading-priority-value="${esc(value)}" title="クリックで ${esc(next)} へ変更" aria-label="読む優先度 ${esc(label)}。クリックで${esc(next)}へ変更"><span>読む優先度</span><strong>${esc(label)}</strong></button>`;
 }
 
 function decorateLibraryCards() {
@@ -131,6 +131,8 @@ function decorateLibraryCards() {
       current?.remove();
       return;
     }
+    const value = readingPriority(work);
+    if (current?.dataset.readingPriorityValue === value) return;
     const wrap = document.createElement("div");
     wrap.innerHTML = controlMarkup(work);
     const next = wrap.firstElementChild;
