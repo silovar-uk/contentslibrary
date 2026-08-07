@@ -74,11 +74,12 @@ test('setSelectedDetailはhas_notes/experience_countを詳細レスポンスの�
   assert.match(body, /experience_count: detail\.experiences\?\.length \?\? 0/);
 });
 
-test('ホームの自動抽選は5冊をクライアント側で選び、初回読み込みと引き直しだけで再抽選する', async () => {
+test('ホームの自動抽選は5冊をクライアント側で選び、初回読み込みと引き直し・モード切替だけで再抽選する', async () => {
   const home = await read('public/views/home.js');
   const app = await read('public/app.js');
   assert.match(home, /export function drawRandomPicks/);
-  assert.match(home, /pickRandomWorks\(scope, 5, previousRandomIds\(\)\)/);
+  assert.match(home, /pickRandomWorks\(scope, 5, previousRandomIds\(\), mode\)/);
+  assert.match(home, /random-mode-change/);
   assert.match(app, /drawRandomPicks\(\);/);
   // stateのnotifyのたびに再抽選されると★操作のたびに顔ぶれが変わってしまうため、
   // subscribe()経由ではなくinit()からの明示呼び出しだけにする。

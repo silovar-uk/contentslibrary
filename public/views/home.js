@@ -1,7 +1,9 @@
 import { $, $$, esc, toast, fmtDate, skeletonCards, skeletonShelf } from "../core/dom.js";
 import { api } from "../core/api.js";
 import { TYPE_LABELS, statusLabel, cardRatingMarkup, cardNoteMarkup } from "../core/format.js";
-import { state, shelfData, themeData, pickRandomWorks, subscribe, setView, openNoteCardIds } from "../core/store.js";
+import { state, shelfData, themeData, subscribe, setView, openNoteCardIds } from "../core/store.js";
+import { pickRandomWorks } from "../core/random-pick.js";
+import { getRandomMode, initRandomMode } from "./random-mode.js";
 import { shelfNavigateToGenre, shelfClearGenreFilter, themeNavigate } from "./library.js";
 
 let homeData = null;
@@ -52,7 +54,8 @@ function renderRandomPicks() {
 // そのたびに5冊の顔ぶれが変わってしまうため。
 export function drawRandomPicks() {
   const scope = $("#randomScope").value;
-  randomPickIds = pickRandomWorks(scope, 5, previousRandomIds()).map((w) => String(w.id));
+  const mode = getRandomMode();
+  randomPickIds = pickRandomWorks(scope, 5, previousRandomIds(), mode).map((w) => String(w.id));
   if (randomPickIds.length) rememberRandom(randomPickIds);
   renderRandomPicks();
 }
@@ -207,6 +210,8 @@ async function setupNotionImport() {
 export function initHome() {
   // renderHome()は末尾でrenderShelf/renderThemeShelfも呼ぶため、個別の購読は不要(二重描画を避ける)。
   subscribe(renderHome);
+  initRandomMode();
+  document.addEventListener("random-mode-change", drawRandomPicks);
   $("#randomScope").addEventListener("change", drawRandomPicks);
   document.addEventListener("click", (event) => {
     if (event.target.closest("[data-action='draw-random']")) { event.preventDefault(); drawRandomPicks(); return; }
