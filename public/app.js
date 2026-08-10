@@ -129,8 +129,8 @@ async function init() {
     initReadingPrioritySurfaces();
     initHomeExperience();
     initDetail();
-    initDetailTopNotes();
     initAmazonTitleSearch();
+    initDetailTopNotes();
     initCoverResolution();
     initWordMemos();
     initWordMemoBulkSelection();
