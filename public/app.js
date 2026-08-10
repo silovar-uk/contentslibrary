@@ -11,6 +11,7 @@ import { initLibrary, renderWorkList } from "./views/library.js";
 import { initReadingPriority } from "./views/reading-priority.js";
 import { initReadingPrioritySurfaces } from "./views/reading-priority-surfaces.js";
 import { initDetail, openDetail } from "./views/detail.js";
+import { initDetailTopNotes } from "./views/detail-top-notes.js";
 import { initAmazonTitleSearch } from "./views/amazon-title-search.js";
 import { initCoverResolution } from "./views/cover-resolution.js";
 import { initWordMemos } from "./views/word-memos.js";
@@ -129,6 +130,7 @@ async function init() {
     initHomeExperience();
     initDetail();
     initAmazonTitleSearch();
+    initDetailTopNotes();
     initCoverResolution();
     initWordMemos();
     initWordMemoBulkSelection();
