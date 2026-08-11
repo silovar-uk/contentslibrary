@@ -1,3 +1,5 @@
+@import url("/styles/detail-document.css");
+
 .detail-top-notes{margin-top:10px;padding-top:14px;padding-bottom:12px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:linear-gradient(180deg,color-mix(in srgb,var(--surface-2) 60%,transparent),transparent)}
 .detail-top-notes-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:8px}
 .detail-top-notes-heading>div{display:grid;gap:1px}
