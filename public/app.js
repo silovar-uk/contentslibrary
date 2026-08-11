@@ -12,7 +12,6 @@ import { initWalletStacks } from "./views/wallet-stacks.js";
 import { initLibrary, renderWorkList } from "./views/library.js";
 import { initReadingPriority } from "./views/reading-priority.js";
 import { initReadingPrioritySurfaces } from "./views/reading-priority-surfaces.js";
-import { initReadingDesire } from "./views/reading-desire.js";
 import { initLightEditSurfaces } from "./views/light-edit-surfaces.js";
 import { initDetail, openDetail } from "./views/detail.js";
 import { initDetailTopNotes } from "./views/detail-top-notes.js";
@@ -132,7 +131,6 @@ async function init() {
     initHome();
     initRandomScopeOptions();
     initReadingPrioritySurfaces();
-    initReadingDesire();
     initLightEditSurfaces();
     initHomeExperience();
     initEditorialHome();
