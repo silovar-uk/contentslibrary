@@ -1,0 +1,103 @@
+/* Phase 4: light editing surfaces.
+   Desktop = popover, mobile = bottom sheet. */
+.light-edit-popover{position:relative;display:inline-flex;align-items:flex-start}
+.light-edit-popover summary{display:inline-flex;align-items:center;justify-content:space-between;gap:6px;min-height:30px;list-style:none;border:1px solid var(--line);border-radius:7px;background:var(--surface);padding:5px 8px;color:var(--ink);font-size:10px;font-weight:700;cursor:pointer}
+.light-edit-popover summary::-webkit-details-marker{display:none}
+.light-edit-popover summary i{font-style:normal;color:var(--muted);font-size:9px;transition:transform .12s ease}
+.light-edit-popover[open] summary i{transform:rotate(180deg)}
+.light-edit-popover-menu{display:none;position:absolute;z-index:50;top:34px;left:0;min-width:180px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:5px;box-shadow:0 14px 36px rgba(0,0,0,.12)}
+.light-edit-popover[open] .light-edit-popover-menu{display:grid}
+.light-edit-popover-choice{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:36px;border:0;border-radius:7px;background:transparent;padding:7px 9px;text-align:left;color:var(--ink);font-size:11px;cursor:pointer}
+.light-edit-popover-choice:hover{background:var(--surface-2)}
+.light-edit-popover-choice.is-active{color:var(--accent);font-weight:750}
+.light-edit-popover-choice strong{font-size:11px}
+
+.light-edit-status-wrap{display:grid;grid-template-columns:68px minmax(0,1fr);align-items:center;gap:0;min-height:40px;width:100%;border-bottom:1px solid color-mix(in srgb,var(--line) 64%,transparent);padding:6px 0}
+.light-edit-property-label{color:var(--muted);font-size:10px}
+.detail-document .detail-doc-properties>.light-edit-status-wrap{order:-1}
+
+.mobile-sort-sheet-button{display:none}
+
+.light-edit-sheet{width:100%;max-width:none;height:100%;max-height:none;margin:0;padding:0;border:0;background:transparent;overflow:hidden}
+.light-edit-sheet::backdrop{background:rgba(17,19,17,.44);backdrop-filter:blur(2px)}
+.light-edit-sheet-card{position:absolute;left:0;right:0;bottom:0;max-height:min(78dvh,680px);overflow:auto;border-radius:20px 20px 0 0;background:var(--surface);padding:8px 12px calc(14px + env(safe-area-inset-bottom));box-shadow:0 -24px 70px rgba(0,0,0,.2)}
+.light-edit-sheet-handle,.light-filter-sheet-handle{width:38px;height:4px;margin:2px auto 10px;border-radius:999px;background:color-mix(in srgb,var(--muted) 32%,transparent)}
+.light-edit-sheet-card>header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:3px 4px 10px}
+.light-edit-sheet-card>header span{display:block;color:var(--muted);font-size:8px;font-weight:800;letter-spacing:.12em}
+.light-edit-sheet-card>header h2{margin:2px 0 0;font-size:18px}
+.light-edit-sheet-body{display:grid;overflow:hidden;border:1px solid var(--line);border-radius:13px;background:var(--surface)}
+.light-edit-sheet-choice{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:52px;border:0;border-bottom:1px solid var(--line);background:transparent;padding:10px 13px;text-align:left;color:var(--ink);font-size:14px;cursor:pointer}
+.light-edit-sheet-choice:last-child{border-bottom:0}
+.light-edit-sheet-choice.is-active{color:var(--accent);font-weight:750}
+.light-edit-sheet-choice i{font-style:normal;color:var(--muted);font-size:18px}
+.light-edit-sheet-choice strong{font-size:13px}
+
+.filter-sheet-backdrop{display:none}
+.filter-sheet-close,.light-filter-sheet-handle{display:none}
+
+@media(max-width:767px){
+  .reading-priority-surface .reading-priority-surface-menu,
+  .light-edit-status .light-edit-popover-menu{display:none!important}
+  .reading-priority-surface summary,
+  .light-edit-status summary{cursor:pointer}
+
+  .detail-document .detail-doc-properties>.light-edit-status-wrap{
+    display:grid;
+    grid-template-columns:90px minmax(0,1fr);
+    align-items:center;
+    gap:8px;
+    min-height:52px;
+    margin:0;
+    border-bottom:1px solid var(--line);
+    padding:9px 12px;
+  }
+  .light-edit-property-label{font-size:11px}
+  .light-edit-status{width:100%}
+  .light-edit-status summary{width:100%;min-height:36px;border-radius:9px;padding:7px 9px;font-size:11px}
+
+  #sortSelect{display:none}
+  .mobile-sort-sheet-button{display:inline-flex;width:100%;justify-content:flex-start;min-height:42px;text-align:left;white-space:normal}
+
+  .filter-sheet-backdrop{
+    display:block;
+    position:fixed;
+    inset:0;
+    z-index:69;
+    border:0;
+    background:rgba(17,19,17,.4);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .16s ease;
+  }
+  body.filter-sheet-open .filter-sheet-backdrop{opacity:1;pointer-events:auto}
+  body.filter-sheet-open{overflow:hidden}
+  .filter-panel.light-filter-sheet{
+    display:block;
+    position:fixed;
+    inset:auto 0 0 0;
+    z-index:70;
+    width:100%;
+    max-width:none;
+    max-height:min(82dvh,760px);
+    overflow:auto;
+    transform:translateY(105%);
+    border:1px solid var(--line);
+    border-bottom:0;
+    border-radius:20px 20px 0 0;
+    background:var(--surface);
+    padding:8px 14px calc(var(--mobile-nav) + 14px);
+    box-shadow:0 -24px 70px rgba(0,0,0,.2);
+    transition:transform .18s ease;
+  }
+  .filter-panel.light-filter-sheet.is-open{transform:translateY(0)}
+  .light-filter-sheet-handle{display:block;position:sticky;top:0;z-index:2}
+  .filter-panel.light-filter-sheet .panel-heading{position:sticky;top:0;z-index:1;margin:0 -2px 12px;padding:5px 2px 9px;background:var(--surface)}
+  .filter-sheet-close{display:grid;margin-left:auto}
+  .filter-panel.light-filter-sheet .panel-heading .icon-button[data-action="clear-filters"]{margin-left:auto}
+  .filter-panel.light-filter-sheet .field-label input,
+  .filter-panel.light-filter-sheet .field-label select{font-size:max(16px,1em)}
+}
+
+@media(max-width:380px){
+  .detail-document .detail-doc-properties>.light-edit-status-wrap{grid-template-columns:78px minmax(0,1fr)}
+}
