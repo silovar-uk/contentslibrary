@@ -1,0 +1,110 @@
+/* Phase 8: cross-cutting UI polish and resilience. */
+:root{
+  --ui-radius-card:18px;
+  --ui-radius-inner:10px;
+  --ui-shadow-card:0 8px 24px rgba(39,41,35,.055);
+  --ui-focus:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent);
+}
+
+/* Focus and state consistency */
+:where(button,a,input,select,textarea,summary):focus-visible{
+  outline:2px solid color-mix(in srgb,var(--accent) 76%,white);
+  outline-offset:2px;
+  box-shadow:var(--ui-focus);
+}
+:where(button,[role="button"],summary):disabled,
+:where(button,[role="button"])[aria-disabled="true"]{opacity:.46;cursor:not-allowed}
+
+/* Long-content safety */
+:where(.work-card,.random-pick-card,.reading-card,.detail-panel,.editorial-card,.wallet-stack-card,.command-palette-card){min-width:0}
+:where(.detail-panel,.fact-section,.note-block,.timeline-item,.command-palette-copy,.wallet-stack-copy) :where(p,a,dd,strong,small,span){overflow-wrap:anywhere;word-break:normal}
+.fact-section a,.detail-panel a{max-width:100%}
+
+/* Surface hierarchy: strong outer surface, quiet inner controls */
+.editorial-card,.wallet-stack-card{border-color:color-mix(in srgb,var(--line) 88%,transparent);box-shadow:var(--ui-shadow-card)}
+.editorial-card :where(.random-pick-card,.reading-card),
+.detail-document :where(.note-block,.creator-fact),
+.wallet-stack-card :where(.wallet-stack-book){box-shadow:none}
+.detail-document .quick-edit-card{box-shadow:none}
+
+/* Keep chips visually subordinate to titles/content */
+:where(.label-chip,.type-pill,.genre-badge,.filter-chip){font-weight:700;letter-spacing:0}
+.label-chip{border:1px solid color-mix(in srgb,var(--line) 70%,transparent);background:color-mix(in srgb,var(--surface-2) 72%,transparent)}
+.type-pill,.genre-badge{box-shadow:none}
+
+/* Titles: never force the surrounding layout wider */
+:where(.work-card h3,.random-pick-card h3,.reading-card h3,.detail-header h2,.wallet-stack-title-fallback){max-width:100%;overflow-wrap:anywhere}
+.detail-header h2{hyphens:auto}
+
+/* Avoid sticky hover affordances on touch devices */
+@media(hover:hover) and (pointer:fine){
+  .editorial-card,.wallet-stack-card{transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+  .wallet-stack-toggle:hover,.command-palette-result:hover{color:var(--ink)}
+}
+
+/* Reduced motion covers all newly added UI layers */
+@media(prefers-reduced-motion:reduce){
+  .editorial-card,.wallet-stack-card,.wallet-stack-book,.command-palette-result,.light-edit-sheet-card,.filter-panel.light-filter-sheet{transition:none!important;animation:none!important;scroll-behavior:auto!important}
+}
+
+@media(max-width:767px){
+  /* Current product rule: random draw is always two columns on phones. */
+  #randomStage .random-pick-grid,
+  .editorial-home .random-pick-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+
+  #randomStage .random-pick-card{min-width:0;max-width:100%;border-radius:13px}
+  #randomStage .random-pick-main{min-width:0;padding:9px!important}
+  #randomStage .random-pick-card h3{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:12px!important;line-height:1.38}
+  #randomStage .random-pick-creator,#randomStage .random-pick-status{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #randomStage .card-note-row{min-width:0}
+
+  /* Five-step controls must fit inside a half-width random card. */
+  .reading-desire-card .reading-desire-scale{grid-template-columns:repeat(5,minmax(0,1fr))!important;width:100%}
+  .reading-desire-card .reading-desire-step{min-width:0;width:100%;height:26px}
+  #randomStage .card-rating{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr));width:auto;gap:1px!important}
+  #randomStage .card-star{min-width:0!important;width:100%!important;height:28px!important}
+
+  /* Touch targets, excluding intentionally dense 5-step controls. */
+  :where(.primary-button,.secondary-button,.ghost-button,.danger-button,.text-button,.draw-button,.wallet-stack-toggle,.wallet-stack-more,.command-palette-result,.light-edit-sheet-choice){min-height:42px}
+  :where(.reading-desire-step,.card-star,.reading-priority-choice){touch-action:manipulation}
+
+  /* Grouped detail remains readable at larger text sizes. */
+  #detailPanel.detail-document{font-size:1rem}
+  .detail-document .detail-doc-label{margin-top:18px}
+  .detail-document .detail-doc-properties>*{min-width:0}
+  .detail-document .detail-doc-properties :where(button,summary){max-width:100%}
+  .detail-document .fact-section dl{min-width:0}
+  .detail-document .fact-section dd{min-width:0;overflow-wrap:anywhere}
+
+  /* Command palette and sheets cannot escape the visual viewport. */
+  .command-palette-card,.light-edit-sheet-card,.filter-panel.light-filter-sheet{max-width:100vw}
+  .command-palette-results,.light-edit-sheet-body{overscroll-behavior:contain}
+
+  /* Wallet stack should stay inside narrow screens when expanded. */
+  .wallet-stack-card{overflow:hidden}
+  .wallet-stack-deck{max-width:100%}
+  .wallet-stack-book{max-width:26vw}
+
+  /* Editorial hierarchy without nested heavy cards. */
+  .editorial-card,.wallet-stack-card{box-shadow:none}
+  .editorial-explore-grid .editorial-card-explore,.editorial-recents-grid .editorial-card-secondary{border-radius:16px}
+}
+
+@media(max-width:390px){
+  /* Explicitly override the legacy one-column rule in mobile-text-resilience.css. */
+  #randomStage .random-pick-grid,
+  .editorial-home .random-pick-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}
+  #randomStage .random-pick-main{padding:8px!important}
+  #randomStage .random-pick-card h3{font-size:11px!important}
+  #randomStage .random-pick-creator,#randomStage .random-pick-status{font-size:8px!important}
+  .reading-desire-card{margin-inline:6px}
+  #randomStage .card-rating,#randomStage .card-note-row{margin-inline:6px!important}
+}
+
+@media(max-width:340px){
+  /* Preserve the two-column requirement, but remove nonessential card density. */
+  #randomStage .random-pick-status{display:none}
+  #randomStage .random-pick-card>[data-random-start]{margin-inline:6px!important;padding-inline:4px}
+  .reading-desire-label{font-size:7px}
+  .reading-desire-card .reading-desire-step{height:24px;font-size:7px}
+}
