@@ -26,6 +26,7 @@ import { initDialogs, openWorkDialog } from "./views/dialogs.js";
 import { initMobileSearch } from "./views/mobile-search.js";
 import { initCommandPalette } from "./views/command-palette.js";
 import { initUiPolish } from "./views/ui-polish.js";
+import { initMobileDetailNav } from "./views/mobile-detail-nav.js";
 import { initBulkAdd } from "./views/bulk-add.js";
 import { initBulkJsonAdd } from "./views/bulk-json-add.js";
 import { initBulkJsonOpenFix } from "./views/bulk-json-open-fix.js";
@@ -145,6 +146,7 @@ async function init() {
     initReviewSummaryStability();
     initReviewSummary();
     initUiPolish();
+    initMobileDetailNav();
 
     await Promise.all([loadHome(), loadSnapshot()]);
     renderWorkList();
