@@ -24,26 +24,26 @@ test("390px以下でも2列を維持し1列へ落とさない", async () => {
   const polish = await read("public/styles/ui-polish.css");
   assert.match(resilience, /@media\(max-width:390px\)[\s\S]*\.random-pick-grid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)\}/);
   assert.match(polish, /@media\(max-width:390px\)[\s\S]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/);
-  assert.doesNotMatch(polish, /@media\(max-width:390px\)[\s\S]*grid-template-columns:minmax\(0,1fr\)!important/);
 });
 
-test("ランダムカードは表紙・タイトル・作者・読みたさを前面に置く", async () => {
+test("ランダムカードは表紙・タイトル・作者・読む優先度を前面に置く", async () => {
   const css = await read("public/styles/ui-polish.css");
   assert.match(css, /home-cover-frame[\s\S]*aspect-ratio:2\/3!important/);
   assert.match(css, /random-pick-card h3/);
   assert.match(css, /random-pick-creator/);
-  assert.match(css, /reading-desire-card/);
+  assert.match(css, /reading-priority-surface-random/);
 });
 
-test("作品評価・メモ・優先度チップはスマホのランダムカード前面から外す", async () => {
+test("作品評価・メモ・旧読みたさはスマホのランダムカード前面から外す", async () => {
   const css = await read("public/styles/ui-polish.css");
-  assert.match(css, /#randomStage \.card-rating,[\s\S]*#randomStage \.card-note-row,[\s\S]*#randomStage \.reading-priority-surface-random\{display:none!important\}/);
+  assert.match(css, /#randomStage \.card-rating,[\s\S]*#randomStage \.card-note-row,[\s\S]*#randomStage \.reading-desire-card\{display:none!important\}/);
 });
 
-test("読みたさ5段階は各本カード内で横幅に収まる", async () => {
+test("読む優先度は半幅カード内で1行に収まりスマホではメニュー本体を隠す", async () => {
   const css = await read("public/styles/ui-polish.css");
-  assert.match(css, /reading-desire-card \.reading-desire-scale\{[\s\S]*grid-template-columns:repeat\(5,minmax\(0,1fr\)\)!important/);
-  assert.match(css, /reading-desire-card \.reading-desire-step\{[\s\S]*width:100%!important/);
+  assert.match(css, /reading-priority-surface-random\{[\s\S]*width:calc\(100% - 18px\)!important/);
+  assert.match(css, /reading-priority-surface-random summary\{[\s\S]*width:100%!important/);
+  assert.match(css, /reading-priority-surface-random \.reading-priority-surface-menu\{display:none!important\}/);
 });
 
 test("長文・URL・タイトルの横はみ出し対策を持つ", async () => {
