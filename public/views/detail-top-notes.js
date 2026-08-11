@@ -8,11 +8,19 @@ let observer = null;
 let frame = 0;
 
 function ensureStyle() {
-  if ($('link[href="/styles/detail-top-notes.css"]')) return;
-  const link = document.createElement("link");
-  link.rel = "stylesheet";
-  link.href = "/styles/detail-top-notes.css";
-  document.head.append(link);
+  let link = $('link[href="/styles/detail-top-notes.css"]');
+  if (!link) {
+    link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "/styles/detail-top-notes.css";
+    document.head.append(link);
+  }
+  if (!$('link[href="/styles/mobile-grouped-detail.css"]')) {
+    const mobile = document.createElement("link");
+    mobile.rel = "stylesheet";
+    mobile.href = "/styles/mobile-grouped-detail.css";
+    document.head.append(mobile);
+  }
 }
 
 export function recentDetailNotes(notes = [], limit = 3) {

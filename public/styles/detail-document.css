@@ -1,3 +1,5 @@
+@import url("/styles/mobile-grouped-detail.css");
+
 /* Phase 2: Notion-inspired detail document.
    カードの集合ではなく、1枚の作品ページとして読む。 */
 .detail-document{--detail-doc-gap:22px}
