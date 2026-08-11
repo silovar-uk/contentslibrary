@@ -1,0 +1,43 @@
+/* Random six + reading desire */
+.reading-desire{display:flex;align-items:center;gap:6px;min-width:0}
+.reading-desire-label,.reading-desire-property-label{color:var(--muted);font-size:9px;font-weight:700;white-space:nowrap}
+.reading-desire-scale{display:flex;align-items:center;gap:3px;min-width:0}
+.reading-desire-step{display:grid;place-items:center;width:22px;height:22px;border:1px solid var(--line);border-radius:50%;background:var(--surface);padding:0;color:var(--muted);font-size:9px;font-weight:700;cursor:pointer;transition:.12s ease}
+.reading-desire-step:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--warm) 58%,var(--line));color:var(--ink)}
+.reading-desire-step.is-on{border-color:color-mix(in srgb,var(--warm) 58%,var(--line));background:color-mix(in srgb,var(--warm) 13%,var(--surface));color:#8b5423}
+.reading-desire-step.is-current{box-shadow:inset 0 0 0 1px currentColor}
+.reading-desire-clear{border:0;background:transparent;padding:2px;color:var(--muted);font-size:11px;cursor:pointer}
+.reading-desire-card{margin:7px 12px 3px;padding-top:7px;border-top:1px solid color-mix(in srgb,var(--line) 66%,transparent)}
+.reading-desire-detail-row{display:grid;grid-template-columns:68px minmax(0,1fr);align-items:center;gap:0;min-height:40px;width:100%;border-bottom:1px solid color-mix(in srgb,var(--line) 64%,transparent);padding:6px 0}
+.reading-desire-detail{justify-content:flex-start}
+
+@media(max-width:767px){
+  /* 6冊を2列で見せる。390px以下でも1列へ落とさない。 */
+  .editorial-home .random-pick-grid,
+  #randomStage .random-pick-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+  #randomStage .random-pick-card{min-width:0;border-radius:13px!important;overflow:hidden}
+  #randomStage .random-pick-main{min-height:0;padding:10px!important}
+  #randomStage .random-pick-card h3{font-size:12px!important;line-height:1.35;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+  #randomStage .genre-badge{font-size:8px;padding:3px 5px}
+  #randomStage .random-pick-creator,#randomStage .random-pick-status{font-size:9px;line-height:1.3}
+  #randomStage .random-pick-card>[data-random-start]{margin-left:10px!important;margin-right:10px!important;font-size:9px}
+  #randomStage .card-rating{margin:3px 8px!important;gap:0!important;flex-wrap:nowrap!important}
+  #randomStage .card-star{width:20px!important;min-width:20px!important;height:26px!important;font-size:12px!important}
+  #randomStage .card-note-row{margin-left:8px!important;margin-right:8px!important}
+  .reading-desire-card{display:block;margin:6px 8px 2px;padding-top:6px}
+  .reading-desire-card .reading-desire-label{display:block;margin-bottom:4px;font-size:8px}
+  .reading-desire-card .reading-desire-scale{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;width:100%}
+  .reading-desire-card .reading-desire-step{width:100%;height:24px;border-radius:6px;font-size:8px}
+  .reading-desire-card .reading-desire-clear{display:block;margin:2px 0 0 auto}
+
+  .detail-document .detail-doc-properties>.reading-desire-detail-row{grid-template-columns:90px minmax(0,1fr);gap:8px;min-height:52px;padding:9px 12px;border-bottom:1px solid var(--line)}
+  .reading-desire-property-label{font-size:11px}
+  .reading-desire-detail{width:100%;justify-content:flex-start;flex-wrap:wrap}
+  .reading-desire-detail .reading-desire-step{width:30px;height:30px;font-size:10px}
+}
+
+@media(max-width:380px){
+  .detail-document .detail-doc-properties>.reading-desire-detail-row{grid-template-columns:78px minmax(0,1fr)}
+  #randomStage .random-pick-grid{gap:6px!important}
+  #randomStage .random-pick-main{padding:9px!important}
+}
