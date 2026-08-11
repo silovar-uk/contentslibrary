@@ -1,6 +1,7 @@
 import { $, esc, fmtDateTime } from "../core/dom.js";
 import { NOTE_LABELS } from "../core/format.js";
 import { state, subscribe } from "../core/store.js";
+import { decorateDetailDocument } from "./detail-document.js";
 
 let initialized = false;
 let observer = null;
@@ -97,6 +98,7 @@ function applyTopNotes() {
   if (!panel || !state.selected) return;
   const recent = syncRecentNotes(panel);
   syncQuickInput(panel, recent);
+  decorateDetailDocument(panel);
 }
 
 function scheduleApply() {
