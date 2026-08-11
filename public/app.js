@@ -24,6 +24,7 @@ import { initReviewSummary } from "./views/review-summary.js";
 import { initReviewSummaryStability } from "./views/review-summary-stability.js";
 import { initDialogs, openWorkDialog } from "./views/dialogs.js";
 import { initMobileSearch } from "./views/mobile-search.js";
+import { initCommandPalette } from "./views/command-palette.js";
 import { initBulkAdd } from "./views/bulk-add.js";
 import { initBulkJsonAdd } from "./views/bulk-json-add.js";
 import { initBulkJsonOpenFix } from "./views/bulk-json-open-fix.js";
@@ -120,6 +121,7 @@ async function init() {
     bindShell();
     initDialogs();
     initMobileSearch();
+    initCommandPalette();
     initBulkAdd();
     initBulkJsonAdd();
     initBulkJsonOpenFix();
