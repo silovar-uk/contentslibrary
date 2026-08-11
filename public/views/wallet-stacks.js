@@ -94,11 +94,15 @@ function renderStacks() {
   const section = ensureSection(home);
   const grid = section.querySelector("#walletStacksGrid");
   const all = Array.from(state.works.values());
-  grid.innerHTML = STACKS.map((config) => {
+  const groups = STACKS.map((config) => {
     const matched = all.filter(config.filter);
     const visible = walletStackWorks(matched, () => true, 5);
-    return stackMarkup(config, visible, matched.length);
-  }).join("");
+    return { config, matched, visible };
+  });
+  const signature = groups.map(({ config, matched, visible }) => `${config.key}:${expanded.has(config.key) ? 1 : 0}:${matched.length}:${visible.map((work) => `${work.id}@${work.version}`).join(",")}`).join("|");
+  if (grid.dataset.signature === signature) return;
+  grid.dataset.signature = signature;
+  grid.innerHTML = groups.map(({ config, matched, visible }) => stackMarkup(config, visible, matched.length)).join("");
 }
 
 function scheduleRender() {
