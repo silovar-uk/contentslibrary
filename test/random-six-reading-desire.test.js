@@ -19,8 +19,8 @@ test("読みたさUIはアプリ初期化から撤去する", async () => {
 
 test("ランダム一覧では読む優先度を選べる", async () => {
   const surface = await read("public/views/reading-priority-surfaces.js");
-  assert.match(surface, /decorateRandomCards/);
-  assert.match(surface, /reading-priority-surface-random/);
+  assert.match(surface, /function decorateRandomCards/);
+  assert.match(surface, /syncSurface\(card, work, "random"/);
   assert.match(surface, /data-reading-priority-set/);
 });
 
