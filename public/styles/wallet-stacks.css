@@ -1,0 +1,53 @@
+/* Phase 6: Apple Wallet-inspired stacks.
+   一覧ではなく「束」として所有感を見せる。 */
+.wallet-stacks-section{margin:0 0 18px}
+.wallet-stacks-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:0 0 10px;padding:0 2px}
+.wallet-stacks-heading span{display:block;color:var(--muted);font-size:8px;font-weight:800;letter-spacing:.12em}
+.wallet-stacks-heading h2{margin:2px 0 2px;font-size:22px;letter-spacing:-.02em}
+.wallet-stacks-heading p{margin:0;color:var(--muted);font-size:11px}
+.wallet-stacks-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.wallet-stack-card{position:relative;min-width:0;border:1px solid var(--line);border-radius:20px;background:var(--surface);padding:14px;overflow:hidden;box-shadow:0 10px 28px rgba(39,41,35,.045)}
+.wallet-stack-toggle{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;width:100%;border:0;background:transparent;padding:0;text-align:left;color:var(--ink);cursor:pointer}
+.wallet-stack-copy{display:grid;gap:2px;min-width:0}
+.wallet-stack-copy small{color:var(--muted);font-size:8px;font-weight:800;letter-spacing:.11em}
+.wallet-stack-copy strong{font-size:17px;line-height:1.2}
+.wallet-stack-copy span{color:var(--muted);font-size:10px;line-height:1.45}
+.wallet-stack-count{display:flex;align-items:center;gap:7px;flex:none}
+.wallet-stack-count b{font-size:18px}
+.wallet-stack-count i{display:grid;place-items:center;width:26px;height:26px;border:1px solid var(--line);border-radius:50%;background:var(--surface-2);font-style:normal;font-size:14px;color:var(--muted)}
+.wallet-stack-deck{position:relative;height:168px;margin-top:14px}
+.wallet-stack-book{position:absolute;left:50%;bottom:2px;width:88px;height:124px;transform:translateX(calc(-50% + (var(--stack-index) - 2) * 8px)) translateY(calc(var(--stack-index) * -5px)) rotate(calc((var(--stack-index) - 2) * 2deg));transform-origin:50% 100%;border:1px solid color-mix(in srgb,var(--line) 84%,transparent);border-radius:8px;background:var(--surface-2);padding:0;overflow:hidden;box-shadow:0 8px 18px rgba(23,25,23,.15);cursor:pointer;transition:transform .2s ease,box-shadow .2s ease}
+.wallet-stack-book img{width:100%;height:100%;object-fit:cover;display:block}
+.wallet-stack-title-fallback{display:flex;align-items:flex-end;width:100%;height:100%;padding:10px;background:linear-gradient(160deg,color-mix(in srgb,var(--accent) 13%,var(--surface-2)),var(--surface-2));color:var(--ink);font-size:10px;font-weight:750;line-height:1.35;text-align:left;overflow-wrap:anywhere}
+.wallet-stack-book:nth-child(1){z-index:5}.wallet-stack-book:nth-child(2){z-index:4}.wallet-stack-book:nth-child(3){z-index:3}.wallet-stack-book:nth-child(4){z-index:2}.wallet-stack-book:nth-child(5){z-index:1}
+.wallet-stack-card:not(.is-expanded) .wallet-stack-book:not(:first-child){pointer-events:none}
+.wallet-stack-card:not(.is-expanded) .wallet-stack-book:first-child{transform:translateX(-50%) translateY(0) rotate(0deg)}
+.wallet-stack-card.is-expanded .wallet-stack-deck{height:180px}
+.wallet-stack-card.is-expanded .wallet-stack-book{transform:translateX(calc(-50% + (var(--stack-index) - 2) * 42px)) translateY(calc(abs(var(--stack-index) - 2) * 8px)) rotate(calc((var(--stack-index) - 2) * 4deg));box-shadow:0 10px 22px rgba(23,25,23,.18)}
+.wallet-stack-card.is-expanded .wallet-stack-book:hover{transform:translateX(calc(-50% + (var(--stack-index) - 2) * 42px)) translateY(-8px) rotate(calc((var(--stack-index) - 2) * 3deg));z-index:10}
+.wallet-stack-empty{display:grid;place-items:center;height:124px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);font-size:10px}
+.wallet-stack-more{display:block;margin:8px 0 0 auto;border:0;background:transparent;padding:4px 0;color:var(--accent);font-size:10px;font-weight:700;cursor:pointer}
+
+@media(max-width:980px){
+  .wallet-stacks-grid{grid-template-columns:minmax(0,1fr)}
+  .wallet-stack-card{display:grid;grid-template-columns:minmax(0,1fr) minmax(190px,.8fr);align-items:center;gap:10px}
+  .wallet-stack-toggle{align-self:start}
+  .wallet-stack-deck{grid-column:2;grid-row:1/3;margin-top:0}
+  .wallet-stack-more{grid-column:1;justify-self:start;margin:8px 0 0}
+}
+
+@media(max-width:767px){
+  .wallet-stacks-section{margin-bottom:12px}
+  .wallet-stacks-heading h2{font-size:19px}
+  .wallet-stacks-heading p{font-size:10px}
+  .wallet-stacks-grid{gap:10px}
+  .wallet-stack-card{display:block;padding:13px;border-radius:18px;box-shadow:none}
+  .wallet-stack-deck{height:150px;margin-top:10px}
+  .wallet-stack-book{width:78px;height:110px}
+  .wallet-stack-card.is-expanded .wallet-stack-deck{height:162px}
+  .wallet-stack-card.is-expanded .wallet-stack-book{transform:translateX(calc(-50% + (var(--stack-index) - 2) * 34px)) translateY(calc(abs(var(--stack-index) - 2) * 7px)) rotate(calc((var(--stack-index) - 2) * 3.5deg))}
+}
+
+@media(max-width:380px){
+  .wallet-stack-card.is-expanded .wallet-stack-book{transform:translateX(calc(-50% + (var(--stack-index) - 2) * 28px)) translateY(calc(abs(var(--stack-index) - 2) * 6px)) rotate(calc((var(--stack-index) - 2) * 3deg))}
+}
