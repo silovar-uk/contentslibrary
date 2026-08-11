@@ -48,21 +48,111 @@
 }
 
 @media(max-width:767px){
-  /* Current product rule: random draw is always two columns on phones. */
+  /* Random shelf = six books in a strict 2 x 3 grid. */
   #randomStage .random-pick-grid,
-  .editorial-home .random-pick-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+  .editorial-home #randomStage .random-pick-grid{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    grid-auto-flow:row!important;
+    grid-auto-columns:auto!important;
+    gap:12px 10px!important;
+    width:100%!important;
+    max-width:100%!important;
+    overflow:visible!important;
+  }
 
-  #randomStage .random-pick-card{min-width:0;max-width:100%;border-radius:13px}
-  #randomStage .random-pick-main{min-width:0;padding:9px!important}
-  #randomStage .random-pick-card h3{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:12px!important;line-height:1.38}
-  #randomStage .random-pick-creator,#randomStage .random-pick-status{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  #randomStage .card-note-row{min-width:0}
+  #randomStage .random-pick-card{
+    grid-column:span 1!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    margin:0!important;
+    border-radius:14px;
+    overflow:hidden;
+    background:var(--surface);
+  }
 
-  /* Five-step controls must fit inside a half-width random card. */
-  .reading-desire-card .reading-desire-scale{grid-template-columns:repeat(5,minmax(0,1fr))!important;width:100%}
-  .reading-desire-card .reading-desire-step{min-width:0;width:100%;height:26px}
-  #randomStage .card-rating{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr));width:auto;gap:1px!important}
-  #randomStage .card-star{min-width:0!important;width:100%!important;height:28px!important}
+  /* The whole half-width cell reads as one book card. */
+  #randomStage .random-pick-main,
+  #randomStage .random-pick-main.is-cover-led{
+    display:flex!important;
+    flex-direction:column!important;
+    width:100%!important;
+    min-width:0!important;
+    padding:0 10px 10px!important;
+  }
+  #randomStage .random-pick-main.is-cover-led .home-cover-frame{
+    width:calc(100% + 20px)!important;
+    margin:0 -10px 10px!important;
+    aspect-ratio:2/3!important;
+    min-height:0!important;
+    border-bottom:1px solid var(--line);
+  }
+  #randomStage .home-cover-frame img{padding:6px!important}
+  #randomStage .home-cover-fallback{padding:11px 9px!important}
+  #randomStage .home-cover-fallback strong{font-size:11px!important;-webkit-line-clamp:5}
+
+  #randomStage .genre-badge{display:none!important}
+  #randomStage .random-pick-card h3{
+    display:-webkit-box;
+    -webkit-box-orient:vertical;
+    -webkit-line-clamp:2;
+    min-height:2.76em;
+    margin:0 0 4px!important;
+    overflow:hidden;
+    font-size:12px!important;
+    line-height:1.38;
+  }
+  #randomStage .random-pick-creator{
+    display:block;
+    margin:0!important;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    font-size:9px!important;
+    line-height:1.4;
+  }
+  #randomStage .random-pick-status{display:none!important}
+
+  /* Keep “読みたさ” on this screen; move secondary controls out of the visual foreground. */
+  #randomStage .reading-desire-card{
+    display:block!important;
+    width:auto!important;
+    margin:0 9px 10px!important;
+    padding:8px 0 0!important;
+    border-top:1px solid color-mix(in srgb,var(--line) 68%,transparent)!important;
+  }
+  #randomStage .reading-desire-card .reading-desire-label{
+    display:block;
+    margin:0 0 5px;
+    font-size:8px;
+  }
+  #randomStage .reading-desire-card .reading-desire-scale{
+    display:grid!important;
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    gap:2px!important;
+    width:100%!important;
+  }
+  #randomStage .reading-desire-card .reading-desire-step{
+    width:100%!important;
+    min-width:0!important;
+    height:26px!important;
+    border-radius:6px!important;
+    font-size:8px!important;
+  }
+
+  #randomStage .card-rating,
+  #randomStage .card-note-row,
+  #randomStage .reading-priority-surface-random{display:none!important}
+  #randomStage .random-pick-card>[data-random-start]{
+    width:calc(100% - 18px)!important;
+    min-height:34px!important;
+    margin:0 9px 9px!important;
+    padding:5px 6px!important;
+    border-radius:8px!important;
+    font-size:9px!important;
+    text-align:center;
+  }
 
   /* Touch targets, excluding intentionally dense 5-step controls. */
   :where(.primary-button,.secondary-button,.ghost-button,.danger-button,.text-button,.draw-button,.wallet-stack-toggle,.wallet-stack-more,.command-palette-result,.light-edit-sheet-choice){min-height:42px}
@@ -91,20 +181,22 @@
 }
 
 @media(max-width:390px){
-  /* Explicitly override the legacy one-column rule in mobile-text-resilience.css. */
   #randomStage .random-pick-grid,
-  .editorial-home .random-pick-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}
-  #randomStage .random-pick-main{padding:8px!important}
+  .editorial-home #randomStage .random-pick-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:10px 8px!important;
+  }
+  #randomStage .random-pick-main,
+  #randomStage .random-pick-main.is-cover-led{padding:0 8px 9px!important}
+  #randomStage .random-pick-main.is-cover-led .home-cover-frame{width:calc(100% + 16px)!important;margin:0 -8px 9px!important}
   #randomStage .random-pick-card h3{font-size:11px!important}
-  #randomStage .random-pick-creator,#randomStage .random-pick-status{font-size:8px!important}
-  .reading-desire-card{margin-inline:6px}
-  #randomStage .card-rating,#randomStage .card-note-row{margin-inline:6px!important}
+  #randomStage .reading-desire-card{margin-inline:7px!important}
+  #randomStage .random-pick-card>[data-random-start]{width:calc(100% - 14px)!important;margin-inline:7px!important}
 }
 
 @media(max-width:340px){
-  /* Preserve the two-column requirement, but remove nonessential card density. */
-  #randomStage .random-pick-status{display:none}
-  #randomStage .random-pick-card>[data-random-start]{margin-inline:6px!important;padding-inline:4px}
-  .reading-desire-label{font-size:7px}
-  .reading-desire-card .reading-desire-step{height:24px;font-size:7px}
+  /* Still 2 x 3: remove secondary copy rather than collapsing to one column. */
+  #randomStage .random-pick-creator{display:none!important}
+  #randomStage .home-cover-fallback strong{font-size:10px!important}
+  #randomStage .reading-desire-card .reading-desire-step{height:24px!important;font-size:7px!important}
 }
