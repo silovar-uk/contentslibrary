@@ -1,0 +1,90 @@
+/* Mobile text-resilience layer.
+   iOS/Safariの文字サイズ変更・Dynamic Type相当の拡大でも、横幅固定でUIが押し出されないようにする。 */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+
+@media(max-width:760px){
+  html,body,#app{max-width:100%;overflow-x:hidden}
+  body{min-width:0}
+  *,*::before,*::after{min-width:0}
+  p,span,strong,small,label,button,a,h1,h2,h3,h4,dd,dt{overflow-wrap:anywhere}
+
+  .topbar{height:auto;min-height:var(--topbar);grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:8px 10px}
+  .brand{min-width:0}
+  .brand>span:last-child{min-width:0}
+  .brand strong,.brand small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .global-search{grid-column:1/-1;grid-row:2;width:100%;height:auto;min-height:44px;grid-template-columns:18px minmax(0,1fr);padding:6px 10px}
+  .global-search kbd,.search-and-hint{display:none}
+  .global-search input{min-width:0;font-size:max(16px,1em)}
+  .top-actions{gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .top-actions .ghost-button{display:none}
+  .top-actions .primary-button.compact{height:auto;min-height:40px;padding-inline:10px;white-space:normal}
+
+  .home-view{padding:24px 14px 88px}
+  .hero-copy h1{font-size:clamp(28px,9vw,42px);line-height:1.12}
+  .random-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:8px;width:100%}
+  .random-controls label{min-width:0}
+  .random-controls select{width:100%;min-width:0;max-width:100%;font-size:max(16px,1em)}
+  .draw-button{min-width:0;height:auto;min-height:46px;padding-inline:12px;white-space:normal}
+  .random-pick-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .random-pick-main{padding:12px}
+  .random-pick-card h3{font-size:1rem;overflow-wrap:anywhere}
+  .random-pick-card>[data-random-start],.random-pick-card>.card-note-row{margin-left:12px;margin-right:12px}
+  .random-pick-card>.card-rating{margin-left:12px;margin-right:12px;flex-wrap:wrap}
+
+  .shelf-heading,.section-heading,.panel-heading,.section-heading-row,.detail-top-notes-heading{align-items:flex-start;gap:8px;flex-wrap:wrap}
+  .shelf-summary,.section-heading>div,.list-tools,.section-heading-tools{flex-wrap:wrap;min-width:0}
+  .shelf-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .shelf-item{grid-column:span 1!important}
+
+  .reading-strip,.home-columns,.stats-bar{grid-template-columns:minmax(0,1fr)}
+  .compact-item{grid-template-columns:minmax(0,1fr);gap:4px}
+  .stat{border-right:0;border-bottom:1px solid var(--line)}
+
+  .library-view{grid-template-columns:minmax(0,1fr);height:auto;min-height:calc(100dvh - var(--topbar));overflow:visible}
+  .filter-panel,.list-panel,.detail-panel{width:100%;max-width:100%;overflow-x:hidden}
+  .list-panel,.detail-panel{padding:16px 14px}
+  .filter-panel{padding:14px}
+  .list-heading{align-items:flex-start}
+  .list-heading h1{font-size:clamp(22px,7vw,29px)}
+  .list-tools{width:100%}
+  .list-tools>*{flex:1 1 auto;max-width:100%}
+
+  .work-card,.reading-card,.random-pick-card,.note-block,.timeline-item{max-width:100%;overflow:hidden}
+  .work-card *,.detail-panel *{max-width:100%}
+  .type-status,.card-rating,.item-top,.item-actions,.preference-panel,.rating-picker>div{flex-wrap:wrap}
+  .card-star{flex:0 0 30px;width:30px;height:30px}
+
+  .preference-panel{align-items:flex-start;gap:10px}
+  .preference-panel>*{max-width:100%}
+  .favorite-button{white-space:normal}
+  .rating-picker{min-width:0}
+  .rating-picker>div{display:flex;gap:4px}
+
+  .reading-priority-home-head{flex-wrap:wrap;align-items:flex-start}
+  .reading-priority-home-organize{white-space:normal;max-width:100%}
+  .reading-priority-home-stats{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:5px!important}
+  .reading-priority-home-stat{min-width:0;justify-content:space-between!important;white-space:normal}
+  .reading-priority-surface-menu{max-width:min(100%,calc(100vw - 32px));flex-wrap:wrap}
+  .reading-priority-choice{flex:1 1 calc(50% - 4px);min-width:0;height:auto;min-height:34px;white-space:normal}
+
+  .detail-top-note-row{grid-template-columns:minmax(0,1fr);gap:3px}
+  .detail-top-note-edit{display:none}
+  .detail-top-note-meta{flex-wrap:wrap}
+  .detail-top-note-quick .inline-note-form{grid-template-columns:minmax(0,1fr)}
+  .detail-top-note-quick textarea{grid-column:1;width:100%;font-size:max(16px,1em)}
+  .detail-top-note-quick .inline-note-footer{grid-column:1;width:100%}
+  .detail-top-note-quick .inline-note-footer button{width:100%;white-space:normal}
+
+  dialog{max-width:calc(100vw - 20px)!important;max-height:calc(100dvh - 20px)!important}
+  input,select,textarea{max-width:100%}
+  textarea,input[type="text"],input[type="search"],select{font-size:max(16px,1em)}
+  .primary-button,.secondary-button,.ghost-button,.danger-button{height:auto;min-height:42px;white-space:normal;text-align:center}
+}
+
+@media(max-width:390px){
+  .random-controls{grid-template-columns:minmax(0,1fr)}
+  .draw-button{width:100%}
+  .random-pick-grid{grid-template-columns:minmax(0,1fr)}
+  .reading-priority-home-stats{grid-template-columns:minmax(0,1fr)!important}
+  .shelf-grid{grid-template-columns:minmax(0,1fr)}
+}

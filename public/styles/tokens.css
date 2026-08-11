@@ -1,3 +1,5 @@
+@import url("/styles/mobile-text-resilience.css");
+
 /* デザイントークン。--line/--muted等の名前はimport-center(v09/v10/v20)のCSSが
    フォールバック付きvar()で参照しているため、名前を変えない。 */
 :root {
