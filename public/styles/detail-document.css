@@ -1,0 +1,82 @@
+/* Phase 2: Notion-inspired detail document.
+   カードの集合ではなく、1枚の作品ページとして読む。 */
+.detail-document{--detail-doc-gap:22px}
+.detail-document .detail-header{position:relative;padding-bottom:18px;border-bottom:0}
+.detail-document .detail-header h2{max-width:26ch;margin:9px 0 5px;font-size:clamp(25px,2.2vw,31px);line-height:1.16;letter-spacing:-.02em}
+.detail-document .detail-header .creator{font-size:12px}
+.detail-document .detail-actions{gap:5px;margin-top:14px}
+.detail-document .detail-actions .ghost-button{min-height:30px;border-color:transparent;background:transparent;padding:0 7px;color:var(--muted);font-size:10px}
+.detail-document .detail-actions .ghost-button:hover{border-color:var(--line);background:var(--surface-2);color:var(--ink)}
+
+.detail-doc-label{display:grid;grid-template-columns:112px minmax(0,1fr);align-items:baseline;gap:12px;margin:26px 0 4px;padding-top:17px;border-top:1px solid var(--line)}
+.detail-doc-label span{color:var(--muted);font-size:8px;font-weight:800;letter-spacing:.12em}
+.detail-doc-label strong{font-size:12px;font-weight:750;color:var(--ink)}
+.detail-doc-label[data-detail-doc-label="work"]{margin-top:4px}
+
+.detail-document>.detail-section,
+.detail-document>.preference-panel,
+.detail-document>.quick-edit-card{border-bottom:0}
+.detail-document>.detail-section{padding:12px 0}
+.detail-document>.detail-section h3{margin-bottom:9px;font-size:10px;letter-spacing:.08em}
+
+.detail-document .detail-doc-cover{padding-top:9px}
+.detail-document .cover-current{align-items:flex-start}
+.detail-document .detail-cover-image{width:96px;height:136px;border-radius:6px;box-shadow:0 5px 18px rgba(39,41,35,.09)}
+.detail-document .cover-current .ghost-button{margin-top:3px;border-color:transparent;background:transparent;color:var(--muted);font-size:10px}
+
+.detail-document .detail-doc-properties{display:grid;grid-template-columns:minmax(0,1fr);gap:0;padding:3px 0;border:0}
+.detail-document .detail-doc-properties>.favorite-button,
+.detail-document .detail-doc-properties>.rating-picker,
+.detail-document .detail-doc-properties>.reading-priority-detail-wrap{min-height:40px;width:100%;margin:0;border:0;border-bottom:1px solid color-mix(in srgb,var(--line) 64%,transparent);border-radius:0;background:transparent;padding:6px 0}
+.detail-document .detail-doc-properties>.favorite-button{justify-content:flex-start}
+.detail-document .detail-doc-properties>.favorite-button span{min-width:68px;background:transparent;padding:0;color:var(--muted);font-size:10px}
+.detail-document .detail-doc-properties>.favorite-button strong{font-size:12px}
+.detail-document .detail-doc-properties>.rating-picker{display:grid;grid-template-columns:68px minmax(0,1fr);align-items:center;gap:0}
+.detail-document .detail-doc-properties>.rating-picker>span{font-size:10px}
+.detail-document .detail-doc-properties>.rating-picker>div{gap:3px;flex-wrap:wrap}
+.detail-document .detail-doc-properties>.rating-picker button{width:27px;height:27px;font-size:10px}
+.detail-document .detail-doc-properties>.reading-priority-detail-wrap{display:grid;grid-template-columns:68px minmax(0,1fr);align-items:center;gap:0;padding-left:0}
+.detail-document .reading-priority-detail-label{font-size:10px}
+.detail-document .reading-priority-surface-detail summary{min-height:28px;border-radius:6px;padding:4px 7px;font-size:9px}
+
+.detail-document .quick-edit-card{margin:8px 0 2px;border:1px solid var(--line);border-radius:9px;background:color-mix(in srgb,var(--surface-2) 55%,transparent);padding:14px}
+.detail-document .detail-top-notes{margin-top:3px;padding:8px 0 7px;border-top:0;border-bottom:0;background:transparent}
+.detail-document .detail-top-note-row{border-radius:7px;padding:7px 5px}
+.detail-document .detail-top-note-row:hover{background:var(--surface-2)}
+.detail-document .detail-top-note-quick{padding:7px 0 3px}
+.detail-document .detail-top-note-quick textarea{border-radius:7px;background:var(--surface)}
+
+.detail-document .detail-short{font-size:14px;line-height:1.75}
+.detail-document .classification-grid{gap:0}
+.detail-document .classification-group{display:grid;grid-template-columns:80px minmax(0,1fr);align-items:start;gap:8px;min-height:36px;padding:6px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 58%,transparent)}
+.detail-document .classification-group strong{margin:2px 0 0;font-size:10px;font-weight:600}
+.detail-document .classification-group>div{display:flex;flex-wrap:wrap;gap:5px}
+.detail-document .label-chip{padding:3px 6px;border-radius:5px;background:var(--surface-2);font-size:9px}
+
+.detail-document .fact-section dl{grid-template-columns:90px minmax(0,1fr);gap:0;margin:0;font-size:12px}
+.detail-document .fact-section dt,
+.detail-document .fact-section dd{margin:0;padding:7px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 58%,transparent)}
+.detail-document .fact-section dt{color:var(--muted);font-size:10px}
+.detail-document .creator-fact{margin:8px 0 0;border:0;border-radius:7px;background:var(--surface-2);padding:10px}
+
+.detail-document .detail-doc-history{padding-top:8px}
+.detail-document .section-heading-row{align-items:flex-start;gap:8px;flex-wrap:wrap}
+.detail-document .section-heading-row h3{font-size:11px;color:var(--ink);letter-spacing:0;text-transform:none}
+.detail-document .timeline-item{padding-bottom:15px}
+.detail-document .note-block{margin-bottom:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent;padding:12px 0}
+.detail-document .note-block:last-child{border-bottom:0}
+.detail-document .note-block header{align-items:flex-start}
+.detail-document .note-block p{line-height:1.7}
+
+.detail-document .detail-doc-danger{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);opacity:.7}
+.detail-document .danger-zone{border:0;background:transparent;padding:0}
+
+@media(max-width:767px){
+  .detail-doc-label{grid-template-columns:1fr;gap:1px;margin-top:22px;padding-top:14px}
+  .detail-doc-label strong{font-size:13px}
+  .detail-document .detail-header h2{font-size:24px}
+  .detail-document .detail-doc-properties>.rating-picker,
+  .detail-document .detail-doc-properties>.reading-priority-detail-wrap{grid-template-columns:82px minmax(0,1fr)}
+  .detail-document .classification-group{grid-template-columns:74px minmax(0,1fr)}
+  .detail-document .fact-section dl{grid-template-columns:82px minmax(0,1fr)}
+}
