@@ -35,7 +35,6 @@ test('一覧は先頭PAGE_SIZE件だけ描画し、もっと見るで追加表�
   assert.match(library, /works\.slice\(0, visibleCount\)/);
   assert.match(library, /data-action='load-more-works'/);
   assert.match(library, /visibleCount \+= PAGE_SIZE; renderWorkList\(\);/);
-  // 絞り込みが変わったら先頭からやり直す(古いページ位置を引きずらない)
   assert.match(library, /if \(filtersKey !== lastFiltersKey\) \{ lastFiltersKey = filtersKey; visibleCount = PAGE_SIZE; \}/);
 });
 
@@ -47,20 +46,18 @@ test('カードメモの開閉状態と保存処理はstore.jsで一覧・ホー
   assert.match(store, /export const openNoteCardIds = new Set\(\);/);
   assert.match(store, /export function toggleCardNote/);
   assert.match(store, /export async function submitCardNote/);
-  // 開閉・保存のイベント処理はapp.jsに一本化し、library.js/home.jsに重複実装を持たない
   assert.match(app, /data-toggle-card-note/);
   assert.match(app, /data-card-note-form/);
   assert.doesNotMatch(library, /document\.addEventListener\("submit"/);
   assert.doesNotMatch(home, /data-toggle-card-note/);
 });
 
-test('抽選5冊のカードにも★とメモ入力を置き、state.worksから引き直して描画する', async () => {
+test('抽選6冊のカードにも★とメモ入力を置き、state.worksから引き直して描画する', async () => {
   const home = await read('public/views/home.js');
   const body = home.match(/function randomPickMarkup[\s\S]*?\n}/)[0];
   assert.match(body, /cardRatingMarkup\(work\)/);
   assert.match(body, /cardNoteMarkup\(work, openNoteCardIds\.has\(work\.id\)\)/);
   assert.match(home, /randomPickIds\.map\(\(id\) => state\.works\.get\(id\)\)/);
-  // 抽選のやり直し(顔ぶれの変更)はrenderHome内から直接ではなく、drawRandomPicksだけが行う
   assert.match(home, /renderRandomPicks\(\); \/\/ 抽選のやり直しはしない/);
 });
 
@@ -71,7 +68,7 @@ test('読み込み中は空表示ではなくスケルトンを出す(3か所)',
   const css = await read('public/styles/app.css');
   assert.match(dom, /export function skeletonCards/);
   assert.match(dom, /export function skeletonShelf/);
-  assert.match(home, /if \(!state\.loaded\)[\s\S]{0,80}skeletonCards\(5\)/);
+  assert.match(home, /if \(!state\.loaded\)[\s\S]{0,80}skeletonCards\(6\)/);
   assert.match(home, /if \(!state\.loaded\)[\s\S]{0,120}skeletonShelf\(8\)/);
   assert.match(library, /if \(!state\.loaded\)[\s\S]{0,80}skeletonCards\(6\)/);
   assert.match(css, /@keyframes skeleton-shimmer/);

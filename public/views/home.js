@@ -15,10 +15,10 @@ let randomPickIds = []; // ★を押しても顔ぶれが変わらないよう�
 
 const RANDOM_HISTORY_KEY = "sakuhin-log-random-history-v2";
 function previousRandomIds() {
-  try { const v = JSON.parse(localStorage.getItem(RANDOM_HISTORY_KEY) || "[]"); return Array.isArray(v) ? v.slice(0, 9) : []; } catch { return []; }
+  try { const v = JSON.parse(localStorage.getItem(RANDOM_HISTORY_KEY) || "[]"); return Array.isArray(v) ? v.slice(0, 12) : []; } catch { return []; }
 }
 function rememberRandom(ids) {
-  const merged = [...ids, ...previousRandomIds().filter((v) => !ids.includes(v))].slice(0, 9);
+  const merged = [...ids, ...previousRandomIds().filter((v) => !ids.includes(v))].slice(0, 12);
   localStorage.setItem(RANDOM_HISTORY_KEY, JSON.stringify(merged));
 }
 
@@ -42,7 +42,7 @@ function randomPickMarkup(work) {
 // renderHome()の末尾から呼ぶことで、表示中(state.view==="home")のときだけ動く一括描画に乗せる。
 function renderRandomPicks() {
   const stage = $("#randomStage");
-  if (!state.loaded) { stage.innerHTML = `<div class="random-pick-grid">${skeletonCards(5)}</div>`; return; }
+  if (!state.loaded) { stage.innerHTML = `<div class="random-pick-grid">${skeletonCards(6)}</div>`; return; }
   const picks = randomPickIds.map((id) => state.works.get(id)).filter(Boolean);
   stage.innerHTML = picks.length
     ? `<div class="random-pick-grid">${picks.map(randomPickMarkup).join("")}</div>`
@@ -51,11 +51,11 @@ function renderRandomPicks() {
 
 // ホーム表示のたびに呼ばれるrenderHome()と違い、抽選のやり直しは初回読み込みと
 // 「引き直す」を押したときだけ行う。★の変更などstate全体のnotifyに反応してしまうと、
-// そのたびに5冊の顔ぶれが変わってしまうため。
+// そのたびに6冊の顔ぶれが変わってしまうため。
 export function drawRandomPicks() {
   const scope = $("#randomScope").value;
   const mode = getRandomMode();
-  randomPickIds = pickRandomWorks(scope, 5, previousRandomIds(), mode).map((w) => String(w.id));
+  randomPickIds = pickRandomWorks(scope, 6, previousRandomIds(), mode).map((w) => String(w.id));
   if (randomPickIds.length) rememberRandom(randomPickIds);
   renderRandomPicks();
 }
@@ -208,7 +208,6 @@ async function setupNotionImport() {
 }
 
 export function initHome() {
-  // renderHome()は末尾でrenderShelf/renderThemeShelfも呼ぶため、個別の購読は不要(二重描画を避ける)。
   subscribe(renderHome);
   initRandomMode();
   document.addEventListener("random-mode-change", drawRandomPicks);

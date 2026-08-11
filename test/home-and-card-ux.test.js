@@ -17,11 +17,8 @@ test('作品を開く経路はdata-open-workの単一デリゲートに一本化
 
   assert.match(app, /data-open-work/);
   assert.match(app, /void openDetail\(openWork\)/);
-
-  // 旧: #workList外かどうかで判定する暗黙経路(再描画で対象が浮いて誤動作していた)
   assert.doesNotMatch(detail, /closest\("#workList"\)/);
   assert.doesNotMatch(detail, /app:open-work/);
-
   assert.match(home, /data-open-work="\$\{esc\(work\.id\)\}"/);
   assert.match(library, /data-open-work="\$\{esc\(work\.id\)\}"/);
 });
@@ -40,7 +37,6 @@ test('作品カードは<article>+ボタンに分離し、★とメモ入力を�
   assert.match(library, /class="work-card-main"/);
   assert.match(library, /cardRatingMarkup\(work\)/);
   assert.match(library, /cardNoteMarkup\(work, openNoteCardIds\.has\(work\.id\)\)/);
-  // カードのメモ入力は一覧・ホーム(抽選)共通のため、core/format.jsへ共有する
   assert.match(format, /data-toggle-card-note/);
   assert.match(format, /data-card-note-form/);
 });
@@ -66,22 +62,18 @@ test('ホームの読書中カードはstate.worksから引き直し、notify購
 });
 
 test('setSelectedDetailはhas_notes/experience_countを詳細レスポンスの実データから再計算する', async () => {
-  // /api/works/:id はSELECT *のためスナップショット専用の計算列を持たない。
-  // 素通しするとカードのメモ有無フィルタが、詳細を開いた瞬間に壊れる(実際に見つかった回帰)。
   const store = await read('public/core/store.js');
   const body = store.match(/export function setSelectedDetail[\s\S]*?\n}/)[0];
   assert.match(body, /has_notes: \(detail\.notes\?\.length \?\? 0\) > 0/);
   assert.match(body, /experience_count: detail\.experiences\?\.length \?\? 0/);
 });
 
-test('ホームの自動抽選は5冊をクライアント側で選び、初回読み込みと引き直し・モード切替だけで再抽選する', async () => {
+test('ホームの自動抽選は6冊をクライアント側で選び、初回読み込みと引き直し・モード切替だけで再抽選する', async () => {
   const home = await read('public/views/home.js');
   const app = await read('public/app.js');
   assert.match(home, /export function drawRandomPicks/);
-  assert.match(home, /pickRandomWorks\(scope, 5, previousRandomIds\(\), mode\)/);
+  assert.match(home, /pickRandomWorks\(scope, 6, previousRandomIds\(\), mode\)/);
   assert.match(home, /random-mode-change/);
   assert.match(app, /drawRandomPicks\(\);/);
-  // stateのnotifyのたびに再抽選されると★操作のたびに顔ぶれが変わってしまうため、
-  // subscribe()経由ではなくinit()からの明示呼び出しだけにする。
   assert.doesNotMatch(home, /subscribe\(drawRandomPicks\)/);
 });

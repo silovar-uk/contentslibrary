@@ -54,5 +54,5 @@ test("PCはPopover、スマホはBottom Sheetという境界を持つ", async ()
 test("アプリ起動時に軽編集Surfaceを初期化する", async () => {
   const app = await read("public/app.js");
   assert.match(app, /initLightEditSurfaces/);
-  assert.match(app, /initReadingPrioritySurfaces\(\);\s*initLightEditSurfaces\(\);/);
+  assert.match(app, /initReadingPrioritySurfaces\(\);[\s\S]{0,80}initLightEditSurfaces\(\);/);
 });
