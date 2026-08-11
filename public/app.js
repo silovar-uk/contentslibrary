@@ -7,6 +7,7 @@ import { renderAccount, loadAdmin } from "./views/admin.js";
 import { initHome, loadHome, drawRandomPicks } from "./views/home.js";
 import { initRandomScopeOptions } from "./views/random-scope-options.js";
 import { initHomeExperience } from "./views/home-experience.js";
+import { initEditorialHome } from "./views/editorial-home.js";
 import { initLibrary, renderWorkList } from "./views/library.js";
 import { initReadingPriority } from "./views/reading-priority.js";
 import { initReadingPrioritySurfaces } from "./views/reading-priority-surfaces.js";
@@ -32,9 +33,6 @@ function applyView() {
   $("#homeView").hidden = view !== "home";
   $("#settingsView").hidden = view !== "settings";
   $("#adminView").hidden = view !== "admin";
-  // 検索や評価などの状態更新でもapplyViewは呼ばれる。
-  // ここで#mainへフォーカスするとモバイルIMEの変換中文字が確定するため、
-  // フォーカス移動はナビゲーション側の明示操作にだけ任せる。
 }
 
 function bindShell() {
@@ -130,6 +128,7 @@ async function init() {
     initReadingPrioritySurfaces();
     initLightEditSurfaces();
     initHomeExperience();
+    initEditorialHome();
     initDetail();
     initAmazonTitleSearch();
     initDetailTopNotes();
@@ -150,8 +149,6 @@ async function init() {
 
 init();
 
-// 取込センター(owner専用・別系統機能)。#settingsView .settings-grid へ自己マウントし、
-// document.body全体を監視することはないため、ライブラリ画面の再描画とは独立している。
 import "./import-center/v09-style.js";
 import "./import-center/app-v091-network.js";
 import "./import-center/app-v09.js";
