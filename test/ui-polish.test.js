@@ -11,18 +11,39 @@ test("仕上げCSSは最終レイヤーとして動的に読み込む", async ()
   assert.match(source, /document\.head\.append\(link\)/);
 });
 
-test("390px以下でもランダム抽選は2列を維持する", async () => {
+test("スマホのランダム抽選は本カード自体を2列に並べる", async () => {
+  const css = await read("public/styles/ui-polish.css");
+  assert.match(css, /#randomStage \.random-pick-grid,[\s\S]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/);
+  assert.match(css, /grid-auto-flow:row!important/);
+  assert.match(css, /#randomStage \.random-pick-card\{[\s\S]*grid-column:span 1!important/);
+  assert.match(css, /width:100%!important/);
+});
+
+test("390px以下でも2列を維持し1列へ落とさない", async () => {
   const resilience = await read("public/styles/mobile-text-resilience.css");
   const polish = await read("public/styles/ui-polish.css");
   assert.match(resilience, /@media\(max-width:390px\)[\s\S]*\.random-pick-grid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)\}/);
   assert.match(polish, /@media\(max-width:390px\)[\s\S]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/);
-  assert.doesNotMatch(resilience, /@media\(max-width:390px\)[\s\S]*\.random-pick-grid\{grid-template-columns:minmax\(0,1fr\)\}/);
+  assert.doesNotMatch(polish, /@media\(max-width:390px\)[\s\S]*grid-template-columns:minmax\(0,1fr\)!important/);
 });
 
-test("半幅カード内の評価と読みたさは5等分で収まる", async () => {
+test("ランダムカードは表紙・タイトル・作者・読みたさを前面に置く", async () => {
   const css = await read("public/styles/ui-polish.css");
-  assert.match(css, /reading-desire-card \.reading-desire-scale\{grid-template-columns:repeat\(5,minmax\(0,1fr\)\)!important/);
-  assert.match(css, /#randomStage \.card-rating\{display:grid!important;grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
+  assert.match(css, /home-cover-frame[\s\S]*aspect-ratio:2\/3!important/);
+  assert.match(css, /random-pick-card h3/);
+  assert.match(css, /random-pick-creator/);
+  assert.match(css, /reading-desire-card/);
+});
+
+test("作品評価・メモ・優先度チップはスマホのランダムカード前面から外す", async () => {
+  const css = await read("public/styles/ui-polish.css");
+  assert.match(css, /#randomStage \.card-rating,[\s\S]*#randomStage \.card-note-row,[\s\S]*#randomStage \.reading-priority-surface-random\{display:none!important\}/);
+});
+
+test("読みたさ5段階は各本カード内で横幅に収まる", async () => {
+  const css = await read("public/styles/ui-polish.css");
+  assert.match(css, /reading-desire-card \.reading-desire-scale\{[\s\S]*grid-template-columns:repeat\(5,minmax\(0,1fr\)\)!important/);
+  assert.match(css, /reading-desire-card \.reading-desire-step\{[\s\S]*width:100%!important/);
 });
 
 test("長文・URL・タイトルの横はみ出し対策を持つ", async () => {
