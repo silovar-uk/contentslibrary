@@ -19,10 +19,10 @@ test("スマホでは横幅固定を解除し主要グリッドを縮退させ�
   assert.match(css, /\.reading-priority-home-stats\{display:grid!important;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/);
 });
 
-test("狭い画面では抽選棚や優先度サマリーを1列へ逃がす", async () => {
+test("狭い画面でも抽選棚は2列を維持し、優先度サマリーだけ1列へ逃がす", async () => {
   const css = await read("public/styles/mobile-text-resilience.css");
   assert.match(css, /@media\(max-width:390px\)/);
-  assert.match(css, /\.random-pick-grid\{grid-template-columns:minmax\(0,1fr\)\}/);
+  assert.match(css, /\.random-pick-grid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)\}/);
   assert.match(css, /\.reading-priority-home-stats\{grid-template-columns:minmax\(0,1fr\)!important\}/);
 });
 
