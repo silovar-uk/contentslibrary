@@ -5,12 +5,18 @@ let initialized = false;
 let observer = null;
 let frame = 0;
 
-function ensureStyle() {
-  if ($('link[href="/styles/mobile-header-detail.css"]')) return;
+function ensureLink(href) {
+  if ($(`link[href="${href}"]`)) return;
   const link = document.createElement("link");
   link.rel = "stylesheet";
-  link.href = "/styles/mobile-header-detail.css";
+  link.href = href;
   document.head.append(link);
+}
+
+function ensureStyle() {
+  ensureLink("/styles/mobile-header-detail.css");
+  // Must come last: this layer resolves accumulated layout conflicts without changing features.
+  ensureLink("/styles/full-ui-polish.css");
 }
 
 function ensureDetailTopLink() {
