@@ -26,7 +26,7 @@ export function readingDesireMarkup(work, surface = "card") {
 }
 
 async function setReadingDesire(workId, value) {
-  const work = state.works.get(String(workId)) || (state.selected?.work?.id === workId ? state.selected.work : null);
+  const work = state.works.get(String(workId)) || (String(state.selected?.work?.id || "") === String(workId) ? state.selected.work : null);
   if (!work) return;
   const current = readingDesire(work);
   const next = current === value ? 0 : value;
@@ -39,10 +39,10 @@ async function setReadingDesire(workId, value) {
       method: "PATCH",
       body: JSON.stringify({ version: Number(work.version), metadata })
     });
-    upsertWork(data.work);
     if (state.selected?.work && String(state.selected.work.id) === String(workId)) {
       state.selected = { ...state.selected, work: data.work };
     }
+    upsertWork(data.work);
     toast(next ? `読みたさを${next}にしました。` : "読みたさを未設定に戻しました。");
   } catch (error) {
     if (error.status === 409) await loadSnapshot();
