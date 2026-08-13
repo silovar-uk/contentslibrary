@@ -40,6 +40,6 @@ export interface AuthContext {
   isDev: boolean;
 }
 
-export type WorkType = "book" | "manga" | "movie" | "anime" | "drama" | "other";
+export type WorkType = "book" | "manga" | "movie" | "anime" | "drama" | "video" | "article" | "other";
 export type WorkStatus = "want" | "owned_unread" | "active" | "completed" | "paused" | "dropped";
 export type LabelKind = "genre" | "theme" | "tag";
