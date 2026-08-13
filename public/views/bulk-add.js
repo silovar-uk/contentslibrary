@@ -11,7 +11,7 @@ let bulkAddBusy = false;
 
 const TYPE_OPTIONS = [
   ["book", "本"], ["manga", "漫画"], ["movie", "映画"],
-  ["anime", "アニメ"], ["drama", "ドラマ"], ["other", "その他"]
+  ["anime", "アニメ"], ["drama", "ドラマ"], ["video", "動画"], ["article", "記事"], ["other", "その他"]
 ];
 const STATUS_OPTIONS = [
   ["want", "読みたい・見たい"], ["owned_unread", "所持・未読"], ["active", "進行中"],
