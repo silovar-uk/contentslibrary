@@ -45,6 +45,12 @@ test("通常入力フォームと作品種別フィルターへ動画・記事�
   assert.match(source, /#filterType/);
 });
 
+test("まとめて追加でも動画と記事を選べる", async () => {
+  const bulk = await read("public/views/bulk-add.js");
+  assert.match(bulk, /\["video", "動画"\]/);
+  assert.match(bulk, /\["article", "記事"\]/);
+});
+
 test("作品入力画面に任意URL欄を追加する", async () => {
   const source = await read("public/views/work-media-url.js");
   assert.match(source, /name="source_url" type="url"/);
