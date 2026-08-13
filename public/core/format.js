@@ -1,6 +1,6 @@
 import { esc } from "./dom.js";
 
-export const TYPE_LABELS = { book: "本", manga: "漫画", movie: "映画", anime: "アニメ", drama: "ドラマ", other: "その他" };
+export const TYPE_LABELS = { book: "本", manga: "漫画", movie: "映画", anime: "アニメ", drama: "ドラマ", video: "動画", article: "記事", other: "その他" };
 export const STATUS_LABELS = { want: "読みたい・見たい", owned_unread: "所持・未読", active: "進行中", completed: "完了", paused: "一時停止", dropped: "中断" };
 export const NOTE_LABELS = { quick: "一言", summary: "要約", impression: "印象", quote: "引用", idea: "自分の考え", connection: "接続", progress: "途中メモ" };
 
@@ -10,6 +10,8 @@ export const MEDIA_CONFIG = {
   movie: { creator: "監督", creatorPlaceholder: "監督名", unit: "分", current: "鑑賞位置", total: "上映時間", statuses: { owned_unread: "所持・未読", want: "見たい", active: "鑑賞中", completed: "鑑賞済み", paused: "保留", dropped: "見るのをやめた" } },
   anime: { creator: "監督・制作", creatorPlaceholder: "監督名・制作会社", unit: "話", current: "見た話数", total: "全話数", statuses: { owned_unread: "所持・未読", want: "見たい", active: "視聴中", completed: "視聴済み", paused: "保留", dropped: "見るのをやめた" } },
   drama: { creator: "監督・制作", creatorPlaceholder: "監督名・制作会社", unit: "話", current: "見た話数", total: "全話数", statuses: { owned_unread: "所持・未読", want: "見たい", active: "視聴中", completed: "視聴済み", paused: "保留", dropped: "見るのをやめた" } },
+  video: { creator: "チャンネル・制作者", creatorPlaceholder: "チャンネル名・制作者名", unit: "分", current: "視聴位置", total: "動画時間", statuses: { owned_unread: "保存・未視聴", want: "見たい", active: "視聴中", completed: "視聴済み", paused: "保留", dropped: "見るのをやめた" } },
+  article: { creator: "著者・媒体", creatorPlaceholder: "著者名・媒体名", unit: "%", current: "読了率", total: "全体", statuses: { owned_unread: "保存・未読", want: "読みたい", active: "読書中", completed: "読了", paused: "保留", dropped: "読むのをやめた" } },
   other: { creator: "作者・制作者", creatorPlaceholder: "作者・制作者名", unit: "件", current: "現在位置", total: "全体", statuses: STATUS_LABELS }
 };
 
