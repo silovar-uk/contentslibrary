@@ -74,6 +74,7 @@ export function openWorkDialog(edit = false) {
     form.status.value = w.status;
     form.short_note.value = w.short_note || "";
     form.creator.value = w.creator || "";
+    if (form.source_url) form.source_url.value = w.metadata?.source_url || "";
     form.release_year.value = w.release_year || "";
     form.rating.value = w.rating || "";
     form.genre.value = (w.labels?.genre || []).join(", ");
@@ -99,6 +100,14 @@ export function openWorkDialog(edit = false) {
 
 function formLabels(value) { return value.split(/[、,]/).map((v) => v.trim()).filter(Boolean); }
 function nullableNumber(value) { return value === "" ? null : Number(value); }
+function normalizeSourceUrl(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  try {
+    const url = new URL(raw);
+    return ["http:", "https:"].includes(url.protocol) ? url.toString() : null;
+  } catch { return null; }
+}
 
 function clearValidation(form) {
   $$(".form-error", form).forEach((el) => (el.textContent = ""));
@@ -124,10 +133,16 @@ async function submitWork(form) {
   if (!form.title.value.trim()) return showValidation(form, { field: "title", message: "タイトルは必須です。" });
   const progressError = validateProgress(form);
   if (progressError) return showValidation(form, progressError);
+  const sourceUrl = normalizeSourceUrl(form.source_url?.value);
+  if (sourceUrl === null) return showValidation(form, { field: "source_url", message: "URLはhttp:// または https:// から始まる形式で入力してください。" });
+  const metadata = { ...(form.id.value ? state.selected?.work?.metadata || {} : {}) };
+  if (sourceUrl) metadata.source_url = sourceUrl;
+  else delete metadata.source_url;
   const payload = {
     title: form.title.value.trim(), type: form.type.value, status: form.status.value, short_note: form.short_note.value.trim(),
     creator: form.creator.value.trim() || null, release_year: nullableNumber(form.release_year.value), rating: nullableNumber(form.rating.value),
     progress_current: nullableNumber(form.progress_current.value), progress_total: nullableNumber(form.progress_total.value), unit_label: form.unit_label.value.trim() || null,
+    metadata,
     labels: { genre: formLabels(form.genre.value), theme: formLabels(form.theme.value), tag: formLabels(form.tag.value) }
   };
   const button = $('[type="submit"]', form);
