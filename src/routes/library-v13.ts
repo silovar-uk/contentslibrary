@@ -3,7 +3,7 @@ import { allNormalizedGenreAliasesV15, getGenreByIdV15, normalizedAliasesForGenr
 import { HttpError, json } from "../http";
 import type { AuthContext, Env, LabelKind, WorkStatus, WorkType } from "../types";
 
-const WORK_TYPES: WorkType[] = ["book", "manga", "movie", "anime", "drama", "other"];
+const WORK_TYPES: WorkType[] = ["book", "manga", "movie", "anime", "drama", "video", "article", "other"];
 const WORK_STATUSES: WorkStatus[] = ["want", "owned_unread", "active", "completed", "paused", "dropped"];
 const NOTE_TYPES = ["quick", "summary", "impression", "quote", "idea", "connection", "progress"] as const;
 
