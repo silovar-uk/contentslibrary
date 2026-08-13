@@ -1,0 +1,7 @@
+.source-url-field{position:relative}
+.optional-mark{display:inline-flex;align-items:center;margin-left:6px;padding:2px 6px;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:9px;font-weight:700;vertical-align:middle}
+.source-url-field input{width:100%}
+.work-source-link{display:inline-flex;align-items:center;gap:6px;width:max-content;max-width:100%;margin-top:8px;padding:7px 10px;border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));border-radius:9px;background:color-mix(in srgb,var(--accent) 6%,var(--surface));color:var(--accent);font-size:11px;font-weight:750;text-decoration:none}
+.work-source-link:hover{background:color-mix(in srgb,var(--accent) 10%,var(--surface))}
+.work-source-link span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:767px){.work-source-link{min-height:36px;margin-top:7px;font-size:11px}.source-url-field input{font-size:16px}}
