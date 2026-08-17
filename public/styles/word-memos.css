@@ -67,14 +67,16 @@
 .word-memo-source-card>p{font-size:12px;line-height:1.65;margin:10px 0 0}
 
 @media(max-width:760px){
-  .word-memo-heading{align-items:flex-start}
-  .word-memo-heading-actions{max-width:55%}
+  .word-memo-heading{flex-direction:column;align-items:stretch;gap:12px}
+  .word-memo-heading-actions{width:100%;max-width:none;justify-content:flex-start;gap:8px}
   .word-memo-form{grid-template-columns:1fr}
   .word-memo-form button{width:100%}
   .word-memo-search{min-height:38px}
   .word-memo-remove{width:36px}
-  .word-memo-research-open span{display:none}
-  .word-memo-research-open{width:36px;padding:0;justify-content:center}
+  .word-memo-research-open{order:-1;width:100%;min-height:48px;padding:0 15px;display:inline-flex;align-items:center;justify-content:center;gap:9px;border-radius:12px;font-size:13px;font-weight:800;line-height:1.2;white-space:normal}
+  .word-memo-research-open span{display:inline}
+  .word-memo-research-open svg{width:20px;height:20px;flex:none}
+  .word-memo-count{margin-left:auto}
   .word-memo-research-dialog{width:calc(100vw - 16px);max-height:calc(100dvh - 16px);border-radius:16px}
   .word-memo-dialog-header,.word-memo-dialog-footer{padding:14px}
   .word-memo-dialog-header h2{font-size:18px}
