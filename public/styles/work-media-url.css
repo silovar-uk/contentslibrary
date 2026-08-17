@@ -1,7 +1,42 @@
 .source-url-field{position:relative}
-.optional-mark{display:inline-flex;align-items:center;margin-left:6px;padding:2px 6px;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:9px;font-weight:700;vertical-align:middle}
+.required-mark,.optional-mark{display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;font-size:9px;font-weight:700;line-height:1;vertical-align:middle}
+.required-mark{color:#9a554d!important}
+.optional-mark{color:#667782}
+.required-mark::before,.optional-mark::before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.82}
 .source-url-field input{width:100%}
 .work-source-link{display:inline-flex;align-items:center;gap:6px;width:max-content;max-width:100%;margin-top:8px;padding:7px 10px;border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));border-radius:9px;background:color-mix(in srgb,var(--accent) 6%,var(--surface));color:var(--accent);font-size:11px;font-weight:750;text-decoration:none}
 .work-source-link:hover{background:color-mix(in srgb,var(--accent) 10%,var(--surface))}
 .work-source-link span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-@media(max-width:767px){.work-source-link{min-height:36px;margin-top:7px;font-size:11px}.source-url-field input{font-size:16px}}
+
+#workList .type-pill.work-type-badge{--work-type-color:#64717a;display:inline-flex;align-items:center;gap:4px;padding:1px 0;border:0;border-radius:0;background:transparent;color:var(--work-type-color);font-size:9px;font-weight:750;line-height:1.2;white-space:nowrap}
+#workList .work-type-badge.is-book{--work-type-color:#825f46}
+#workList .work-type-badge.is-manga{--work-type-color:#8a4f70}
+#workList .work-type-badge.is-movie{--work-type-color:#6d5687}
+#workList .work-type-badge.is-anime{--work-type-color:#43757a}
+#workList .work-type-badge.is-drama{--work-type-color:#526d8a}
+#workList .work-type-badge.is-video{--work-type-color:#a7563d}
+#workList .work-type-badge.is-article{--work-type-color:#356783}
+#workList .work-type-badge.is-other{--work-type-color:#69716f}
+#workList .work-type-icon{width:13px;height:13px;flex:none}
+
+.work-card-source-link{display:inline-grid;place-items:center;width:30px;height:30px;border:1px solid transparent;border-radius:8px;color:var(--muted);text-decoration:none;transition:color .12s ease,background .12s ease,border-color .12s ease}
+.work-card-source-link:hover{border-color:color-mix(in srgb,var(--accent) 25%,var(--line));background:color-mix(in srgb,var(--accent) 7%,var(--surface));color:var(--accent)}
+.work-card-source-link:focus-visible{outline:2px solid color-mix(in srgb,var(--accent) 64%,transparent);outline-offset:2px}
+.work-source-icon{width:15px;height:15px}
+
+@media(min-width:1100px){
+  #workList .work-card:has(> .work-card-source-link){grid-template-columns:minmax(0,1fr) auto auto auto auto}
+  #workList .work-card-source-link{align-self:center;margin:0 1px}
+  #workList .type-pill.work-type-badge{font-size:9px}
+}
+
+@media(max-width:1099px){
+  #workList .work-card:has(> .work-card-source-link){padding-right:48px}
+  #workList .work-card-source-link{position:absolute;top:12px;right:12px;z-index:2;background:color-mix(in srgb,var(--surface) 92%,transparent)}
+}
+
+@media(max-width:767px){
+  .work-source-link{min-height:36px;margin-top:7px;font-size:11px}
+  .source-url-field input{font-size:16px}
+  #workList .work-card-source-link{top:10px;right:10px;width:32px;height:32px}
+}
