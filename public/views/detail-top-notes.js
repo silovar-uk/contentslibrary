@@ -5,6 +5,7 @@ import { decorateDetailDocument } from "./detail-document.js";
 
 let initialized = false;
 let observer = null;
+let launcherObserver = null;
 let frame = 0;
 
 function ensureStyle() {
@@ -132,12 +133,31 @@ function setupFactChatGptLauncher() {
   button.title = "プロンプトと作品JSONをChatGPTで開く";
 }
 
+function setupWordMemoChatGptLauncher() {
+  const button = $('[data-word-memo-copy="prompt"]');
+  if (!button) return;
+  button.removeAttribute("data-word-memo-copy");
+  button.dataset.wordMemoChatgpt = "";
+  button.textContent = "ChatGPTに聞く";
+  button.title = "書評調査プロンプトをChatGPTで開く";
+}
+
+function openPromptInChatGpt(prompt) {
+  if (!prompt) return;
+  const url = `https://chatgpt.com/?prompt=${encodeURIComponent(prompt)}`;
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
 function openFactPromptInChatGpt() {
   const output = $("#factOutput");
   const prompt = output?.value || "";
   if (!prompt || prompt === "読み込み中…") return;
-  const url = `https://chatgpt.com/?prompt=${encodeURIComponent(prompt)}`;
-  window.open(url, "_blank", "noopener,noreferrer");
+  openPromptInChatGpt(prompt);
+}
+
+function openWordMemoPromptInChatGpt() {
+  const output = $("#wordMemoResearchPrompt");
+  openPromptInChatGpt(output?.value || "");
 }
 
 export function initDetailTopNotes() {
@@ -145,12 +165,19 @@ export function initDetailTopNotes() {
   initialized = true;
   ensureStyle();
   setupFactChatGptLauncher();
+  setupWordMemoChatGptLauncher();
 
   const panel = $("#detailPanel");
   if (panel) {
     observer = new MutationObserver(scheduleApply);
     observer.observe(panel, { childList: true, subtree: true });
   }
+
+  launcherObserver = new MutationObserver(() => {
+    setupFactChatGptLauncher();
+    setupWordMemoChatGptLauncher();
+  });
+  launcherObserver.observe(document.body, { childList: true, subtree: true });
 
   subscribe(scheduleApply);
 
@@ -162,6 +189,10 @@ export function initDetailTopNotes() {
     if (event.target.closest("[data-fact-chatgpt]")) {
       event.preventDefault();
       openFactPromptInChatGpt();
+    }
+    if (event.target.closest("[data-word-memo-chatgpt]")) {
+      event.preventDefault();
+      openWordMemoPromptInChatGpt();
     }
   });
 
