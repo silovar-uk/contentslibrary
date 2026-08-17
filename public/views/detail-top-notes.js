@@ -123,10 +123,28 @@ function scrollToFullNotes() {
   setTimeout(() => section.classList.remove("detail-notes-highlight"), 900);
 }
 
+function setupFactChatGptLauncher() {
+  const button = $('[data-fact-copy="all"]');
+  if (!button) return;
+  button.removeAttribute("data-fact-copy");
+  button.dataset.factChatgpt = "";
+  button.textContent = "ChatGPTに聞く";
+  button.title = "プロンプトと作品JSONをChatGPTで開く";
+}
+
+function openFactPromptInChatGpt() {
+  const output = $("#factOutput");
+  const prompt = output?.value || "";
+  if (!prompt || prompt === "読み込み中…") return;
+  const url = `https://chatgpt.com/?prompt=${encodeURIComponent(prompt)}`;
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
 export function initDetailTopNotes() {
   if (initialized) return;
   initialized = true;
   ensureStyle();
+  setupFactChatGptLauncher();
 
   const panel = $("#detailPanel");
   if (panel) {
@@ -140,6 +158,10 @@ export function initDetailTopNotes() {
     if (event.target.closest("[data-top-notes-scroll]")) {
       event.preventDefault();
       scrollToFullNotes();
+    }
+    if (event.target.closest("[data-fact-chatgpt]")) {
+      event.preventDefault();
+      openFactPromptInChatGpt();
     }
   });
 
