@@ -1,4 +1,7 @@
 /* Mobile header + detail top navigation */
+/* JS mounts this navigation for state continuity at every viewport; keep it invisible unless mobile rules opt in. */
+.mobile-detail-topnav{display:none}
+
 @media(max-width:767px){
   .topbar.mobile-topbar-refined{
     position:sticky;
@@ -102,8 +105,11 @@
   .mobile-detail-topnav{
     display:flex;
     align-items:center;
+    flex-wrap:nowrap;
     gap:7px;
     width:100%;
+    min-width:0;
+    overflow:hidden;
     margin:0 0 10px;
     padding:2px 2px 8px;
     border-bottom:1px solid color-mix(in srgb,var(--line) 72%,transparent);
@@ -113,6 +119,7 @@
   .mobile-detail-home-link{
     display:inline-flex;
     align-items:center;
+    flex:none;
     gap:5px;
     min-height:34px;
     border:0;
@@ -122,9 +129,10 @@
     color:var(--accent);
     font-size:12px;
     font-weight:750;
+    white-space:nowrap;
   }
-  .mobile-detail-topnav-current{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .mobile-detail-topnav-separator{opacity:.55}
+  .mobile-detail-topnav-current{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mobile-detail-topnav-separator{flex:none;opacity:.55}
 
   #detailPanel.detail-document{
     padding-top:10px;
