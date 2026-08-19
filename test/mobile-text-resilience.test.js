@@ -10,9 +10,10 @@ test("モバイル文字拡大耐性CSSをtokensから常時読み込む", async
   assert.match(tokens, /@import url\("\/styles\/mobile-text-resilience\.css"\)/);
 });
 
-test("スマホでは横幅固定を解除し主要グリッドを縮退させる", async () => {
+test("スマホでは767pxまで横幅固定を解除し主要グリッドを縮退させる", async () => {
   const css = await read("public/styles/mobile-text-resilience.css");
-  assert.match(css, /@media\(max-width:760px\)/);
+  assert.match(css, /@media\(max-width:767px\)/);
+  assert.doesNotMatch(css, /@media\(max-width:760px\)/);
   assert.match(css, /body\{min-width:0\}/);
   assert.match(css, /\.random-pick-grid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
   assert.match(css, /\.library-view\{grid-template-columns:minmax\(0,1fr\)/);
