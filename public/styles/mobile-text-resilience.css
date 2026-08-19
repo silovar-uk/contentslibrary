@@ -2,7 +2,7 @@
    iOS/Safariの文字サイズ変更・Dynamic Type相当の拡大でも、横幅固定でUIが押し出されないようにする。 */
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 
-@media(max-width:760px){
+@media(max-width:767px){
   html,body,#app{max-width:100%;overflow-x:hidden}
   body{min-width:0}
   *,*::before,*::after{min-width:0}
