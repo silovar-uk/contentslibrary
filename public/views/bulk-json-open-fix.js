@@ -1,6 +1,7 @@
 import { $, toast } from "../core/dom.js";
 import { state, loadSnapshot } from "../core/store.js";
 import { requestCloseDialog } from "./dialogs.js";
+import { initBulkJsonChatGpt } from "./bulk-json-chatgpt.js";
 
 const DRAFT_KEY = "sakuhin-log-bulk-json-draft-v1";
 let initialized = false;
@@ -85,6 +86,7 @@ function handleOpenClick(event) {
 export function initBulkJsonOpenFix() {
   if (initialized) return;
   initialized = true;
+  initBulkJsonChatGpt();
   // captureで先に受け、別モジュールとのイベント順競合を避ける。
   document.addEventListener("click", handleOpenClick, true);
 }
