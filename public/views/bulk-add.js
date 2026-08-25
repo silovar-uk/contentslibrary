@@ -1,22 +1,14 @@
 import { $, $$, toast } from "../core/dom.js";
 import { api } from "../core/api.js";
 import { state, loadSnapshot, setView } from "../core/store.js";
-import { normalizeText } from "../shared/normalize.js";
+import { buildExistingWorkKeys, createImportDraftWork, workIdentityKey } from "../shared/import-draft.js";
+import { DEFAULT_WORK_STATUS, DEFAULT_WORK_TYPE, WORK_STATUS_OPTIONS, WORK_TYPE_OPTIONS, optionMarkup } from "../shared/work-domain.js";
 import { requestCloseDialog } from "./dialogs.js";
 
 const MAX_TITLES = 10;
 const MAX_TITLE_LENGTH = 300;
 const DRAFT_KEY = "sakuhin-log-bulk-add-draft-v1";
 let bulkAddBusy = false;
-
-const TYPE_OPTIONS = [
-  ["book", "本"], ["manga", "漫画"], ["movie", "映画"],
-  ["anime", "アニメ"], ["drama", "ドラマ"], ["video", "動画"], ["article", "記事"], ["other", "その他"]
-];
-const STATUS_OPTIONS = [
-  ["want", "読みたい・見たい"], ["owned_unread", "所持・未読"], ["active", "進行中"],
-  ["completed", "完了"], ["paused", "一時停止"], ["dropped", "中断"]
-];
 
 const escapeHtml = (value = "") => String(value).replace(/[&<>"']/g, (char) => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
@@ -28,10 +20,6 @@ function ensureBulkAddStyle() {
   link.rel = "stylesheet";
   link.href = "/styles/bulk-add.css";
   document.head.append(link);
-}
-
-function selectOptions(options) {
-  return options.map(([value, label]) => `<option value="${value}">${label}</option>`).join("");
 }
 
 function mountBulkAddTriggers() {
@@ -75,10 +63,10 @@ function mountBulkAddDialog() {
       </header>
       <div class="bulk-add-toolbar">
         <label class="field-label">種別
-          <select name="type">${selectOptions(TYPE_OPTIONS)}</select>
+          <select name="type">${optionMarkup(WORK_TYPE_OPTIONS)}</select>
         </label>
         <label class="field-label">状態
-          <select name="status">${selectOptions(STATUS_OPTIONS)}</select>
+          <select name="status">${optionMarkup(WORK_STATUS_OPTIONS)}</select>
         </label>
       </div>
       <label class="field-label bulk-add-title-field">タイトル
@@ -126,27 +114,29 @@ function clearDraft() {
   localStorage.removeItem(DRAFT_KEY);
 }
 
-function existingTitleKeys(type) {
-  const keys = new Set();
-  for (const work of state.works.values()) {
-    if (work.type === type) keys.add(normalizeText(work.title || ""));
-  }
-  return keys;
-}
-
 function analyzeTitles(form) {
   const rawLines = form.titles.value.split(/\r?\n/).map((title) => title.trim()).filter(Boolean);
   const seen = new Set();
-  const existing = existingTitleKeys(form.type.value);
+  const existing = buildExistingWorkKeys(state.works.values());
   const allowDuplicates = form.allow_duplicates.checked;
+  const type = form.type.value;
+  const status = form.status.value;
   const items = rawLines.map((title, index) => {
-    const key = normalizeText(title);
+    const key = workIdentityKey(type, title);
     const duplicateInInput = seen.has(key);
     seen.add(key);
     const tooLong = title.length > MAX_TITLE_LENGTH;
     const alreadyExists = existing.has(key);
-    const selectable = !duplicateInInput && !tooLong && (allowDuplicates || !alreadyExists);
-    return { index, title, key, duplicateInInput, tooLong, alreadyExists, selectable };
+    const draft = createImportDraftWork({
+      source: "titles",
+      originalInput: title,
+      payload: { title, type, status },
+      errors: tooLong ? [`タイトルは${MAX_TITLE_LENGTH}文字以内です`] : [],
+      duplicateInInput,
+      alreadyExists,
+      allowDuplicates
+    });
+    return { index, title, key, duplicateInInput, tooLong, alreadyExists, selectable: draft.selectable, draft };
   });
   return {
     rawCount: rawLines.length,
@@ -228,12 +218,12 @@ async function openBulkAddDialog() {
   const draft = readDraft();
   if (draft) {
     form.titles.value = draft.titles || "";
-    form.type.value = draft.type || "book";
-    form.status.value = draft.status || "want";
+    form.type.value = draft.type || DEFAULT_WORK_TYPE;
+    form.status.value = draft.status || DEFAULT_WORK_STATUS;
     form.allow_duplicates.checked = Boolean(draft.allow_duplicates);
   } else {
-    form.type.value = "book";
-    form.status.value = "want";
+    form.type.value = DEFAULT_WORK_TYPE;
+    form.status.value = DEFAULT_WORK_STATUS;
   }
   $("#bulkAddError").textContent = "";
   $("#bulkAddProgress").textContent = "";
