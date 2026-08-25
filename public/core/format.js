@@ -1,8 +1,7 @@
 import { esc } from "./dom.js";
+import { NOTE_LABELS, STATUS_LABELS, TYPE_LABELS } from "../shared/work-domain.js";
 
-export const TYPE_LABELS = { book: "本", manga: "漫画", movie: "映画", anime: "アニメ", drama: "ドラマ", video: "動画", article: "記事", other: "その他" };
-export const STATUS_LABELS = { want: "読みたい・見たい", owned_unread: "所持・未読", active: "進行中", completed: "完了", paused: "一時停止", dropped: "中断" };
-export const NOTE_LABELS = { quick: "一言", summary: "要約", impression: "印象", quote: "引用", idea: "自分の考え", connection: "接続", progress: "途中メモ" };
+export { NOTE_LABELS, STATUS_LABELS, TYPE_LABELS };
 
 export const MEDIA_CONFIG = {
   book: { creator: "著者", creatorPlaceholder: "著者名", unit: "ページ", current: "読んだ位置", total: "総ページ数", statuses: { owned_unread: "所持・未読", want: "読みたい", active: "読書中", completed: "読了", paused: "保留", dropped: "読むのをやめた" } },
