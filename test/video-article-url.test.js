@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { TYPE_LABELS, WORK_TYPES } from "../public/shared/work-domain.js";
 
 const root = new URL("../", import.meta.url);
 const read = (path) => readFile(new URL(path, root), "utf8");
@@ -8,9 +9,12 @@ const read = (path) => readFile(new URL(path, root), "utf8");
 test("作品種別に動画と記事を追加する", async () => {
   const format = await read("public/core/format.js");
   const types = await read("src/types.ts");
-  assert.match(format, /video: "動画"/);
-  assert.match(format, /article: "記事"/);
-  assert.match(types, /"video" \| "article"/);
+  assert.equal(TYPE_LABELS.video, "動画");
+  assert.equal(TYPE_LABELS.article, "記事");
+  assert.equal(WORK_TYPES.includes("video"), true);
+  assert.equal(WORK_TYPES.includes("article"), true);
+  assert.match(format, /TYPE_LABELS/);
+  assert.match(types, /WORK_TYPE_OPTIONS/);
 });
 
 test("動画と記事には媒体別の作者・進捗・状態ラベルを持つ", async () => {
@@ -38,17 +42,17 @@ test("作品APIと一覧APIの両方で動画・記事を有効な種別とし�
 });
 
 test("通常入力フォームと作品種別フィルターへ動画・記事を追加する", async () => {
-  const source = await read("public/views/work-media-url.js");
-  assert.match(source, /\{ value: "video", label: "動画" \}/);
-  assert.match(source, /\{ value: "article", label: "記事" \}/);
+  const source = await read("public/views/work-domain-ui.js");
+  assert.match(source, /WORK_TYPE_OPTIONS/);
   assert.match(source, /#workForm select\[name='type'\]/);
   assert.match(source, /#filterType/);
 });
 
 test("まとめて追加でも動画と記事を選べる", async () => {
   const bulk = await read("public/views/bulk-add.js");
-  assert.match(bulk, /\["video", "動画"\]/);
-  assert.match(bulk, /\["article", "記事"\]/);
+  assert.match(bulk, /WORK_TYPE_OPTIONS/);
+  assert.equal(WORK_TYPES.includes("video"), true);
+  assert.equal(WORK_TYPES.includes("article"), true);
 });
 
 test("作品入力画面に任意URL欄を追加する", async () => {
