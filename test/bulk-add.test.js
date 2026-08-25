@@ -14,8 +14,9 @@ test("bulk add accepts one title per line and limits a batch to ten", () => {
 });
 
 test("bulk add prevents accidental duplicate titles by default", () => {
-  assert.match(moduleSource, /existingTitleKeys/);
-  assert.match(moduleSource, /normalizeText\(work\.title/);
+  assert.match(moduleSource, /buildExistingWorkKeys/);
+  assert.match(moduleSource, /workIdentityKey\(type, title\)/);
+  assert.match(moduleSource, /createImportDraftWork/);
   assert.match(moduleSource, /allow_duplicates/);
   assert.match(moduleSource, /登録済みのため除外/);
   assert.match(moduleSource, /duplicateInInput/);
