@@ -1,3 +1,5 @@
+import { WORK_STATUS_OPTIONS, WORK_TYPE_OPTIONS } from "../public/shared/work-domain.js";
+
 export interface Env {
   DB: D1Database;
   ASSETS: Fetcher;
@@ -40,6 +42,6 @@ export interface AuthContext {
   isDev: boolean;
 }
 
-export type WorkType = "book" | "manga" | "movie" | "anime" | "drama" | "video" | "article" | "other";
-export type WorkStatus = "want" | "owned_unread" | "active" | "completed" | "paused" | "dropped";
+export type WorkType = (typeof WORK_TYPE_OPTIONS)[number][0];
+export type WorkStatus = (typeof WORK_STATUS_OPTIONS)[number][0];
 export type LabelKind = "genre" | "theme" | "tag";

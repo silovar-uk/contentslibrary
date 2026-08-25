@@ -27,6 +27,7 @@ import { initCommandPalette } from "./views/command-palette.js";
 import { initUiPolish } from "./views/ui-polish.js";
 import { initMobileDetailNav } from "./views/mobile-detail-nav.js";
 import { initWorkMediaUrl } from "./views/work-media-url.js";
+import { initWorkDomainUi } from "./views/work-domain-ui.js";
 import { initBulkAdd } from "./views/bulk-add.js";
 import { initBulkJsonAdd } from "./views/bulk-json-add.js";
 import { initBulkJsonOpenFix } from "./views/bulk-json-open-fix.js";
@@ -122,6 +123,7 @@ async function init() {
     renderAccount();
 
     bindShell();
+    initWorkDomainUi();
     initWorkMediaUrl();
     initDialogs();
     initMobileSearch();
