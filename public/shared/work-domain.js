@@ -30,9 +30,9 @@ export const NOTE_TYPE_OPTIONS = /** @type {const} */ ([
   ["progress", "途中メモ"]
 ]);
 
-export const WORK_TYPES = /** @type {const} */ (WORK_TYPE_OPTIONS.map(([value]) => value));
-export const WORK_STATUSES = /** @type {const} */ (WORK_STATUS_OPTIONS.map(([value]) => value));
-export const NOTE_TYPES = /** @type {const} */ (NOTE_TYPE_OPTIONS.map(([value]) => value));
+export const WORK_TYPES = Object.freeze(WORK_TYPE_OPTIONS.map(([value]) => value));
+export const WORK_STATUSES = Object.freeze(WORK_STATUS_OPTIONS.map(([value]) => value));
+export const NOTE_TYPES = Object.freeze(NOTE_TYPE_OPTIONS.map(([value]) => value));
 
 export const TYPE_LABELS = Object.freeze(Object.fromEntries(WORK_TYPE_OPTIONS));
 export const STATUS_LABELS = Object.freeze(Object.fromEntries(WORK_STATUS_OPTIONS));
