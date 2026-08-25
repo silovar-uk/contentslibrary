@@ -1,5 +1,3 @@
-// @ts-check
-
 export const WORK_TYPE_OPTIONS = /** @type {const} */ ([
   ["book", "本"],
   ["manga", "漫画"],
