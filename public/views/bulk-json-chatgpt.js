@@ -1,22 +1,6 @@
 import { $ } from "../core/dom.js";
-
-function templateJson() {
-  return JSON.stringify([
-    {
-      title: "作品名",
-      type: "book",
-      status: "want",
-      creator: "著者名",
-      release_year: 2026,
-      rating: null,
-      short_note: "",
-      labels: { genre: ["小説"], theme: [], tag: [] },
-      metadata: {},
-      experiences: [],
-      notes: [{ note_type: "quick", content: "あとから戻りたいメモ", position: null }]
-    }
-  ], null, 2);
-}
+import { WORK_STATUSES, WORK_TYPES } from "../shared/work-domain.js";
+import { workImportTemplateJson } from "../shared/work-import-template.js";
 
 function chatGptPrompt() {
   return [
@@ -24,11 +8,11 @@ function chatGptPrompt() {
     "これから私が伝える作品情報を、下記のひな形に合わせたJSONにしてください。",
     "出力はそのまま貼り付けられるJSONのみ。説明文やMarkdownのコードフェンスは不要です。",
     "不明な項目は無理に推測せず、null・空文字・空配列を使ってください。",
-    "typeは book / manga / movie / anime / drama / other のいずれか、statusは want / owned_unread / active / completed / paused / dropped のいずれかにしてください。",
+    `typeは ${WORK_TYPES.join(" / ")} のいずれか、statusは ${WORK_STATUSES.join(" / ")} のいずれかにしてください。`,
     "最大10作品まで1つの配列にまとめてください。",
     "",
     "ひな形:",
-    templateJson(),
+    workImportTemplateJson(),
     "",
     "追加したい作品:"
   ].join("\n");
