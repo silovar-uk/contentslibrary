@@ -1,7 +1,7 @@
 .add-entry-bulk-top-trigger,.single-add-top-trigger{white-space:nowrap}
 #bulkAddTopButton[hidden],#bulkJsonTopButton[hidden]{display:none!important}
 .add-entry-choice-dialog{width:min(680px,calc(100vw - 28px))}
-.add-entry-choice-shell{display:grid;gap:20px}
+.add-entry-choice-shell{display:grid;gap:20px;padding:24px;max-height:calc(100dvh - 28px);overflow:auto}
 .add-entry-choice-shell>header{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
 .add-entry-choice-shell h2{margin:0 0 6px;font-size:24px}
 .add-entry-choice-shell .dialog-lead{margin:0;color:var(--muted,#6c6d68);line-height:1.6}
@@ -26,6 +26,7 @@
 }
 @media(max-width:760px){
   .add-entry-choice-dialog{width:calc(100vw - 16px);max-height:calc(100dvh - 16px)}
+  .add-entry-choice-shell{padding:20px;max-height:calc(100dvh - 16px)}
   .add-entry-choice-grid{grid-template-columns:1fr}
   .add-entry-choice-card{min-height:150px}
   .add-entry-choice-footer{align-items:flex-start;gap:10px}
