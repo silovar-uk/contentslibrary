@@ -1,17 +1,14 @@
 import { $, $$, toast } from "../core/dom.js";
 import { api } from "../core/api.js";
 import { state, loadSnapshot, setView } from "../core/store.js";
-import { normalizeText } from "../shared/normalize.js";
+import { adaptJsonImport } from "../shared/json-import-adapter.js";
+import { STATUS_LABELS, TYPE_LABELS } from "../shared/work-domain.js";
+import { workImportTemplateJson } from "../shared/work-import-template.js";
 import { requestCloseDialog } from "./dialogs.js";
 
 const MAX_JSON_WORKS = 10;
 const MAX_JSON_FILE_BYTES = 2 * 1024 * 1024;
 const DRAFT_KEY = "sakuhin-log-bulk-json-draft-v1";
-const WORK_TYPES = new Set(["book", "manga", "movie", "anime", "drama", "other"]);
-const WORK_STATUSES = new Set(["want", "owned_unread", "active", "completed", "paused", "dropped"]);
-const NOTE_TYPES = new Set(["quick", "summary", "impression", "quote", "idea", "connection", "progress"]);
-const TYPE_LABELS = { book: "本", manga: "漫画", movie: "映画", anime: "アニメ", drama: "ドラマ", other: "その他" };
-const STATUS_LABELS = { want: "読みたい・見たい", owned_unread: "所持・未読", active: "進行中", completed: "完了", paused: "一時停止", dropped: "中断" };
 let bulkJsonBusy = false;
 let lastFailureReport = [];
 
@@ -122,241 +119,12 @@ function clearDraft() {
   localStorage.removeItem(DRAFT_KEY);
 }
 
-function stripCodeFence(value) {
-  const text = String(value || "").replace(/^\uFEFF/, "").trim();
-  if (!text.startsWith("```")) return text;
-  return text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
-}
-
-function plainObject(value) {
-  return value && typeof value === "object" && !Array.isArray(value);
-}
-
-function nullableNumber(value) {
-  if (value === undefined || value === null || value === "") return null;
-  const number = Number(value);
-  return Number.isFinite(number) ? number : Number.NaN;
-}
-
-function stringValue(value, max, field, errors, { required = false } = {}) {
-  if (value === undefined || value === null) {
-    if (required) errors.push(`${field}は必須です`);
-    return null;
-  }
-  if (typeof value !== "string") {
-    errors.push(`${field}は文字列で入力してください`);
-    return null;
-  }
-  const text = value.trim();
-  if (required && !text) errors.push(`${field}は必須です`);
-  if (text.length > max) errors.push(`${field}は${max}文字以内です`);
-  return text || null;
-}
-
-function numberValue(value, field, errors, options = {}) {
-  const number = nullableNumber(value);
-  if (number === null) return null;
-  if (!Number.isFinite(number)) {
-    errors.push(`${field}は数値で入力してください`);
-    return null;
-  }
-  if (options.integer && !Number.isInteger(number)) errors.push(`${field}は整数で入力してください`);
-  if (options.min !== undefined && number < options.min) errors.push(`${field}は${options.min}以上です`);
-  if (options.max !== undefined && number > options.max) errors.push(`${field}は${options.max}以下です`);
-  if (options.halfStep && Math.round(number * 2) !== number * 2) errors.push(`${field}は0.5刻みです`);
-  return number;
-}
-
-function labelsValue(value, errors) {
-  if (value === undefined || value === null) return { genre: [], theme: [], tag: [] };
-  if (!plainObject(value)) {
-    errors.push("labelsはオブジェクトで入力してください");
-    return { genre: [], theme: [], tag: [] };
-  }
-  const output = { genre: [], theme: [], tag: [] };
-  for (const kind of Object.keys(output)) {
-    const source = value[kind] ?? [];
-    if (!Array.isArray(source) || source.some((item) => typeof item !== "string")) {
-      errors.push(`labels.${kind}は文字列の配列で入力してください`);
-      continue;
-    }
-    const clean = Array.from(new Set(source.map((item) => item.trim()).filter(Boolean)));
-    if (clean.length > 30) errors.push(`labels.${kind}は30件以内です`);
-    if (clean.some((item) => item.length > 40)) errors.push(`labels.${kind}は1件40文字以内です`);
-    output[kind] = clean.slice(0, 30);
-  }
-  return output;
-}
-
-function metadataValue(value, errors) {
-  if (value === undefined || value === null) return {};
-  if (!plainObject(value)) {
-    errors.push("metadataはオブジェクトで入力してください");
-    return {};
-  }
-  try {
-    if (JSON.stringify(value).length > 10_000) errors.push("metadataが大きすぎます");
-  } catch {
-    errors.push("metadataをJSONとして扱えません");
-    return {};
-  }
-  return value;
-}
-
-function experienceValue(value, index, errors) {
-  const prefix = `体験${index + 1}`;
-  if (!plainObject(value)) {
-    errors.push(`${prefix}の形式が正しくありません`);
-    return null;
-  }
-  const localErrors = [];
-  const rating = numberValue(value.rating, `${prefix}.rating`, localErrors, { min: 0.5, max: 5, halfStep: true });
-  const progressCurrent = numberValue(value.progress_current, `${prefix}.progress_current`, localErrors, { min: 0 });
-  const progressTotal = numberValue(value.progress_total, `${prefix}.progress_total`, localErrors, { min: 0 });
-  if (progressCurrent !== null && progressTotal !== null && progressCurrent > progressTotal) localErrors.push(`${prefix}の現在位置が全体を超えています`);
-  const result = {
-    source_id: value.id == null ? null : String(value.id),
-    started_at: stringValue(value.started_at, 30, `${prefix}.started_at`, localErrors),
-    completed_at: stringValue(value.completed_at, 30, `${prefix}.completed_at`, localErrors),
-    rating,
-    progress_current: progressCurrent,
-    progress_total: progressTotal,
-    memo: stringValue(value.memo, 50_000, `${prefix}.memo`, localErrors)
-  };
-  errors.push(...localErrors);
-  return result;
-}
-
-function noteValue(value, index, errors) {
-  const prefix = `メモ${index + 1}`;
-  if (!plainObject(value)) {
-    errors.push(`${prefix}の形式が正しくありません`);
-    return null;
-  }
-  const localErrors = [];
-  const noteType = value.note_type == null ? "quick" : String(value.note_type);
-  if (!NOTE_TYPES.has(noteType)) localErrors.push(`${prefix}.note_typeが正しくありません`);
-  const result = {
-    source_id: value.id == null ? null : String(value.id),
-    source_experience_id: value.experience_id == null ? null : String(value.experience_id),
-    note_type: NOTE_TYPES.has(noteType) ? noteType : "quick",
-    content: stringValue(value.content, 50_000, `${prefix}.content`, localErrors, { required: true }),
-    position: stringValue(value.position, 100, `${prefix}.position`, localErrors)
-  };
-  errors.push(...localErrors);
-  return result;
-}
-
-function parseContainer(rawText) {
-  const text = stripCodeFence(rawText);
-  if (!text) return { works: [], source: "empty", warnings: [] };
-  let parsed;
-  try { parsed = JSON.parse(text); }
-  catch (error) { throw new Error(`JSONを解析できません。${error.message}`); }
-
-  if (Array.isArray(parsed)) return { works: parsed, experiences: [], notes: [], source: "array", warnings: [] };
-  if (!plainObject(parsed)) throw new Error("JSONは作品の配列、またはworks配列を持つオブジェクトにしてください。");
-  if (Array.isArray(parsed.works)) {
-    return {
-      works: parsed.works,
-      experiences: Array.isArray(parsed.experiences) ? parsed.experiences : [],
-      notes: Array.isArray(parsed.notes) ? parsed.notes : [],
-      source: "backup",
-      warnings: []
-    };
-  }
-  if (Array.isArray(parsed.items)) return { works: parsed.items, experiences: [], notes: [], source: "items", warnings: [] };
-  if (typeof parsed.title === "string") return { works: [parsed], experiences: [], notes: [], source: "single", warnings: [] };
-  throw new Error("works配列が見つかりません。配列そのものを貼り付けることもできます。");
-}
-
-function sourceChildren(container, rawWork, index) {
-  const sourceId = rawWork?.id == null ? null : String(rawWork.id);
-  const nestedExperiences = Array.isArray(rawWork?.experiences) ? rawWork.experiences : [];
-  const nestedNotes = Array.isArray(rawWork?.notes) ? rawWork.notes : [];
-  const topExperiences = sourceId ? container.experiences.filter((item) => String(item?.work_id ?? "") === sourceId) : [];
-  const topNotes = sourceId ? container.notes.filter((item) => String(item?.work_id ?? "") === sourceId) : [];
-  if (!sourceId && container.works.length === 1) {
-    return {
-      experiences: [...nestedExperiences, ...container.experiences],
-      notes: [...nestedNotes, ...container.notes]
-    };
-  }
-  return { experiences: [...nestedExperiences, ...topExperiences], notes: [...nestedNotes, ...topNotes], index };
-}
-
-function canonicalRetryValue(item) {
-  return {
-    ...item.payload,
-    experiences: item.experiences.map(({ source_id, ...experience }) => ({ id: source_id, ...experience })),
-    notes: item.notes.map(({ source_id, source_experience_id, ...note }) => ({ id: source_id, experience_id: source_experience_id, ...note }))
-  };
-}
-
 function analyzeJson(form) {
-  let container;
-  try { container = parseContainer(form.json.value); }
-  catch (error) { return { parseError: error.message, items: [], candidates: [], rawCount: 0, overLimit: false, warnings: [] }; }
-
-  const allowDuplicates = form.allow_duplicates.checked;
-  const existing = new Set(Array.from(state.works.values()).map((work) => `${work.type}::${normalizeText(work.title || "")}`));
-  const seen = new Set();
-  const items = container.works.map((rawWork, index) => {
-    const errors = [];
-    if (!plainObject(rawWork)) errors.push("作品はオブジェクトで入力してください");
-    const source = plainObject(rawWork) ? rawWork : {};
-    const title = stringValue(source.title, 300, "title", errors, { required: true }) || `作品${index + 1}`;
-    const type = source.type == null ? "book" : String(source.type);
-    const status = source.status == null ? "want" : String(source.status);
-    if (!WORK_TYPES.has(type)) errors.push("typeが正しくありません");
-    if (!WORK_STATUSES.has(status)) errors.push("statusが正しくありません");
-    const progressCurrent = numberValue(source.progress_current, "progress_current", errors, { min: 0 });
-    const progressTotal = numberValue(source.progress_total, "progress_total", errors, { min: 0 });
-    if (progressCurrent !== null && progressTotal !== null && progressCurrent > progressTotal) errors.push("progress_currentがprogress_totalを超えています");
-    const payload = {
-      title,
-      type: WORK_TYPES.has(type) ? type : "book",
-      status: WORK_STATUSES.has(status) ? status : "want",
-      creator: stringValue(source.creator, 300, "creator", errors),
-      release_year: numberValue(source.release_year, "release_year", errors, { integer: true, min: 0, max: 3000 }),
-      rating: numberValue(source.rating, "rating", errors, { min: 0.5, max: 5, halfStep: true }),
-      short_note: stringValue(source.short_note, 280, "short_note", errors),
-      progress_current: progressCurrent,
-      progress_total: progressTotal,
-      unit_label: stringValue(source.unit_label, 30, "unit_label", errors),
-      metadata: metadataValue(source.metadata, errors),
-      labels: labelsValue(source.labels, errors)
-    };
-    const children = sourceChildren(container, source, index);
-    const experiences = children.experiences.map((value, childIndex) => experienceValue(value, childIndex, errors)).filter(Boolean);
-    const notes = children.notes.map((value, childIndex) => noteValue(value, childIndex, errors)).filter(Boolean);
-    const key = `${payload.type}::${normalizeText(payload.title)}`;
-    const duplicateInInput = seen.has(key);
-    seen.add(key);
-    const alreadyExists = existing.has(key);
-    const selectable = errors.length === 0 && !duplicateInInput && (allowDuplicates || !alreadyExists);
-    const item = { index, raw: source, title: payload.title, payload, experiences, notes, errors, duplicateInInput, alreadyExists, selectable };
-    item.retryValue = canonicalRetryValue(item);
-    return item;
+  return adaptJsonImport(form.json.value, {
+    existingWorks: state.works.values(),
+    allowDuplicates: form.allow_duplicates.checked,
+    maxWorks: MAX_JSON_WORKS
   });
-
-  const matchedExperienceIds = new Set(items.flatMap((item) => item.experiences.map((experience) => experience.source_id).filter(Boolean)));
-  const matchedNoteIds = new Set(items.flatMap((item) => item.notes.map((note) => note.source_id).filter(Boolean)));
-  const unmatchedExperiences = container.experiences.filter((item) => item?.id != null && !matchedExperienceIds.has(String(item.id))).length;
-  const unmatchedNotes = container.notes.filter((item) => item?.id != null && !matchedNoteIds.has(String(item.id))).length;
-  const warnings = [];
-  if (unmatchedExperiences) warnings.push(`work_idが一致しない体験${unmatchedExperiences}件は対象外です`);
-  if (unmatchedNotes) warnings.push(`work_idが一致しないメモ${unmatchedNotes}件は対象外です`);
-
-  return {
-    parseError: null,
-    source: container.source,
-    rawCount: items.length,
-    overLimit: items.length > MAX_JSON_WORKS,
-    items,
-    candidates: items.filter((item) => item.selectable).slice(0, MAX_JSON_WORKS),
-    warnings
-  };
 }
 
 function previewState(item) {
@@ -612,24 +380,6 @@ async function copyText(text, successMessage) {
   }
 }
 
-function templateJson() {
-  return JSON.stringify([
-    {
-      title: "作品名",
-      type: "book",
-      status: "want",
-      creator: "著者名",
-      release_year: 2026,
-      rating: null,
-      short_note: "",
-      labels: { genre: ["小説"], theme: [], tag: [] },
-      metadata: {},
-      experiences: [],
-      notes: [{ note_type: "quick", content: "あとから戻りたいメモ", position: null }]
-    }
-  ], null, 2);
-}
-
 export function initBulkJsonAdd() {
   ensureStyle();
   mountTriggers();
@@ -657,7 +407,7 @@ export function initBulkJsonAdd() {
     }
     const action = event.target.closest("[data-bulk-json-action]")?.dataset.bulkJsonAction;
     if (action === "select-file") fileInput.click();
-    if (action === "copy-template") void copyText(templateJson(), "JSONのひな形をコピーしました。");
+    if (action === "copy-template") void copyText(workImportTemplateJson(), "JSONのひな形をコピーしました。");
     if (action === "copy-failures") void copyText(lastFailureReport.map((item) => `${item.title}: ${item.messages.join(" / ")}`).join("\n"), "失敗内容をコピーしました。");
   });
 }
