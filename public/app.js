@@ -30,6 +30,7 @@ import { initWorkMediaUrl } from "./views/work-media-url.js";
 import { initBulkAdd } from "./views/bulk-add.js";
 import { initBulkJsonAdd } from "./views/bulk-json-add.js";
 import { initBulkJsonOpenFix } from "./views/bulk-json-open-fix.js";
+import { initAddEntryFlow } from "./views/add-entry-flow.js";
 import "./views/admin.js";
 
 function applyView() {
@@ -128,6 +129,7 @@ async function init() {
     initBulkAdd();
     initBulkJsonAdd();
     initBulkJsonOpenFix();
+    initAddEntryFlow();
     initLibrary();
     initReadingPriority();
     initHome();
