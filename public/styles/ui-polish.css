@@ -176,3 +176,41 @@
   #randomStage .home-cover-fallback strong{font-size:10px!important}
   #randomStage .reading-priority-surface-random summary{min-height:32px!important;font-size:8px!important}
 }
+
+/* Mobile bottom navigation: keep optical size, hit area, and safe area as separate concerns. */
+@media(max-width:767px){
+  .mobile-nav{
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    align-items:stretch;
+  }
+  .mobile-nav button{
+    min-width:44px;
+    min-height:44px;
+    padding:6px 4px 5px;
+    gap:4px;
+    font-size:11px;
+    line-height:1.1;
+    font-weight:650;
+    touch-action:manipulation;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .mobile-nav button>span{
+    min-width:28px;
+    min-height:28px;
+    display:grid;
+    place-items:center;
+    font-size:24px;
+    line-height:1;
+  }
+  .mobile-nav .mobile-add span{
+    width:48px;
+    height:48px;
+    min-width:48px;
+    min-height:48px;
+    margin-top:-16px;
+    font-size:28px;
+  }
+  .mobile-nav button:active{
+    background:color-mix(in srgb,var(--accent) 8%,transparent);
+  }
+}
