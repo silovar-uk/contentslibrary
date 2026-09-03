@@ -13,7 +13,7 @@ test("モバイルナビは5項目を維持する", async () => {
 
 test("モバイルナビ高さは操作領域とsafe areaを分離する", async () => {
   const tokens = await read("public/styles/tokens.css");
-  assert.match(tokens, /--mobile-nav-content:\s*74px/);
+  assert.match(tokens, /--mobile-nav-content:\s*64px/);
   assert.match(tokens, /--mobile-nav:\s*calc\(var\(--mobile-nav-content\) \+ env\(safe-area-inset-bottom\)\)/);
 });
 
