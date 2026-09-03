@@ -1,5 +1,6 @@
 import { $, esc, fmtDateTime, setBusy, toast } from "../core/dom.js";
 import { api } from "../core/api.js";
+import { normalizeText } from "../shared/normalize.js";
 import { NOTE_LABELS } from "../core/format.js";
 import { state, setSelectedDetail, subscribe } from "../core/store.js";
 import { decorateDetailDocument } from "./detail-document.js";
@@ -222,7 +223,8 @@ function locallyAppendSavedNote(workId, created) {
   const work = {
     ...current.work,
     updated_at: timestamp,
-    version: Number(current.work.version || 0) + 1
+    version: Number(current.work.version || 0) + 1,
+    search_text: normalizeText([current.work.search_text || "", note.content || ""].join(" "))
   };
   const notes = [...(current.notes || []).filter((item) => String(item.id) !== String(note.id)), note];
   lastSavedNoteId = String(note.id);
