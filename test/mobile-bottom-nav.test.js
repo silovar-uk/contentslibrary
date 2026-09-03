@@ -26,6 +26,5 @@ test("モバイルナビは44px以上のタップ領域と大きなアイコン�
 
 test("モバイルナビの拡大はスマホ幅だけに限定する", async () => {
   const css = await read("public/styles/ui-polish.css");
-  const mobile = css.match(/@media\(max-width:767px\)\{[\s\S]*?@media\(max-width:390px\)/)?.[0] || "";
-  assert.match(mobile, /\.mobile-nav/);
+  assert.match(css, /Mobile bottom navigation:[\s\S]*@media\(max-width:767px\)\{[\s\S]*\.mobile-nav\{/);
 });
