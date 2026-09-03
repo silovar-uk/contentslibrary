@@ -40,6 +40,41 @@ test("上部クイック入力では詳細オプションを隠し、下部メ�
   assert.match(detail, /notesMarkup\(d\.notes \|\| \[\]\)/);
 });
 
+test("メモ追加は詳細を開き直さず、現在のstateへ局所反映する", async () => {
+  const source = await read("public/views/detail-top-notes.js");
+  assert.match(source, /addEventListener\("submit"[\s\S]*true\)/);
+  assert.match(source, /stopImmediatePropagation\(\)/);
+  assert.match(source, /locallyAppendSavedNote/);
+  assert.match(source, /setSelectedDetail/);
+  assert.doesNotMatch(source, /openDetail\(/);
+});
+
+test("保存前後の閲覧位置と入力フォーカスを保持する", async () => {
+  const source = await read("public/views/detail-top-notes.js");
+  assert.match(source, /captureReadingContext/);
+  assert.match(source, /restoreReadingContext/);
+  assert.match(source, /getBoundingClientRect\(\)\.top/);
+  assert.match(source, /focus\(\{ preventScroll: true \}\)/);
+});
+
+test("保存状態を入力欄の近くで伝え、新規メモを一時強調する", async () => {
+  const source = await read("public/views/detail-top-notes.js");
+  const css = await read("public/styles/detail-top-notes.css");
+  assert.match(source, /inline-note-status/);
+  assert.match(source, /保存中…/);
+  assert.match(source, /保存しました/);
+  assert.match(source, /is-just-saved/);
+  assert.match(css, /\.inline-note-status\[data-state="saved"\]/);
+  assert.match(css, /detail-note-saved/);
+});
+
+test("CtrlまたはCommand+Enterでクイックメモを保存できる", async () => {
+  const source = await read("public/views/detail-top-notes.js");
+  assert.match(source, /event\.metaKey/);
+  assert.match(source, /event\.ctrlKey/);
+  assert.match(source, /requestSubmit\(\)/);
+});
+
 test("アプリ起動時に詳細上部メモUIを初期化する", async () => {
   const app = await read("public/app.js");
   assert.match(app, /initDetailTopNotes/);

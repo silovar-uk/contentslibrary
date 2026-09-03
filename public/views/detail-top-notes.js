@@ -1,12 +1,16 @@
-import { $, esc, fmtDateTime } from "../core/dom.js";
+import { $, esc, fmtDateTime, setBusy, toast } from "../core/dom.js";
+import { api } from "../core/api.js";
+import { normalizeText } from "../shared/normalize.js";
 import { NOTE_LABELS } from "../core/format.js";
-import { state, subscribe } from "../core/store.js";
+import { state, setSelectedDetail, subscribe } from "../core/store.js";
 import { decorateDetailDocument } from "./detail-document.js";
 
 let initialized = false;
 let observer = null;
 let launcherObserver = null;
 let frame = 0;
+let lastSavedNoteId = null;
+let savedMarkerTimer = 0;
 
 function ensureStyle() {
   let link = $('link[href="/styles/detail-top-notes.css"]');
@@ -37,7 +41,8 @@ function noteSignature(notes) {
 function noteRowMarkup(note) {
   const kind = NOTE_LABELS[note.note_type] || note.note_type || "メモ";
   const time = note.updated_at || note.created_at;
-  return `<button type="button" class="detail-top-note-row" data-edit-note="${esc(note.id)}" title="クリックして編集">
+  const savedClass = String(note.id) === String(lastSavedNoteId || "") ? " is-just-saved" : "";
+  return `<button type="button" class="detail-top-note-row${savedClass}" data-edit-note="${esc(note.id)}" title="クリックして編集">
     <span class="detail-top-note-meta"><strong>${esc(kind)}</strong>${note.position ? `<span>${esc(note.position)}</span>` : ""}${time ? `<time>${esc(fmtDateTime(time))}</time>` : ""}</span>
     <span class="detail-top-note-content">${esc(note.content || "")}</span>
     <span class="detail-top-note-edit" aria-hidden="true">編集</span>
@@ -63,7 +68,7 @@ function syncRecentNotes(panel) {
 
   const notes = Array.isArray(detail.notes) ? detail.notes : [];
   const recent = recentDetailNotes(notes, 3);
-  const signature = `${detail.work.id}|${notes.length}|${noteSignature(recent)}`;
+  const signature = `${detail.work.id}|${notes.length}|${noteSignature(recent)}|${lastSavedNoteId || ""}`;
   let section = panel.querySelector("#detailTopNotes");
 
   if (!section) {
@@ -79,6 +84,29 @@ function syncRecentNotes(panel) {
 
   if (section) section.dataset.signature = signature;
   return section;
+}
+
+function ensureInlineStatus(inline) {
+  const form = inline?.querySelector(".inline-note-form");
+  if (!form) return null;
+  let status = form.querySelector(".inline-note-status");
+  if (!status) {
+    status = document.createElement("span");
+    status.className = "inline-note-status";
+    status.setAttribute("role", "status");
+    status.setAttribute("aria-live", "polite");
+    form.append(status);
+  }
+  return status;
+}
+
+function setInlineStatus(message, stateName = "") {
+  const inline = $("#detailPanel .inline-note-section");
+  if (!inline) return;
+  const status = ensureInlineStatus(inline);
+  if (!status) return;
+  status.textContent = message || "";
+  status.dataset.state = stateName;
 }
 
 function syncQuickInput(panel, recentSection) {
@@ -100,6 +128,8 @@ function syncQuickInput(panel, recentSection) {
 
   const submit = inline.querySelector('button[type="submit"]');
   if (submit && submit.textContent !== "追加") submit.textContent = "追加";
+
+  ensureInlineStatus(inline);
 }
 
 function applyTopNotes() {
@@ -122,6 +152,137 @@ function scrollToFullNotes() {
   section.scrollIntoView({ behavior: "smooth", block: "start" });
   section.classList.add("detail-notes-highlight");
   setTimeout(() => section.classList.remove("detail-notes-highlight"), 900);
+}
+
+function scrollableAncestor(element) {
+  let node = element?.parentElement;
+  while (node && node !== document.body) {
+    const style = getComputedStyle(node);
+    const scrollable = /(auto|scroll)/.test(style.overflowY);
+    if (scrollable && node.scrollHeight > node.clientHeight + 1) return node;
+    node = node.parentElement;
+  }
+  return document.scrollingElement || document.documentElement;
+}
+
+function captureReadingContext(form) {
+  const anchor = form?.closest(".inline-note-section");
+  const scroller = scrollableAncestor(anchor);
+  return {
+    scroller,
+    anchorTop: anchor?.getBoundingClientRect().top ?? null,
+    scrollTop: scroller?.scrollTop ?? 0,
+    textareaFocused: document.activeElement === form?.elements?.content
+  };
+}
+
+function markSavedNote(noteId) {
+  if (!noteId) return;
+  const panel = $("#detailPanel");
+  if (!panel) return;
+  const selectorId = typeof CSS !== "undefined" && CSS.escape ? CSS.escape(String(noteId)) : String(noteId).replace(/["\\]/g, "\\$&");
+  const targets = [
+    panel.querySelector(`.detail-top-note-row[data-edit-note="${selectorId}"]`),
+    panel.querySelector(`.note-block[data-note-id="${selectorId}"]`)
+  ].filter(Boolean);
+  targets.forEach((target) => target.classList.add("is-just-saved"));
+}
+
+function restoreReadingContext(snapshot, noteId) {
+  requestAnimationFrame(() => {
+    applyTopNotes();
+    const anchor = $("#detailPanel .inline-note-section");
+    const scroller = snapshot?.scroller;
+    if (anchor && scroller && snapshot.anchorTop != null) {
+      const delta = anchor.getBoundingClientRect().top - snapshot.anchorTop;
+      scroller.scrollTop = snapshot.scrollTop + delta;
+    } else if (scroller) {
+      scroller.scrollTop = snapshot.scrollTop;
+    }
+
+    const textarea = $("#inlineNoteForm textarea[name='content']");
+    if (snapshot?.textareaFocused && textarea) {
+      try { textarea.focus({ preventScroll: true }); }
+      catch { textarea.focus(); }
+    }
+
+    markSavedNote(noteId);
+  });
+}
+
+function locallyAppendSavedNote(workId, created) {
+  const current = state.selected;
+  if (!current?.work || String(current.work.id) !== String(workId)) return false;
+  const timestamp = created.updated_at || created.created_at || new Date().toISOString();
+  const note = {
+    ...created,
+    updated_at: timestamp,
+    created_at: created.created_at || timestamp,
+    sort_order: created.sort_order ?? 0
+  };
+  const work = {
+    ...current.work,
+    updated_at: timestamp,
+    version: Number(current.work.version || 0) + 1,
+    search_text: normalizeText([current.work.search_text || "", note.content || ""].join(" "))
+  };
+  const notes = [...(current.notes || []).filter((item) => String(item.id) !== String(note.id)), note];
+  lastSavedNoteId = String(note.id);
+  setSelectedDetail({ ...current, work, notes });
+  return note;
+}
+
+async function saveInlineNoteInContext(form) {
+  const content = String(form.elements.content?.value || "").trim();
+  if (!content) {
+    form.elements.content?.focus();
+    return;
+  }
+
+  const workId = String(form.elements.work_id?.value || "");
+  const payload = {
+    note_type: form.elements.note_type?.value || "quick",
+    content,
+    position: form.elements.position?.value || null
+  };
+  const button = form.querySelector('[type="submit"]');
+  const context = captureReadingContext(form);
+
+  setBusy(button, true, "保存中…");
+  setInlineStatus("保存中…", "saving");
+
+  try {
+    const created = await api(`/api/works/${encodeURIComponent(workId)}/notes`, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+
+    if (String(state.selectedId || "") !== workId) {
+      toast("メモを保存しました。");
+      return;
+    }
+
+    const note = locallyAppendSavedNote(workId, created);
+    applyTopNotes();
+
+    const nextForm = $("#inlineNoteForm");
+    if (nextForm?.elements?.content) nextForm.elements.content.value = "";
+    setInlineStatus("保存しました", "saved");
+    restoreReadingContext(context, note?.id);
+
+    clearTimeout(savedMarkerTimer);
+    savedMarkerTimer = window.setTimeout(() => {
+      const savedId = lastSavedNoteId;
+      lastSavedNoteId = null;
+      $("#detailPanel")?.querySelectorAll(".is-just-saved").forEach((element) => element.classList.remove("is-just-saved"));
+      if (savedId) scheduleApply();
+    }, 1800);
+  } catch (error) {
+    setInlineStatus("保存できませんでした。入力内容は残っています。", "error");
+    toast(error.message, "error");
+  } finally {
+    if (button?.isConnected) setBusy(button, false);
+  }
 }
 
 function setupFactChatGptLauncher() {
@@ -180,6 +341,29 @@ export function initDetailTopNotes() {
   launcherObserver.observe(document.body, { childList: true, subtree: true });
 
   subscribe(scheduleApply);
+
+  document.addEventListener("submit", (event) => {
+    if (event.target?.id !== "inlineNoteForm") return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    void saveInlineNoteInContext(event.target);
+  }, true);
+
+  document.addEventListener("keydown", (event) => {
+    const textarea = event.target?.closest?.('#inlineNoteForm textarea[name="content"]');
+    if (!textarea || event.key !== "Enter" || (!event.metaKey && !event.ctrlKey)) return;
+    event.preventDefault();
+    textarea.form?.requestSubmit();
+  });
+
+  document.addEventListener("input", (event) => {
+    if (!event.target?.matches?.('#inlineNoteForm textarea[name="content"]')) return;
+    const status = event.target.form?.querySelector(".inline-note-status");
+    if (status?.dataset.state === "saved") {
+      status.textContent = "";
+      status.dataset.state = "";
+    }
+  });
 
   document.addEventListener("click", (event) => {
     if (event.target.closest("[data-top-notes-scroll]")) {
