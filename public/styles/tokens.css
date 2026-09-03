@@ -19,7 +19,7 @@
   --radius: 18px;
   --radius-sm: 11px;
   --topbar: 76px;
-  --mobile-nav-content: 74px;
+  --mobile-nav-content: 64px;
   --mobile-nav: calc(var(--mobile-nav-content) + env(safe-area-inset-bottom));
   font-family: "Inter", "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", Meiryo, system-ui, sans-serif;
   color: var(--ink);
