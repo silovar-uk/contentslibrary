@@ -36,14 +36,16 @@ test('ジャンルごとの色相を一覧・棚に適用する', async () => {
   assert.match(css, /var\(--genre-color\)/);
 });
 
-test('ランダム探索をホーム・ヘッダー・スマホへ配置する', async () => {
+test('ランダム探索をホーム・ヘッダー・スマホへ配置し、開始操作はTOPに持たない', async () => {
   const html = await read('public/index.html');
   const home = await read('public/views/home.js');
+  const composition = await read('public/views/home-composition.js');
   assert.match(html, /次に読むものを/);
   assert.match(html, /data-action="draw-random"/);
   assert.match(html, /class="mobile-add"/);
   assert.match(html, /所持・未読＋読みたい/);
-  assert.match(home, /読み始める/);
+  assert.doesNotMatch(home, /読み始める|data-random-start/);
+  assert.match(composition, /readingPrioritySurfaceMarkup\(work, "choose"\)/);
 });
 
 test('Unicode記号ではなくSVGアイコン体系を使う', async () => {
