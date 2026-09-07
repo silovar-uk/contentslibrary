@@ -46,14 +46,6 @@ function ensureReadingFeature(home) {
   }
 }
 
-function movePriorityHub(home) {
-  const hub = home.querySelector("#readingPriorityHomeHub");
-  const random = home.querySelector("#randomStage");
-  if (!hub || !random) return;
-  hub.classList.add("editorial-card", "editorial-priority-feature");
-  if (hub.previousElementSibling !== random) random.after(hub);
-}
-
 function decorateRecents(home) {
   const columns = home.querySelector(".home-columns");
   if (!columns) return;
@@ -112,7 +104,6 @@ export function applyEditorialHome() {
   if (!home) return;
   home.classList.add("editorial-home");
   decorateRandom(home);
-  movePriorityHub(home);
   ensureExploreGrid(home);
   ensureReadingFeature(home);
   decorateRecents(home);
