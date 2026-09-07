@@ -1,4 +1,4 @@
-import { $, fmtDate } from "../core/dom.js";
+import { $ } from "../core/dom.js";
 import { state, subscribe } from "../core/store.js";
 import { readingPriority } from "./reading-priority.js";
 import { readingPrioritySurfaceMarkup } from "./reading-priority-surfaces.js";
@@ -112,18 +112,6 @@ function enhanceContinueCards(zone) {
     card.querySelector(":scope > .card-rating")?.remove();
     const main = card.querySelector(".reading-card-main");
     if (!main) return;
-    const work = state.works.get(String(card.dataset.workId));
-
-    let updated = main.querySelector(".reading-card-updated");
-    if (!updated) {
-      updated = document.createElement("span");
-      updated.className = "reading-card-updated";
-      main.append(updated);
-    }
-    const updatedText = work?.updated_at ? `最終更新 ${fmtDate(work.updated_at)}` : "";
-    setText(updated, updatedText);
-    updated.hidden = !updatedText;
-
     let cue = main.querySelector(".reading-card-cue");
     if (!cue) {
       cue = document.createElement("span");
