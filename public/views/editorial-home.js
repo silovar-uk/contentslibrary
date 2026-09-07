@@ -4,6 +4,7 @@ import { subscribe } from "../core/store.js";
 let initialized = false;
 let frame = 0;
 let observer = null;
+let randomScrollGrid = null;
 
 function ensureStyle() {
   if ($('link[href="/styles/editorial-home.css"]')) return;
@@ -60,12 +61,46 @@ function decorateRecents(home) {
   [...columns.children].forEach((section) => section.classList.add("editorial-card", "editorial-card-secondary"));
 }
 
+function ensureRandomSkeletonCount(home) {
+  const grid = home.querySelector("#randomStage .random-pick-grid");
+  if (!grid) return;
+  const skeletons = [...grid.children].filter((item) => item.classList.contains("skeleton-card"));
+  if (!skeletons.length || skeletons.length >= 6) return;
+  const template = skeletons[skeletons.length - 1];
+  for (let index = skeletons.length; index < 6; index += 1) grid.append(template.cloneNode(true));
+}
+
+function updateRandomScrollState() {
+  const stage = $("#randomStage");
+  const grid = stage?.querySelector(".random-pick-grid");
+  if (!stage || !grid) return;
+  const hasOverflow = grid.scrollWidth > grid.clientWidth + 2;
+  const isAtEnd = !hasOverflow || grid.scrollLeft + grid.clientWidth >= grid.scrollWidth - 4;
+  stage.classList.toggle("has-horizontal-overflow", hasOverflow);
+  stage.classList.toggle("is-scroll-end", isAtEnd);
+}
+
+function ensureRandomScrollTracking(home) {
+  const grid = home.querySelector("#randomStage .random-pick-grid");
+  if (!grid) return;
+  if (randomScrollGrid !== grid) {
+    randomScrollGrid?.removeEventListener("scroll", updateRandomScrollState);
+    randomScrollGrid = grid;
+    randomScrollGrid.addEventListener("scroll", updateRandomScrollState, { passive: true });
+  }
+  updateRandomScrollState();
+}
+
 function decorateRandom(home) {
   const stage = home.querySelector("#randomStage");
   if (!stage) return;
   stage.classList.add("editorial-card", "editorial-random-feature");
+  ensureRandomSkeletonCount(home);
+  ensureRandomScrollTracking(home);
   const hero = home.querySelector(".hero-row");
   hero?.classList.add("editorial-hero");
+  const topDraw = document.querySelector('.top-actions [data-action="draw-random"]');
+  if (topDraw) topDraw.title = "候補を6件引き直す";
 }
 
 function decorateStats(home) {
@@ -98,6 +133,7 @@ export function initEditorialHome() {
     observer = new MutationObserver(scheduleApply);
     observer.observe(home, { childList: true, subtree: true });
   }
+  window.addEventListener("resize", scheduleApply, { passive: true });
   subscribe(scheduleApply);
   scheduleApply();
 }
