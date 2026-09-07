@@ -11,7 +11,8 @@
 .editorial-random-feature{position:relative;padding:22px;margin:0 0 18px;background:linear-gradient(145deg,color-mix(in srgb,var(--accent) 7%,var(--surface)),var(--surface) 52%)}
 .editorial-random-feature::before{content:"FEATURED · PICK NEXT";display:block;margin-bottom:14px;color:var(--muted);font-size:9px;font-weight:800;letter-spacing:.12em}
 .editorial-random-feature .random-pick-grid{gap:12px}
-.editorial-random-feature .random-pick-card{border:0;border-radius:16px;background:color-mix(in srgb,var(--surface) 90%,transparent);box-shadow:none}
+.editorial-random-feature .random-pick-card{min-width:0;border:0;border-radius:16px;background:color-mix(in srgb,var(--surface) 90%,transparent);box-shadow:none}
+.editorial-random-feature .random-pick-card h3{overflow-wrap:anywhere}
 
 .editorial-priority-feature{width:100%;max-width:none!important;margin:0 0 18px!important;padding:18px 20px!important;border-radius:20px!important;background:linear-gradient(145deg,color-mix(in srgb,#d78a4a 8%,var(--surface)),var(--surface));box-shadow:0 10px 28px rgba(39,41,35,.045)}
 .editorial-priority-feature .reading-priority-home-head strong{font-size:18px}
@@ -43,6 +44,24 @@
 .editorial-stats .stat{padding:14px 10px;border-color:color-mix(in srgb,var(--line) 70%,transparent)}
 .editorial-stats .stat strong{font-size:24px;color:var(--muted)}
 .editorial-stats .stat span{font-size:10px}
+
+/* Featuredは候補群そのものをひとまとまりとして見せる。
+   十分なPC幅では6件を6列1段、狭いPC/タブレットではカードを潰さず横方向へ逃がす。 */
+@media(min-width:1280px){
+  .editorial-random-feature .random-pick-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+  .editorial-random-feature .random-pick-main{padding:14px}
+  .editorial-random-feature .random-pick-card h3{font-size:15px}
+  .editorial-random-feature .random-pick-creator{font-size:12px}
+  .editorial-random-feature .random-pick-card>[data-random-start]{margin:0 12px 14px}
+  .editorial-random-feature .random-pick-card>.card-rating{margin-left:12px;margin-right:12px}
+  .editorial-random-feature .random-pick-card>.card-note-row{margin:0 12px 14px}
+}
+
+@media(min-width:768px) and (max-width:1279px){
+  .editorial-random-feature{overflow:hidden}
+  .editorial-random-feature .random-pick-grid{display:grid;grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:220px;overflow-x:auto;overscroll-behavior-inline:contain;scroll-snap-type:inline proximity;padding:0 0 6px;scrollbar-width:thin}
+  .editorial-random-feature .random-pick-card{scroll-snap-align:start}
+}
 
 @media(max-width:980px){
   .editorial-explore-grid{grid-template-columns:minmax(0,1fr)}
