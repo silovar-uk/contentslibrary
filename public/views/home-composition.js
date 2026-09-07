@@ -65,22 +65,23 @@ function moveIntoBody(zone, node) {
   if (node.parentElement !== body) body.append(node);
 }
 
-function activeWorks() {
-  return Array.from(state.works.values()).filter((work) => work?.status === "active");
+function hasContinueItems() {
+  if (!state.loaded) return true;
+  return Boolean(document.querySelector("#readingStrip .reading-card"));
 }
 
 function setText(node, value) {
   if (node && node.textContent !== value) node.textContent = value;
 }
 
-function updateIntro(home, hasActive, chooseAvailable) {
+function updateIntro(home, hasContinue, chooseAvailable) {
   const eyebrow = home.querySelector(".hero-copy .eyebrow");
   const title = home.querySelector(".hero-copy h1");
   const lead = home.querySelector(".hero-copy > p:last-of-type");
   setText(eyebrow, "YOUR CULTURE, NEXT MOVE");
   if (!title || !lead) return;
 
-  if (hasActive) {
+  if (hasContinue) {
     setText(title, "今日は、どれに戻る？");
     setText(lead, "続きを進める。次を選ぶ。まだ決まらなければ、興味から探す。");
     return;
@@ -186,15 +187,15 @@ export function applyHomeComposition() {
   composeExplore(zones.explore);
   composeReflect(zones.reflect);
 
-  const hasActive = activeWorks().length > 0;
+  const hasContinue = hasContinueItems();
   const chooseAvailable = chooseHasCandidates();
-  const hideContinue = state.loaded && !hasActive;
+  const hideContinue = state.loaded && !hasContinue;
   const hideChoose = state.loaded && !chooseAvailable;
   if (zones.continue.hidden !== hideContinue) zones.continue.hidden = hideContinue;
   if (zones.choose.hidden !== hideChoose) zones.choose.hidden = hideChoose;
   if (zones.explore.hidden) zones.explore.hidden = false;
   if (zones.reflect.hidden) zones.reflect.hidden = false;
-  updateIntro(home, hasActive, chooseAvailable);
+  updateIntro(home, hasContinue, chooseAvailable);
 }
 
 function scheduleApply() {
