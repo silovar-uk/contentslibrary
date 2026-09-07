@@ -8,7 +8,7 @@ import { initHome, loadHome, drawRandomPicks } from "./views/home.js";
 import { initRandomScopeOptions } from "./views/random-scope-options.js";
 import { initHomeExperience } from "./views/home-experience.js";
 import { initEditorialHome } from "./views/editorial-home.js";
-import { initWalletStacks } from "./views/wallet-stacks.js";
+import { initHomeComposition } from "./views/home-composition.js";
 import { initLibrary, renderWorkList } from "./views/library.js";
 import { initReadingPriority } from "./views/reading-priority.js";
 import { initReadingPrioritySurfaces } from "./views/reading-priority-surfaces.js";
@@ -140,7 +140,7 @@ async function init() {
     initLightEditSurfaces();
     initHomeExperience();
     initEditorialHome();
-    initWalletStacks();
+    initHomeComposition();
     initDetail();
     initAmazonTitleSearch();
     initDetailTopNotes();
