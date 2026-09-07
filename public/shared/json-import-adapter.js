@@ -14,6 +14,88 @@ function stripCodeFence(value) {
   return text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
 }
 
+function normalizeSmartJsonQuotes(value) {
+  const text = String(value || "");
+  let output = "";
+  let quoteMode = null;
+  let escaped = false;
+
+  for (const char of text) {
+    if (quoteMode === "ascii") {
+      output += char;
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+      if (char === "\\") {
+        escaped = true;
+        continue;
+      }
+      if (char === '"') quoteMode = null;
+      continue;
+    }
+
+    if (quoteMode === "smart") {
+      if (escaped) {
+        output += char;
+        escaped = false;
+        continue;
+      }
+      if (char === "\\") {
+        output += char;
+        escaped = true;
+        continue;
+      }
+      if (["”", "‟", "“"].includes(char)) {
+        output += '"';
+        quoteMode = null;
+        continue;
+      }
+      output += char;
+      continue;
+    }
+
+    if (quoteMode === "fullwidth") {
+      if (escaped) {
+        output += char;
+        escaped = false;
+        continue;
+      }
+      if (char === "\\") {
+        output += char;
+        escaped = true;
+        continue;
+      }
+      if (char === "＂") {
+        output += '"';
+        quoteMode = null;
+        continue;
+      }
+      output += char;
+      continue;
+    }
+
+    if (char === '"') {
+      output += char;
+      quoteMode = "ascii";
+      continue;
+    }
+    if (["“", "”", "„", "‟"].includes(char)) {
+      output += '"';
+      quoteMode = "smart";
+      continue;
+    }
+    if (char === "＂") {
+      output += '"';
+      quoteMode = "fullwidth";
+      continue;
+    }
+    output += char;
+  }
+
+  return output;
+}
+
 function plainObject(value) {
   return Boolean(value && typeof value === "object" && !Array.isArray(value));
 }
@@ -137,13 +219,25 @@ export function parseJsonImportContainer(rawText) {
   const text = stripCodeFence(rawText);
   if (!text) return { works: [], experiences: [], notes: [], source: "empty", warnings: [] };
   let parsed;
+  let repairedSmartQuotes = false;
   try {
     parsed = JSON.parse(text);
   } catch (error) {
-    throw new Error(`JSONを解析できません。${error.message}`);
+    const repairedText = normalizeSmartJsonQuotes(text);
+    if (repairedText !== text) {
+      try {
+        parsed = JSON.parse(repairedText);
+        repairedSmartQuotes = true;
+      } catch {
+        throw new Error(`JSONを解析できません。${error.message}`);
+      }
+    } else {
+      throw new Error(`JSONを解析できません。${error.message}`);
+    }
   }
 
-  if (Array.isArray(parsed)) return { works: parsed, experiences: [], notes: [], source: "array", warnings: [] };
+  const warnings = repairedSmartQuotes ? ["スマートクォートをJSONの引用符として補正しました"] : [];
+  if (Array.isArray(parsed)) return { works: parsed, experiences: [], notes: [], source: "array", warnings };
   if (!plainObject(parsed)) throw new Error("JSONは作品の配列、またはworks配列を持つオブジェクトにしてください。");
   if (Array.isArray(parsed.works)) {
     return {
@@ -151,11 +245,11 @@ export function parseJsonImportContainer(rawText) {
       experiences: Array.isArray(parsed.experiences) ? parsed.experiences : [],
       notes: Array.isArray(parsed.notes) ? parsed.notes : [],
       source: "backup",
-      warnings: []
+      warnings
     };
   }
-  if (Array.isArray(parsed.items)) return { works: parsed.items, experiences: [], notes: [], source: "items", warnings: [] };
-  if (typeof parsed.title === "string") return { works: [parsed], experiences: [], notes: [], source: "single", warnings: [] };
+  if (Array.isArray(parsed.items)) return { works: parsed.items, experiences: [], notes: [], source: "items", warnings };
+  if (typeof parsed.title === "string") return { works: [parsed], experiences: [], notes: [], source: "single", warnings };
   throw new Error("works配列が見つかりません。配列そのものを貼り付けることもできます。");
 }
 
@@ -255,7 +349,7 @@ export function adaptJsonImport(rawText, { existingWorks = [], allowDuplicates =
   const matchedNoteIds = new Set(items.flatMap((item) => item.notes.map((note) => note.source_id).filter(Boolean)));
   const unmatchedExperiences = container.experiences.filter((item) => item?.id != null && !matchedExperienceIds.has(String(item.id))).length;
   const unmatchedNotes = container.notes.filter((item) => item?.id != null && !matchedNoteIds.has(String(item.id))).length;
-  const warnings = [];
+  const warnings = [...container.warnings];
   if (unmatchedExperiences) warnings.push(`work_idが一致しない体験${unmatchedExperiences}件は対象外です`);
   if (unmatchedNotes) warnings.push(`work_idが一致しないメモ${unmatchedNotes}件は対象外です`);
 
