@@ -53,8 +53,11 @@ test("スマホではスタックを1列にし、展開時も横幅内に収め�
   assert.match(css, /var\(--stack-offset\) \* 34px/);
 });
 
-test("アプリ起動時にEditorial Homeの後でWalletスタックを初期化する", async () => {
+test("Walletスタック実装は残すがHome起動から外す", async () => {
   const app = await read("public/app.js");
-  assert.match(app, /initWalletStacks/);
-  assert.match(app, /initEditorialHome\(\);\s*initWalletStacks\(\);/);
+  const composition = await read("public/views/home-composition.js");
+  assert.doesNotMatch(app, /initWalletStacks/);
+  assert.doesNotMatch(app, /views\/wallet-stacks\.js/);
+  assert.match(composition, /#walletStacks/);
+  assert.match(composition, /removeLegacyHomeSurfaces/);
 });
