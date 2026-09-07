@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { prioritySummaryCounts } from "../public/views/reading-priority-surfaces.js";
+import { prioritySummaryCounts, readingPrioritySurfaceMarkup } from "../public/views/reading-priority-surfaces.js";
 
 const root = new URL("../", import.meta.url);
 const read = (path) => readFile(new URL(path, root), "utf8");
@@ -18,17 +18,31 @@ test("読む優先度集計は未読の本・漫画だけを対象にする", ()
   assert.deepEqual(counts, { top: 1, high: 1, medium: 1, low: 0, unset: 1, total: 4 });
 });
 
-test("読む優先度は一覧と詳細の管理文脈へ同じチップUIを出す", async () => {
+test("読む優先度Surfaceは一覧・詳細・CHOOSEで再利用できる", async () => {
   const source = await read("public/views/reading-priority-surfaces.js");
+  const composition = await read("public/views/home-composition.js");
+  assert.match(source, /export function readingPrioritySurfaceMarkup/);
   assert.match(source, /decorateLibraryCards/);
   assert.match(source, /decorateDetail/);
   assert.match(source, /syncSurface\(card, work, "library"/);
-  assert.match(source, /surfaceMarkup\(work, "detail"\)/);
-  assert.doesNotMatch(source, /decorateRandomCards/);
-  assert.doesNotMatch(source, /syncSurface\(card, work, "random"/);
+  assert.match(source, /readingPrioritySurfaceMarkup\(work, "detail"\)/);
+  assert.match(composition, /readingPrioritySurfaceMarkup\(work, "choose"\)/);
   assert.match(source, /data-reading-priority-set/);
   assert.match(source, /data-work-id/);
   assert.match(source, /解除/);
+});
+
+test("CHOOSE用Surfaceは未読book/mangaだけに出し、statusを変更するUIを持たない", () => {
+  const eligible = readingPrioritySurfaceMarkup({ id: "b1", type: "book", status: "owned_unread", metadata: {} }, "choose");
+  assert.match(eligible, /reading-priority-surface-choose/);
+  assert.match(eligible, /優先度を決める/);
+  assert.match(eligible, /data-reading-priority-set="top"/);
+  assert.doesNotMatch(eligible, /status/);
+
+  const active = readingPrioritySurfaceMarkup({ id: "b2", type: "book", status: "active", metadata: {} }, "choose");
+  const movie = readingPrioritySurfaceMarkup({ id: "m1", type: "movie", status: "want", metadata: {} }, "choose");
+  assert.equal(active, "");
+  assert.equal(movie, "");
 });
 
 test("ホームはランク別件数ダッシュボードを持たず整理入口だけを弱く残す", async () => {
@@ -49,7 +63,6 @@ test("旧ワンクリック循環ボタンは隠し、現在値チップから4�
   assert.match(css, /\.reading-priority-choice\.is-medium/);
   assert.match(css, /\.reading-priority-choice\.is-low/);
   assert.doesNotMatch(css, /reading-priority-home-hub/);
-  assert.doesNotMatch(css, /reading-priority-surface-random/);
 });
 
 test("アプリ起動時に読む優先度の管理UIを初期化する", async () => {
