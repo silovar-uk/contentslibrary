@@ -6,15 +6,14 @@ const moduleSource = readFileSync(new URL("../public/views/home-experience.js", 
 const cssSource = readFileSync(new URL("../public/styles/home-experience.css", import.meta.url), "utf8");
 const appSource = readFileSync(new URL("../public/app.js", import.meta.url), "utf8");
 
-test("recently edited books are derived from books and sorted newest first", () => {
-  assert.match(moduleSource, /filter\(\(work\) => work\.type === "book"\)/);
-  assert.match(moduleSource, /String\(b\.updated_at \|\| b\.created_at/);
-  assert.match(moduleSource, /localeCompare/);
-  assert.match(moduleSource, /\.slice\(0, 5\)/);
-  assert.match(moduleSource, /最近編集した本/);
+test("Home Experienceは最近編集した本を生成せずFeaturedの表紙装飾に専念する", () => {
+  assert.doesNotMatch(moduleSource, /recentlyEditedBooks/);
+  assert.doesNotMatch(moduleSource, /最近編集した本/);
+  assert.doesNotMatch(moduleSource, /mountRecentBooksSection/);
+  assert.match(moduleSource, /decorateRandomCards/);
 });
 
-test("random and recent cards use registered covers with a designed fallback", () => {
+test("random cards use registered covers with a designed fallback", () => {
   assert.match(moduleSource, /isAllowedCoverUrl/);
   assert.match(moduleSource, /coverThumbUrl/);
   assert.match(moduleSource, /home-cover-fallback/);
@@ -36,10 +35,11 @@ test("desktop header keeps actions horizontal and collapses duplicate entries on
   assert.match(cssSource, /data-action="draw-random"/);
 });
 
-test("recent books are a five-column cover grid with mobile horizontal scrolling", () => {
-  assert.match(cssSource, /grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
+test("Featuredの表紙は2:3を保ち、スマホでもカード内に収まる", () => {
   assert.match(cssSource, /aspect-ratio:2\/3/);
-  assert.match(cssSource, /scroll-snap-type:x mandatory/);
+  assert.match(cssSource, /\.random-pick-main\.is-cover-led \.home-cover-frame/);
+  assert.match(cssSource, /@media \(max-width:767px\)/);
+  assert.doesNotMatch(cssSource, /recent-book-grid/);
 });
 
 test("home experience is initialized from the app entry", () => {
