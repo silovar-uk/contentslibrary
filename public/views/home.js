@@ -1,14 +1,13 @@
-import { $, $$, esc, toast, fmtDate, skeletonCards, skeletonShelf } from "../core/dom.js";
+import { $, $$, esc, fmtDate, skeletonCards, skeletonShelf } from "../core/dom.js";
 import { api } from "../core/api.js";
-import { TYPE_LABELS, statusLabel, cardRatingMarkup, cardNoteMarkup } from "../core/format.js";
-import { state, shelfData, themeData, subscribe, setView, openNoteCardIds } from "../core/store.js";
+import { TYPE_LABELS, statusLabel } from "../core/format.js";
+import { state, shelfData, themeData, subscribe } from "../core/store.js";
 import { pickRandomWorks } from "../core/random-pick.js";
 import { getRandomMode, initRandomMode } from "./random-mode.js";
 import { shelfNavigateToGenre, shelfClearGenreFilter, themeNavigate } from "./library.js";
 
 let homeData = null;
 let shelfScope = "all";
-let shelfExpanded = false;
 let activeShelfFilter = null;
 let themeExpanded = false;
 let randomPickIds = []; // ★を押しても顔ぶれが変わらないよう、IDだけ保持し表示のたびstate.worksから引く
@@ -24,7 +23,6 @@ function rememberRandom(ids) {
 
 function randomPickMarkup(work) {
   const genre = work.labels?.genre?.[0] || "未分類";
-  const canStart = work.type === "book" && ["want", "owned_unread"].includes(work.status);
   return `<article class="random-pick-card">
     <button type="button" class="random-pick-main" data-open-work="${esc(work.id)}">
       <span class="genre-badge">${esc(genre)}</span>
@@ -32,9 +30,6 @@ function randomPickMarkup(work) {
       <p class="random-pick-creator">${esc(work.creator || "作者情報なし")}</p>
       <p class="random-pick-status">${esc(statusLabel(work.type, work.status))}</p>
     </button>
-    ${canStart ? `<button type="button" class="text-button" data-random-start="${esc(work.id)}" data-version="${Number(work.version)}">読み始める</button>` : ""}
-    ${cardRatingMarkup(work)}
-    ${cardNoteMarkup(work, openNoteCardIds.has(work.id))}
   </article>`;
 }
 
@@ -50,7 +45,7 @@ function renderRandomPicks() {
 }
 
 // ホーム表示のたびに呼ばれるrenderHome()と違い、抽選のやり直しは初回読み込みと
-// 「引き直す」を押したときだけ行う。★の変更などstate全体のnotifyに反応してしまうと、
+// 「引き直す」を押したときだけ行う。優先度などstate全体のnotifyに反応してしまうと、
 // そのたびに6冊の顔ぶれが変わってしまうため。
 export function drawRandomPicks() {
   const scope = $("#randomScope").value;
@@ -60,24 +55,11 @@ export function drawRandomPicks() {
   renderRandomPicks();
 }
 
-async function startFromRandom(button) {
-  const id = button.dataset.randomStart;
-  const version = Number(button.dataset.version);
-  button.disabled = true;
-  try {
-    const data = await api(`/api/works/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify({ version, status: "active" }) });
-    if (data.work) state.works.set(String(data.work.id), data.work);
-    button.textContent = "読み始めました";
-    toast("読書中に変更しました。");
-  } catch (error) { button.disabled = false; toast(error.message, "error"); }
-}
-
-function shelfItemMarkup(genre, maxCount, index) {
+function shelfItemMarkup(genre, maxCount) {
   const percent = Math.round((genre.share || 0) * 100);
   const spineCount = Math.max(2, Math.min(8, Math.round(2 + Math.sqrt(genre.count / maxCount) * 6)));
-  const span = genre.count / maxCount >= 0.72 ? 4 : genre.count / maxCount >= 0.38 ? 3 : 2;
   const spines = Array.from({ length: spineCount }, () => "<i></i>").join("");
-  return `<button type="button" class="shelf-item ${index >= 6 ? "is-secondary" : ""}" data-genre-id="${esc(genre.id)}" style="--genre-color:${esc(genre.color)};--shelf-span:${span}">
+  return `<button type="button" class="shelf-item" data-genre-id="${esc(genre.id)}" style="--genre-color:${esc(genre.color)}">
     <span class="spines">${spines}</span>
     <span class="shelf-item-copy"><strong>${esc(genre.name)}</strong><small>${genre.count}作品・${percent}%</small></span>
   </button>`;
@@ -88,14 +70,14 @@ function renderShelf() {
   const summary = $("#shelfSummary");
   if (!state.loaded) { summary.innerHTML = ""; body.innerHTML = `<div class="shelf-grid">${skeletonShelf(8)}</div>`; return; }
   const data = shelfData(shelfScope);
-  summary.innerHTML = `<span><strong>${data.total}</strong>対象作品</span><span><strong>${data.classified}</strong>分類済み</span><span><strong>${data.unclassified}</strong>未分類</span>`;
+  summary.innerHTML = `<span><strong>${data.genres.length}</strong>ジャンル</span><span><strong>${data.total}</strong>対象作品</span><span><strong>${data.classified}</strong>分類済み</span><span><strong>${data.unclassified}</strong>未分類</span>`;
   const maxCount = Math.max(1, ...data.genres.map((g) => g.count));
-  const items = data.genres.map((g, i) => shelfItemMarkup(g, maxCount, i)).join("");
+  const items = data.genres.map((g) => shelfItemMarkup(g, maxCount)).join("");
   const unclassifiedItem = data.unclassified
-    ? `<button type="button" class="shelf-item is-unclassified" data-genre-id="unclassified" style="--genre-color:#858681;--shelf-span:2"><span class="spines"><i></i><i></i></span><span class="shelf-item-copy"><strong>未分類</strong><small>${data.unclassified}作品・整理前の棚</small></span></button>`
+    ? `<button type="button" class="shelf-item is-unclassified" data-genre-id="unclassified" style="--genre-color:#858681"><span class="spines"><i></i><i></i></span><span class="shelf-item-copy"><strong>未分類</strong><small>${data.unclassified}作品・整理前の棚</small></span></button>`
     : "";
   body.innerHTML = items || unclassifiedItem
-    ? `<div class="shelf-grid ${shelfExpanded ? "is-expanded" : ""}">${items}${unclassifiedItem}</div><button type="button" class="shelf-expand" data-shelf-expand>${shelfExpanded ? "棚をたたむ" : "ほかの棚も見る"}</button>`
+    ? `<div class="shelf-grid">${items}${unclassifiedItem}</div>`
     : '<div class="shelf-empty">この条件の作品はまだありません。</div>';
   $$("[data-shelf-scope]").forEach((btn) => btn.setAttribute("aria-selected", String(btn.dataset.shelfScope === shelfScope)));
 }
@@ -136,8 +118,7 @@ function shelfScopeStatuses(scope) {
 export function renderHome() {
   if (state.view !== "home") return; // 非表示ビューの再描画はしない
   const h = homeData || {};
-  // ★はstate.worksを直接更新する(home.jsのデータはloadHome時点のスナップショット)ため、
-  // 描画のたびにstate.worksから引き直して最新の評価を表示する。
+  // Home APIは読み込み時点のスナップショットなので、描画のたびにstate.worksから引き直す。
   $("#readingStrip").innerHTML = (h.reading || []).length
     ? h.reading.map((item) => state.works.get(String(item.id)) || item).map((work) => `
     <article class="reading-card" data-work-id="${esc(work.id)}">
@@ -147,7 +128,6 @@ export function renderHome() {
         <p class="short-note">${esc(work.short_note || "一言メモはまだありません。")}</p>
         ${work.progress_total ? `<div class="progress-track"><span style="width:${Math.min(100, Math.max(0, ((work.progress_current || 0) / work.progress_total) * 100))}%"></span></div>` : ""}
       </button>
-      ${cardRatingMarkup(work)}
     </article>`).join("")
     : '<div class="empty-state">現在読書中の本はありません。<br><button class="text-button" data-action="open-work-dialog">本を追加する</button></div>';
 
@@ -170,7 +150,7 @@ export function renderHome() {
   renderShelf();
   renderShelfFilterChip();
   renderThemeShelf();
-  renderRandomPicks(); // 抽選のやり直しはしない。★・メモ変更時の表示更新だけをここに乗せる
+  renderRandomPicks(); // 抽選のやり直しはしない。優先度などの表示更新だけをここに乗せる
 }
 
 export async function loadHome() {
@@ -214,12 +194,9 @@ export function initHome() {
   $("#randomScope").addEventListener("change", drawRandomPicks);
   document.addEventListener("click", (event) => {
     if (event.target.closest("[data-action='draw-random']")) { event.preventDefault(); drawRandomPicks(); return; }
-    const start = event.target.closest("[data-random-start]");
-    if (start) { event.preventDefault(); void startFromRandom(start); return; }
 
     const scope = event.target.closest("[data-shelf-scope]")?.dataset.shelfScope;
-    if (scope) { shelfScope = scope; shelfExpanded = false; renderShelf(); return; }
-    if (event.target.closest("[data-shelf-expand]")) { shelfExpanded = !shelfExpanded; renderShelf(); return; }
+    if (scope) { shelfScope = scope; renderShelf(); return; }
     const genreButton = event.target.closest("[data-genre-id]");
     if (genreButton) {
       const genreId = genreButton.dataset.genreId;
