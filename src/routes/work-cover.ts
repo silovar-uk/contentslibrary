@@ -12,6 +12,11 @@ interface CoverPayload {
 // 許可ホストは一箇所(このSetとCSP)だけで管理し、増やすときは両方を直す。
 const ALLOWED_HOSTS = new Set(["m.media-amazon.com", "images-na.ssl-images-amazon.com"]);
 
+// Amazonの商品画像URLは、画像IDの後ろにサイズ・フォーマット・配信用途などの変換指定が付く。
+// 変換指定はAmazon側で増減する内部表現なので、既知トークンを列挙せず「._ から末尾の _ まで」を
+// 1つのopaqueな修飾部として扱う。slashだけは許可せず、別pathへ広がらないようにする。
+const AMAZON_ITEM_IMAGE_PATH = /^\/images\/I\/([A-Za-z0-9+-]+)(?:\._[^/]+_)?\.jpg$/;
+
 function requireEditor(auth: AuthContext): void {
   if (!["owner", "admin", "member"].includes(auth.member.role)) {
     throw new HttpError(403, "FORBIDDEN", "編集権限がありません。");
@@ -36,10 +41,7 @@ function versionField(value: unknown): number {
   return number;
 }
 
-// クライアントは候補URLを一度自分で読み込んで確認してから送ってくる(空の1x1 GIFを弾くため)。
-// サーバー側はさらに、既知の画像URL形式であることを確認したうえで高解像度版へ正規化する。
-// 一覧・ホームではクライアント側で中解像度へ落とし、詳細だけ高解像度を使う。
-function normalizeCoverUrl(raw: string): string {
+function parseCoverUrl(raw: string): URL {
   let url: URL;
   try {
     url = new URL(raw);
@@ -52,18 +54,34 @@ function normalizeCoverUrl(raw: string): string {
   if (!ALLOWED_HOSTS.has(url.hostname)) {
     throw new HttpError(422, "VALIDATION_ERROR", "表紙URLはAmazonの画像URLのみ使用できます。", { field: "cover_url" });
   }
+  return url;
+}
 
+function normalizeAmazonCoverPath(url: URL): string | null {
   // /images/P/<ISBN等>.<edition>.<SIZE>.jpg 形式(主に書籍)。大サイズへ正規化する。
   const productMatch = url.pathname.match(/^\/images\/P\/([^./]+)\.(\d+)\.[A-Za-z0-9]+\.jpg$/);
   if (productMatch) {
     return `https://${url.hostname}/images/P/${productMatch[1]}.${productMatch[2]}.LZZZZZZZ.jpg`;
   }
 
-  // /images/I/<画像ID>[._SIZE_].jpg 形式(商品ページから貼った画像URL)。長辺800px相当へ正規化する。
-  const itemMatch = url.pathname.match(/^\/images\/I\/([^._]+)(?:\._[A-Za-z0-9,_]+_)?\.jpg$/);
+  // /images/I/<画像ID>[._変換指定_].jpg 形式(商品ページから貼った画像URL)。
+  // queryはURL.pathnameに含まれないため、aicid等が付いていても形式判定には影響させない。
+  // 変換指定の中身は解釈せず、保存時には長辺800px相当の既知形式へ正規化する。
+  const itemMatch = url.pathname.match(AMAZON_ITEM_IMAGE_PATH);
   if (itemMatch) {
     return `https://${url.hostname}/images/I/${itemMatch[1]}._SL800_.jpg`;
   }
+
+  return null;
+}
+
+// クライアントは候補URLを一度自分で読み込んで確認してから送ってくる(空の1x1 GIFを弾くため)。
+// サーバー側はURLとしての妥当性とAmazonホストを先に検証し、その後pathだけを正規化する。
+// 一覧・ホームではクライアント側で中解像度へ落とし、詳細だけ高解像度を使う。
+function normalizeCoverUrl(raw: string): string {
+  const url = parseCoverUrl(raw);
+  const normalized = normalizeAmazonCoverPath(url);
+  if (normalized) return normalized;
 
   throw new HttpError(422, "VALIDATION_ERROR", "認識できないAmazon画像URLの形式です。", { field: "cover_url" });
 }
