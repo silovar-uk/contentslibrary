@@ -27,6 +27,20 @@ test('表紙保存APIはCSPと同じホストだけを許可し、高解像度�
   assert.match(route, /_SL800_\.jpg`/);
 });
 
+test('Amazon画像URLは変換指定内の小数点とqueryを許容し、未知トークンを列挙しない', async () => {
+  const route = await read('src/routes/work-cover.ts');
+  const sample = new URL('https://m.media-amazon.com/images/I/71LFLndr04L._AC_AIweblab1378949,T3_FMavif_SF516.0,327.0_PQ65_.jpg?aicid=productui-image-1');
+
+  // URL APIでqueryはpathnameから分離されるため、形式判定は画像pathだけに限定できる。
+  assert.equal(sample.pathname, '/images/I/71LFLndr04L._AC_AIweblab1378949,T3_FMavif_SF516.0,327.0_PQ65_.jpg');
+  assert.equal(sample.searchParams.get('aicid'), 'productui-image-1');
+
+  // Amazon内部の変換指定はopaqueに扱い、slash以外を許容する。既知トークンの列挙へ戻さない。
+  assert.ok(route.includes('const AMAZON_ITEM_IMAGE_PATH = /^\\/images\\/I\\/([A-Za-z0-9+-]+)(?:\\._[^/]+_)?\\.jpg$/;'));
+  assert.ok(route.includes('url.pathname.match(AMAZON_ITEM_IMAGE_PATH)'));
+  assert.doesNotMatch(route, /\[A-Za-z0-9,_\]\+/);
+});
+
 test('cover.jsはonerrorが発火しない透明GIFをnaturalWidthで判定する', async () => {
   const cover = await read('public/core/cover.js');
   assert.match(cover, /export function probeCoverImage/);
