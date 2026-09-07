@@ -28,11 +28,13 @@ function formatProgressNumber(value) {
 }
 
 function resumeProgressText(work) {
-  const current = Number(work?.progress_current);
-  const total = Number(work?.progress_total);
-  const unit = String(work?.unit_label || "").trim();
+  if (work?.progress_current == null || work.progress_current === "") return "";
+  const current = Number(work.progress_current);
   if (!Number.isFinite(current)) return "";
+  const unit = String(work?.unit_label || "").trim();
   const currentText = formatProgressNumber(current);
+  if (work?.progress_total == null || work.progress_total === "") return `進捗 ${currentText}${unit ? ` ${unit}` : ""}`;
+  const total = Number(work.progress_total);
   if (!Number.isFinite(total) || total <= 0) return `進捗 ${currentText}${unit ? ` ${unit}` : ""}`;
   const totalText = formatProgressNumber(total);
   const percent = Math.min(100, Math.max(0, Math.round((current / total) * 100)));
