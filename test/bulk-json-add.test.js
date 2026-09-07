@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { parseJsonImportContainer } from "../public/shared/json-import-adapter.js";
 
 const moduleSource = readFileSync(new URL("../public/views/bulk-json-add.js", import.meta.url), "utf8");
 const adapterSource = readFileSync(new URL("../public/shared/json-import-adapter.js", import.meta.url), "utf8");
@@ -23,7 +24,22 @@ test("JSONの解析と正規化はUIではなくImportAdapterが担当する", (
   assert.match(adapterSource, /Array\.isArray\(parsed\.items\)/);
   assert.match(adapterSource, /typeof parsed\.title === "string"/);
   assert.match(adapterSource, /stripCodeFence/);
+  assert.match(adapterSource, /normalizeSmartJsonQuotes/);
   assert.match(adapterSource, /createImportDraftWork/);
+});
+
+test("スマートクォートのJSONも通常の作品配列として補正して読める", () => {
+  const parsed = parseJsonImportContainer('[{“title”:“世界標準の経営理論”,“type”:“book”,“status”:“want”}]');
+  assert.equal(parsed.source, "array");
+  assert.equal(parsed.works.length, 1);
+  assert.equal(parsed.works[0].title, "世界標準の経営理論");
+  assert.match(parsed.warnings[0], /スマートクォート/);
+});
+
+test("ASCII引用符の文字列内にあるスマートクォートは壊さない", () => {
+  const parsed = parseJsonImportContainer('[{"title":"“引用”のある本","type":"book","status":"want"}]');
+  assert.equal(parsed.works[0].title, "“引用”のある本");
+  assert.deepEqual(parsed.warnings, []);
 });
 
 test("バックアップJSONの体験とメモをwork_idで作品へ結び直す", () => {
