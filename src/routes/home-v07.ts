@@ -7,6 +7,11 @@ function parseJsonSafe<T>(value: string | null, fallback: T): T {
   try { return JSON.parse(value) as T; } catch { return fallback; }
 }
 
+function newestTimestamp(...values: unknown[]): string | null {
+  const timestamps = values.filter((value): value is string => typeof value === "string" && value.length > 0);
+  return timestamps.sort().at(-1) ?? null;
+}
+
 async function attachLabels(env: Env, rows: Array<Record<string, unknown>>) {
   const ids = rows.map((row) => String(row.id));
   const labels = await getLabelsForWorks(env, ids);
@@ -14,14 +19,24 @@ async function attachLabels(env: Env, rows: Array<Record<string, unknown>>) {
     ...row,
     metadata: parseJsonSafe(String(row.metadata_json ?? "{}"), {}),
     labels: labels.get(String(row.id)) ?? { genre: [], theme: [], tag: [] },
-    metadata_json: undefined
+    resume_at: newestTimestamp(row.updated_at, row.resume_note_at, row.resume_experience_at),
+    metadata_json: undefined,
+    resume_note_at: undefined,
+    resume_experience_at: undefined
   }));
 }
 
 export async function getHomeV07(env: Env, auth: AuthContext): Promise<Response> {
   const owner = auth.member.id;
   const active = await env.DB.prepare(
-    "SELECT * FROM works WHERE owner_id = ? AND deleted_at IS NULL AND status = 'active' ORDER BY updated_at DESC LIMIT 8"
+    `SELECT w.*,
+      (SELECT n.content FROM notes n WHERE n.work_id = w.id ORDER BY n.updated_at DESC LIMIT 1) AS resume_note,
+      (SELECT n.updated_at FROM notes n WHERE n.work_id = w.id ORDER BY n.updated_at DESC LIMIT 1) AS resume_note_at,
+      (SELECT e.updated_at FROM experiences e WHERE e.work_id = w.id ORDER BY e.updated_at DESC LIMIT 1) AS resume_experience_at
+    FROM works w
+    WHERE w.owner_id = ? AND w.deleted_at IS NULL AND w.status = 'active'
+    ORDER BY w.updated_at DESC
+    LIMIT 8`
   ).bind(owner).all<Record<string, unknown>>();
   const recentOther = await env.DB.prepare(
     "SELECT * FROM works WHERE owner_id = ? AND deleted_at IS NULL AND status <> 'active' ORDER BY updated_at DESC LIMIT 8"
