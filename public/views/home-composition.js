@@ -1,5 +1,7 @@
-import { $ } from "../core/dom.js";
+import { $, fmtDate } from "../core/dom.js";
 import { state, subscribe } from "../core/store.js";
+import { readingPriority } from "./reading-priority.js";
+import { readingPrioritySurfaceMarkup } from "./reading-priority-surfaces.js";
 
 let initialized = false;
 let frame = 0;
@@ -7,9 +9,9 @@ let observer = null;
 let exploreMode = "genre";
 
 const ZONES = [
-  { key: "continue", eyebrow: "CONTINUE", title: "続きを進める", description: "始めた作品に、まず戻る。" },
-  { key: "choose", eyebrow: "CHOOSE", title: "次の作品を、棚から引く。", description: "自分では選ばなかった候補にも、偶然もう一度出会う。" },
-  { key: "explore", eyebrow: "EXPLORE", title: "興味から探す", description: "ジャンルやテーマから、棚を横断する。" },
+  { key: "continue", eyebrow: "CONTINUE", title: "続きを進める", description: "いま進めている作品へ、すぐ戻る。" },
+  { key: "choose", eyebrow: "CHOOSE", title: "次の作品を、棚から引く。", description: "偶然に出会った候補から、次の優先度を決める。" },
+  { key: "explore", eyebrow: "EXPLORE", title: "興味から探す", description: "まだ候補に入っていない作品を、ジャンルやテーマから拾う。" },
   { key: "reflect", eyebrow: "REFLECT", title: "振り返る", description: "最近のメモや記録から、体験をもう一度拾う。" }
 ];
 
@@ -95,9 +97,49 @@ function updateIntro(home, hasContinue, chooseAvailable) {
   setText(lead, "ジャンルやテーマを入口に、次に触れる作品を見つける。");
 }
 
+function ensureSwipeHint(zone) {
+  const actions = zone.querySelector(".home-zone-actions");
+  if (!actions || actions.querySelector(".home-swipe-hint")) return;
+  const hint = document.createElement("span");
+  hint.className = "home-swipe-hint";
+  hint.setAttribute("aria-hidden", "true");
+  hint.textContent = "横にスワイプ →";
+  actions.append(hint);
+}
+
+function enhanceContinueCards(zone) {
+  zone.querySelectorAll(".reading-card[data-work-id]").forEach((card) => {
+    card.querySelector(":scope > .card-rating")?.remove();
+    const main = card.querySelector(".reading-card-main");
+    if (!main) return;
+    const work = state.works.get(String(card.dataset.workId));
+
+    let updated = main.querySelector(".reading-card-updated");
+    if (!updated) {
+      updated = document.createElement("span");
+      updated.className = "reading-card-updated";
+      main.append(updated);
+    }
+    const updatedText = work?.updated_at ? `最終更新 ${fmtDate(work.updated_at)}` : "";
+    setText(updated, updatedText);
+    updated.hidden = !updatedText;
+
+    let cue = main.querySelector(".reading-card-cue");
+    if (!cue) {
+      cue = document.createElement("span");
+      cue.className = "reading-card-cue";
+      cue.textContent = "作品へ戻る →";
+      main.append(cue);
+    }
+  });
+}
+
 function composeContinue(zone) {
   const feature = $("#editorialReadingFeature");
-  if (feature) moveIntoBody(zone, feature);
+  if (feature) {
+    feature.classList.add("home-featured-shelf", "home-featured-continue");
+    moveIntoBody(zone, feature);
+  }
   const actions = zone.querySelector(".home-zone-actions");
   if (actions && !actions.querySelector('[data-preset="reading"]')) {
     const button = document.createElement("button");
@@ -107,13 +149,51 @@ function composeContinue(zone) {
     button.textContent = "進行中をすべて見る →";
     actions.append(button);
   }
+  ensureSwipeHint(zone);
+  enhanceContinueCards(zone);
+}
+
+function enhanceChooseCards(stage) {
+  stage.querySelectorAll(".random-pick-card").forEach((card) => {
+    const workId = card.querySelector("[data-open-work]")?.dataset.openWork;
+    if (!workId) return;
+    card.dataset.workId = workId;
+    card.classList.add("home-choice-card");
+
+    // TOPは「次候補を決める」面に絞る。開始・評価・メモは詳細/一覧へ委ねる。
+    card.querySelector("[data-random-start]")?.remove();
+    card.querySelector(":scope > .card-rating")?.remove();
+    card.querySelector(":scope > .card-note-row")?.remove();
+
+    const work = state.works.get(String(workId));
+    const markup = work ? readingPrioritySurfaceMarkup(work, "choose") : "";
+    let host = card.querySelector(":scope > .home-choice-priority");
+    if (!markup) {
+      host?.remove();
+      return;
+    }
+
+    const value = readingPriority(work);
+    if (host?.dataset.priorityValue === value) return;
+    if (!host) {
+      host = document.createElement("div");
+      host.className = "home-choice-priority";
+      card.append(host);
+    }
+    host.dataset.priorityValue = value;
+    host.innerHTML = markup;
+  });
 }
 
 function composeChoose(zone) {
   const controls = document.querySelector("#homeView .random-controls");
   const stage = $("#randomStage");
   if (controls) moveIntoBody(zone, controls);
-  if (stage) moveIntoBody(zone, stage);
+  if (stage) {
+    stage.classList.add("home-featured-shelf", "home-featured-choose");
+    moveIntoBody(zone, stage);
+    enhanceChooseCards(stage);
+  }
 
   const actions = zone.querySelector(".home-zone-actions");
   if (actions && !actions.querySelector("[data-reading-priority-organize]")) {
@@ -124,6 +204,7 @@ function composeChoose(zone) {
     button.textContent = "読む順番を整理 →";
     actions.append(button);
   }
+  ensureSwipeHint(zone);
 }
 
 function ensureExploreTabs(zone) {
@@ -145,11 +226,36 @@ function syncExploreTabs(zone) {
   });
 }
 
+function enhanceGenreShelf(zone) {
+  const genre = zone.querySelector("#genreShelf");
+  if (!genre) return;
+  genre.classList.add("genre-shelf-complete");
+  genre.querySelector("[data-shelf-expand]")?.remove();
+  genre.querySelectorAll(".shelf-item").forEach((item) => {
+    item.classList.remove("is-secondary");
+    item.style.removeProperty("--shelf-span");
+  });
+
+  if (!state.loaded) return;
+  const count = genre.querySelectorAll(".shelf-item[data-genre-id]").length;
+  const summary = genre.querySelector("#shelfSummary");
+  if (!summary) return;
+  let countNode = summary.querySelector("[data-genre-count]");
+  if (!countNode) {
+    countNode = document.createElement("span");
+    countNode.dataset.genreCount = "";
+    countNode.innerHTML = "<strong></strong>ジャンル";
+    summary.prepend(countNode);
+  }
+  setText(countNode.querySelector("strong"), String(count));
+}
+
 function composeExplore(zone) {
   const grid = $("#editorialExploreGrid");
   if (grid) moveIntoBody(zone, grid);
   ensureExploreTabs(zone);
   syncExploreTabs(zone);
+  enhanceGenreShelf(zone);
 }
 
 function composeReflect(zone) {
