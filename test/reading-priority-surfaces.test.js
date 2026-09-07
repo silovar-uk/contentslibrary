@@ -6,7 +6,7 @@ import { prioritySummaryCounts } from "../public/views/reading-priority-surfaces
 const root = new URL("../", import.meta.url);
 const read = (path) => readFile(new URL(path, root), "utf8");
 
-test("ホームの読む優先度サマリーは未読の本・漫画だけを集計する", () => {
+test("読む優先度集計は未読の本・漫画だけを対象にする", () => {
   const counts = prioritySummaryCounts([
     { id: "1", type: "book", status: "owned_unread", metadata: { reading_priority: "top" } },
     { id: "2", type: "book", status: "want", metadata: { reading_priority: "high" } },
@@ -18,28 +18,26 @@ test("ホームの読む優先度サマリーは未読の本・漫画だけを�
   assert.deepEqual(counts, { top: 1, high: 1, medium: 1, low: 0, unset: 1, total: 4 });
 });
 
-test("読む優先度は一覧・抽選・詳細の3か所へ同じチップUIを出す", async () => {
+test("読む優先度は一覧と詳細の管理文脈へ同じチップUIを出す", async () => {
   const source = await read("public/views/reading-priority-surfaces.js");
   assert.match(source, /decorateLibraryCards/);
-  assert.match(source, /decorateRandomCards/);
   assert.match(source, /decorateDetail/);
   assert.match(source, /syncSurface\(card, work, "library"/);
-  assert.match(source, /syncSurface\(card, work, "random"/);
   assert.match(source, /surfaceMarkup\(work, "detail"\)/);
+  assert.doesNotMatch(source, /decorateRandomCards/);
+  assert.doesNotMatch(source, /syncSurface\(card, work, "random"/);
   assert.match(source, /data-reading-priority-set/);
   assert.match(source, /data-work-id/);
-  assert.match(source, /最優先/);
   assert.match(source, /解除/);
 });
 
-test("ホームに読む順番の整理入口とランク別件数サマリーを出す", async () => {
-  const source = await read("public/views/reading-priority-surfaces.js");
-  assert.match(source, /READING PRIORITY/);
-  assert.match(source, /読む順番を整理/);
-  assert.match(source, /data-reading-priority-home-filter/);
-  assert.match(source, /setView\("library"\)/);
-  assert.match(source, /filterReadingPriority/);
-  assert.match(source, /dispatchEvent\(new Event\("change"/);
+test("ホームはランク別件数ダッシュボードを持たず整理入口だけを弱く残す", async () => {
+  const surface = await read("public/views/reading-priority-surfaces.js");
+  const composition = await read("public/views/home-composition.js");
+  assert.doesNotMatch(surface, /READING PRIORITY/);
+  assert.doesNotMatch(surface, /data-reading-priority-home-filter/);
+  assert.match(composition, /data\.readingPriorityOrganize/);
+  assert.match(composition, /読む順番を整理/);
 });
 
 test("旧ワンクリック循環ボタンは隠し、現在値チップから4段階を開く", async () => {
@@ -50,9 +48,11 @@ test("旧ワンクリック循環ボタンは隠し、現在値チップから4�
   assert.match(css, /\.reading-priority-choice\.is-high/);
   assert.match(css, /\.reading-priority-choice\.is-medium/);
   assert.match(css, /\.reading-priority-choice\.is-low/);
+  assert.doesNotMatch(css, /reading-priority-home-hub/);
+  assert.doesNotMatch(css, /reading-priority-surface-random/);
 });
 
-test("アプリ起動時に読む優先度の常設UIを初期化する", async () => {
+test("アプリ起動時に読む優先度の管理UIを初期化する", async () => {
   const app = await read("public/app.js");
   assert.match(app, /initReadingPrioritySurfaces/);
   assert.match(app, /initReadingPrioritySurfaces\(\);/);
