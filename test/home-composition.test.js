@@ -66,7 +66,7 @@ test("ジャンル棚は展開操作なしで全件を見せ、ジャンル数�
   const css = await read("public/styles/home-decision-surface.css");
   assert.match(source, /enhanceGenreShelf/);
   assert.match(source, /\[data-shelf-expand\]/);
-  assert.match(source, /dataGenreCount/);
+  assert.match(source, /dataset\.genreCount/);
   assert.match(css, /#genreShelf \.shelf-grid\{display:grid;grid-template-columns:repeat\(auto-fit,minmax\(150px,1fr\)\)/);
   assert.match(css, /max-height:none;overflow:visible/);
   assert.match(css, /#genreShelf \[data-shelf-expand\]\{display:none!important\}/);
