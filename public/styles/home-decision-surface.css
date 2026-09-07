@@ -8,28 +8,61 @@
 .home-zone-heading span{display:block;margin-top:5px;color:var(--muted);font-size:12px;line-height:1.55}
 .home-zone-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex:none}
 .home-zone-body{min-width:0}
+.home-swipe-hint{display:none;margin:0;color:var(--muted);font-size:10px;font-weight:700;white-space:nowrap}
 
 .editorial-home .editorial-hero{margin-bottom:8px}
 .editorial-home .editorial-hero .hero-copy{max-width:900px}
 .editorial-home .editorial-hero h1{max-width:18ch;font-size:clamp(36px,4.4vw,58px)}
 .editorial-home .editorial-hero .random-controls{display:none}
 
-.home-zone-continue .editorial-reading-feature{margin:0}
+/* CONTINUE / CHOOSE は同じFeatured Shelf文法を共有する。役割はCTAで分ける。 */
+.home-featured-shelf{min-width:0}
+.home-zone-continue .editorial-reading-feature,
+.home-zone-choose .editorial-random-feature{margin:0;padding:22px;border-radius:24px;box-shadow:0 12px 34px rgba(39,41,35,.055)}
+
+.home-zone-continue .editorial-reading-feature{background:linear-gradient(145deg,color-mix(in srgb,var(--warm) 6%,var(--surface)),var(--surface) 54%)}
 .home-zone-continue .editorial-reading-feature>.section-heading{display:none}
-.home-zone-continue .reading-strip{margin:0}
+.home-zone-continue .reading-strip{display:flex;gap:10px;margin:0;overflow-x:auto;overscroll-behavior-inline:contain;scroll-snap-type:inline proximity;scroll-padding-inline:0;padding-bottom:4px}
+.home-zone-continue .reading-card{flex:1 0 calc((100% - 50px)/6);min-width:180px;border:0;border-radius:16px;background:color-mix(in srgb,var(--surface) 90%,transparent);box-shadow:none;scroll-snap-align:start}
+.home-zone-continue .reading-card:hover{background:var(--surface);box-shadow:0 8px 24px rgba(39,41,35,.07)}
+.home-zone-continue .reading-card-updated{display:block;margin-top:12px;color:var(--muted);font-size:10px;line-height:1.4}
+.home-zone-continue .reading-card-cue{display:block;margin-top:10px;color:var(--accent);font-size:11px;font-weight:750;line-height:1.4}
+.home-zone-continue .reading-card .short-note{padding-top:14px}
 
 .home-zone-choose .random-controls{display:flex;margin:0 0 12px;padding:0 2px}
-.home-zone-choose .editorial-random-feature{margin:0}
+.home-zone-choose .editorial-random-feature{background:linear-gradient(145deg,color-mix(in srgb,var(--accent) 7%,var(--surface)),var(--surface) 52%)}
 .home-zone-choose .editorial-random-feature::before{display:none}
 .home-priority-link{font-size:12px;white-space:nowrap}
+
+/* TOPのCHOOSEでは開始・評価・メモではなく「次候補の優先度」だけを主操作にする。 */
+.editorial-random-feature [data-random-start],
+.editorial-random-feature .card-rating,
+.editorial-random-feature .card-note-row{display:none!important}
+.home-choice-priority{margin:0 14px 12px;padding-top:10px;border-top:1px solid color-mix(in srgb,var(--line) 72%,transparent)}
+.home-choice-priority .reading-priority-surface{display:flex;width:100%;max-width:none}
+.home-choice-priority .reading-priority-surface summary{min-height:34px;width:100%;justify-content:space-between;border-radius:10px;padding:7px 10px}
+.home-choice-priority .reading-priority-surface[open]{width:100%}
+.home-choice-priority .reading-priority-surface-menu{width:100%}
 
 .home-zone-explore .editorial-explore-grid{margin:0}
 .home-explore-tabs{display:none;gap:4px;padding:3px;border:1px solid var(--line);border-radius:999px;background:var(--surface-2)}
 .home-explore-tabs button{border:0;border-radius:999px;background:transparent;padding:7px 12px;font-size:11px;font-weight:700;color:var(--muted)}
 .home-explore-tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-sm)}
 
+/* ジャンルは省略せず、全体像を一度で把握できる等幅グリッドにする。 */
+.home-zone-explore #genreShelf .shelf-summary{flex-wrap:wrap}
+.home-zone-explore #genreShelf .shelf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;max-height:none;overflow:visible}
+.home-zone-explore #genreShelf .shelf-item{grid-column:auto!important;min-height:86px;opacity:1}
+.home-zone-explore #genreShelf [data-shelf-expand]{display:none!important}
+.home-zone-explore #genreShelf .shelf-item.is-secondary{opacity:1}
+
 .home-zone-reflect .editorial-recents-grid{margin:0!important}
 .home-zone-reflect .editorial-stats{margin-top:14px!important}
+
+@media(max-width:1279px){
+  .home-swipe-hint{display:inline-flex}
+  .home-zone-continue .reading-card{flex:0 0 220px;min-width:220px}
+}
 
 @media(max-width:980px){
   .home-decision-flow{gap:28px}
@@ -42,16 +75,36 @@
   .home-zone-heading h2{font-size:21px}
   .home-zone-heading span{font-size:11px;max-width:28rem}
   .home-zone-actions{align-self:flex-start}
+
+  .home-zone-continue .home-zone-heading,
   .home-zone-choose .home-zone-heading{flex-wrap:wrap}
-  .home-zone-choose .home-zone-actions{width:100%;justify-content:flex-start}
+  .home-zone-continue .home-zone-actions,
+  .home-zone-choose .home-zone-actions{width:100%;justify-content:space-between}
+
+  .home-zone-continue .editorial-reading-feature,
+  .home-zone-choose .editorial-random-feature{padding:14px;border-radius:18px;box-shadow:none}
+
+  .home-zone-continue .reading-strip{gap:10px;scroll-snap-type:inline mandatory;padding-bottom:2px;scrollbar-width:none}
+  .home-zone-continue .reading-strip::-webkit-scrollbar{display:none}
+  .home-zone-continue .reading-card{flex:0 0 100%;min-width:100%;scroll-snap-align:start;scroll-snap-stop:always}
+
   .home-zone-choose .random-controls{gap:8px;align-items:flex-end;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px}
   .home-zone-choose .random-controls label{min-width:190px}
   .home-zone-choose .draw-button{flex:none}
+  .home-zone-choose .editorial-random-feature .random-pick-grid{display:grid;grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:100%;gap:10px;overflow-x:auto;overscroll-behavior-inline:contain;scroll-snap-type:inline mandatory;margin:0;padding:0;scrollbar-width:none}
+  .home-zone-choose .editorial-random-feature .random-pick-grid::-webkit-scrollbar{display:none}
+  .home-zone-choose .editorial-random-feature .random-pick-card{min-width:0;width:auto;scroll-snap-align:start;scroll-snap-stop:always}
+  .home-choice-priority{margin:0 12px 12px}
+  .home-choice-priority .reading-priority-surface summary{min-height:38px}
+
   .home-zone-explore .home-zone-heading{align-items:center}
   .home-explore-tabs{display:flex}
   .home-zone-explore[data-explore-mode="genre"] #themeShelf{display:none}
   .home-zone-explore[data-explore-mode="theme"] #genreShelf{display:none}
   .home-zone-explore .editorial-explore-grid{display:block}
+  .home-zone-explore #genreShelf .shelf-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .home-zone-explore #genreShelf .shelf-item{min-height:80px;padding:12px}
+
   .home-zone-reflect .home-columns{gap:22px;margin-top:0}
   .home-zone-reflect .editorial-stats{margin-top:10px!important}
   .home-priority-link{font-size:11px}
