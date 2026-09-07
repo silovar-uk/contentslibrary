@@ -36,7 +36,7 @@ test("ホームはランク別件数ダッシュボードを持たず整理入�
   const composition = await read("public/views/home-composition.js");
   assert.doesNotMatch(surface, /READING PRIORITY/);
   assert.doesNotMatch(surface, /data-reading-priority-home-filter/);
-  assert.match(composition, /data\.readingPriorityOrganize/);
+  assert.match(composition, /dataset\.readingPriorityOrganize/);
   assert.match(composition, /読む順番を整理/);
 });
 
