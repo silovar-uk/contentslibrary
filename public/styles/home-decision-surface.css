@@ -25,9 +25,16 @@
 .home-zone-continue .reading-strip{display:flex;gap:10px;margin:0;overflow-x:auto;overscroll-behavior-inline:contain;scroll-snap-type:inline proximity;scroll-padding-inline:0;padding-bottom:4px}
 .home-zone-continue .reading-card{flex:1 0 calc((100% - 50px)/6);min-width:180px;border:0;border-radius:16px;background:color-mix(in srgb,var(--surface) 90%,transparent);box-shadow:none;scroll-snap-align:start}
 .home-zone-continue .reading-card:hover{background:var(--surface);box-shadow:0 8px 24px rgba(39,41,35,.07)}
-.home-zone-continue .reading-card-updated{display:block;margin-top:12px;color:var(--muted);font-size:10px;line-height:1.4}
-.home-zone-continue .reading-card-cue{display:block;margin-top:10px;color:var(--accent);font-size:11px;font-weight:750;line-height:1.4}
-.home-zone-continue .reading-card .short-note{padding-top:14px}
+.home-zone-continue .reading-card-cue{display:block;margin-top:12px;color:var(--accent);font-size:11px;font-weight:750;line-height:1.4}
+.home-zone-continue .reading-card-resume-signals{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:12px}
+.home-zone-continue .reading-card-recency,
+.home-zone-continue .reading-card-progress{display:inline-flex;align-items:center;min-height:24px;border-radius:999px;padding:4px 8px;font-size:9px;font-weight:750;line-height:1.2}
+.home-zone-continue .reading-card-recency{background:color-mix(in srgb,var(--warm) 12%,var(--surface));color:color-mix(in srgb,var(--ink) 72%,var(--muted))}
+.home-zone-continue .reading-card-progress{background:var(--surface-2);color:var(--muted)}
+.home-zone-continue .reading-card-memory{margin-top:12px;padding-top:11px;border-top:1px solid color-mix(in srgb,var(--line) 72%,transparent)}
+.home-zone-continue .reading-card-memory>span{display:block;margin:0 0 4px;color:var(--muted);font-size:9px;font-weight:800;letter-spacing:.04em}
+.home-zone-continue .reading-card-memory>p{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin:0;color:var(--ink);font-size:11px;line-height:1.55}
+.home-zone-continue .reading-card .progress-track{margin-top:12px}
 
 .home-zone-choose .random-controls{display:flex;margin:0 0 12px;padding:0 2px}
 .home-zone-choose .editorial-random-feature{background:linear-gradient(145deg,color-mix(in srgb,var(--accent) 7%,var(--surface)),var(--surface) 52%)}
@@ -87,6 +94,10 @@
   .home-zone-continue .reading-strip{gap:10px;scroll-snap-type:inline mandatory;padding-bottom:2px;scrollbar-width:none}
   .home-zone-continue .reading-strip::-webkit-scrollbar{display:none}
   .home-zone-continue .reading-card{flex:0 0 100%;min-width:100%;scroll-snap-align:start;scroll-snap-stop:always}
+  .home-zone-continue .reading-card-resume-signals{margin-top:14px}
+  .home-zone-continue .reading-card-recency,
+  .home-zone-continue .reading-card-progress{min-height:28px;padding:5px 9px;font-size:10px}
+  .home-zone-continue .reading-card-memory>p{-webkit-line-clamp:3;font-size:12px}
 
   .home-zone-choose .random-controls{gap:8px;align-items:flex-end;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px}
   .home-zone-choose .random-controls label{min-width:190px}
