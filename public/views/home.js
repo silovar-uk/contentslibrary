@@ -21,6 +21,63 @@ function rememberRandom(ids) {
   localStorage.setItem(RANDOM_HISTORY_KEY, JSON.stringify(merged));
 }
 
+function formatProgressNumber(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "";
+  return Number.isInteger(number) ? String(number) : String(Math.round(number * 10) / 10);
+}
+
+function resumeProgressText(work) {
+  const current = Number(work?.progress_current);
+  const total = Number(work?.progress_total);
+  const unit = String(work?.unit_label || "").trim();
+  if (!Number.isFinite(current)) return "";
+  const currentText = formatProgressNumber(current);
+  if (!Number.isFinite(total) || total <= 0) return `進捗 ${currentText}${unit ? ` ${unit}` : ""}`;
+  const totalText = formatProgressNumber(total);
+  const percent = Math.min(100, Math.max(0, Math.round((current / total) * 100)));
+  return `進捗 ${currentText} / ${totalText}${unit ? ` ${unit}` : ""} · ${percent}%`;
+}
+
+function resumeRecencyLabel(value, now = Date.now()) {
+  if (!value) return "";
+  const timestamp = Date.parse(String(value));
+  if (!Number.isFinite(timestamp)) return "";
+  const elapsed = Math.max(0, now - timestamp);
+  const day = 24 * 60 * 60 * 1000;
+  if (elapsed < day) return "今日触った";
+  if (elapsed < 7 * day) return "今週触った";
+  if (elapsed < 30 * day) return "少し空いている";
+  return "久しぶり";
+}
+
+function resumeMemoryMarkup(work) {
+  const latest = String(work?.resume_note || "").trim();
+  const fallback = String(work?.short_note || "").trim();
+  const content = latest || fallback;
+  if (!content) return "";
+  const label = latest ? "前回のメモ" : "ひとこと";
+  return `<div class="reading-card-memory"><span>${label}</span><p>${esc(content.slice(0, 120))}</p></div>`;
+}
+
+function readingCardMarkup(work) {
+  const progress = resumeProgressText(work);
+  const recency = resumeRecencyLabel(work.resume_at);
+  const recencyTitle = work.resume_at ? `最終接点 ${fmtDate(work.resume_at)}` : "";
+  const progressBar = Number(work.progress_total) > 0
+    ? `<div class="progress-track"><span style="width:${Math.min(100, Math.max(0, ((Number(work.progress_current) || 0) / Number(work.progress_total)) * 100))}%"></span></div>`
+    : "";
+  return `<article class="reading-card" data-work-id="${esc(work.id)}">
+      <button type="button" class="reading-card-main" data-open-work="${esc(work.id)}">
+        <div class="type-status"><span class="type-pill">${TYPE_LABELS[work.type]}</span><span>${statusLabel(work.type, work.status)}</span></div>
+        <h3>${esc(work.title)}</h3><div class="creator">${esc(work.creator || "")}</div>
+        ${(recency || progress) ? `<div class="reading-card-resume-signals">${recency ? `<span class="reading-card-recency" title="${esc(recencyTitle)}">${esc(recency)}</span>` : ""}${progress ? `<span class="reading-card-progress">${esc(progress)}</span>` : ""}</div>` : ""}
+        ${resumeMemoryMarkup(work)}
+        ${progressBar}
+      </button>
+    </article>`;
+}
+
 function randomPickMarkup(work) {
   const genre = work.labels?.genre?.[0] || "未分類";
   return `<article class="random-pick-card">
@@ -118,17 +175,10 @@ function shelfScopeStatuses(scope) {
 export function renderHome() {
   if (state.view !== "home") return; // 非表示ビューの再描画はしない
   const h = homeData || {};
-  // Home APIは読み込み時点のスナップショットなので、描画のたびにstate.worksから引き直す。
-  $("#readingStrip").innerHTML = (h.reading || []).length
-    ? h.reading.map((item) => state.works.get(String(item.id)) || item).map((work) => `
-    <article class="reading-card" data-work-id="${esc(work.id)}">
-      <button type="button" class="reading-card-main" data-open-work="${esc(work.id)}">
-        <div class="type-status"><span class="type-pill">${TYPE_LABELS[work.type]}</span><span>${statusLabel(work.type, work.status)}</span></div>
-        <h3>${esc(work.title)}</h3><div class="creator">${esc(work.creator || "")}</div>
-        <p class="short-note">${esc(work.short_note || "一言メモはまだありません。")}</p>
-        ${work.progress_total ? `<div class="progress-track"><span style="width:${Math.min(100, Math.max(0, ((work.progress_current || 0) / work.progress_total) * 100))}%"></span></div>` : ""}
-      </button>
-    </article>`).join("")
+  // Home APIのresume_*はstate.worksにないため保持しつつ、通常フィールドだけ最新stateで上書きする。
+  const reading = (h.reading || []).map((item) => ({ ...item, ...(state.works.get(String(item.id)) || {}) }));
+  $("#readingStrip").innerHTML = reading.length
+    ? reading.map(readingCardMarkup).join("")
     : '<div class="empty-state">現在読書中の本はありません。<br><button class="text-button" data-action="open-work-dialog">本を追加する</button></div>';
 
   $("#recentNotes").innerHTML = (h.recentNotes || []).length
