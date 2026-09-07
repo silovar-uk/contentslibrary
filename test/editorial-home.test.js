@@ -5,12 +5,13 @@ import test from "node:test";
 const root = new URL("../", import.meta.url);
 const read = (path) => readFile(new URL(path, root), "utf8");
 
-test("ホームにEditorial階層を付与する", async () => {
+test("ホームにEditorial装飾を付与し、配置責務はCompositionへ委譲する", async () => {
   const source = await read("public/views/editorial-home.js");
   assert.match(source, /editorial-home/);
   assert.match(source, /editorial-random-feature/);
-  assert.match(source, /editorial-priority-feature/);
   assert.match(source, /editorial-reading-feature/);
+  assert.doesNotMatch(source, /movePriorityHub/);
+  assert.doesNotMatch(source, /editorial-priority-feature/);
 });
 
 test("ジャンル棚とテーマ棚を探索グリッドへまとめる", async () => {
@@ -44,8 +45,9 @@ test("スマホではEditorialカードを単列へ縮退する", async () => {
   assert.match(css, /grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/);
 });
 
-test("アプリ起動時にEditorial Homeを初期化する", async () => {
+test("アプリ起動時にEditorial装飾の後でHome Compositionを初期化する", async () => {
   const app = await read("public/app.js");
   assert.match(app, /initEditorialHome/);
-  assert.match(app, /initHomeExperience\(\);\s*initEditorialHome\(\);/);
+  assert.match(app, /initHomeComposition/);
+  assert.match(app, /initHomeExperience\(\);\s*initEditorialHome\(\);\s*initHomeComposition\(\);/);
 });
