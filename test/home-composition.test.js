@@ -53,12 +53,13 @@ test("CHOOSEは読み始める・評価・メモを除き、読む優先度Surfa
   assert.match(css, /home-choice-priority/);
 });
 
-test("CONTINUEはTOP上の評価操作を外し、戻る判断に最終更新とCTAを足す", async () => {
+test("CONTINUEのCompositionは戻るCTAだけを足し、時刻の意味付けはHomeのResume Signalsへ委ねる", async () => {
   const source = await read("public/views/home-composition.js");
   assert.match(source, /enhanceContinueCards/);
-  assert.match(source, /:scope > \.card-rating/);
-  assert.match(source, /最終更新/);
   assert.match(source, /作品へ戻る →/);
+  assert.doesNotMatch(source, /最終更新/);
+  assert.doesNotMatch(source, /reading-card-updated/);
+  assert.doesNotMatch(source, /fmtDate/);
 });
 
 test("ジャンル棚は展開操作なしで全件を見せ、ジャンル数を明示する", async () => {
