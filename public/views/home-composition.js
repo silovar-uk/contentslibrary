@@ -52,7 +52,10 @@ function ensureZones(flow) {
     }
     zones[config.key] = zone;
   }
-  ZONES.forEach(({ key }) => flow.append(zones[key]));
+  ZONES.forEach(({ key }, index) => {
+    const zone = zones[key];
+    if (flow.children[index] !== zone) flow.insertBefore(zone, flow.children[index] || null);
+  });
   return zones;
 }
 
@@ -66,25 +69,29 @@ function activeWorks() {
   return Array.from(state.works.values()).filter((work) => work?.status === "active");
 }
 
+function setText(node, value) {
+  if (node && node.textContent !== value) node.textContent = value;
+}
+
 function updateIntro(home, hasActive, chooseAvailable) {
   const eyebrow = home.querySelector(".hero-copy .eyebrow");
   const title = home.querySelector(".hero-copy h1");
   const lead = home.querySelector(".hero-copy > p:last-of-type");
-  if (eyebrow) eyebrow.textContent = "YOUR CULTURE, NEXT MOVE";
+  setText(eyebrow, "YOUR CULTURE, NEXT MOVE");
   if (!title || !lead) return;
 
   if (hasActive) {
-    title.textContent = "今日は、どれに戻る？";
-    lead.textContent = "続きを進める。次を選ぶ。まだ決まらなければ、興味から探す。";
+    setText(title, "今日は、どれに戻る？");
+    setText(lead, "続きを進める。次を選ぶ。まだ決まらなければ、興味から探す。");
     return;
   }
   if (chooseAvailable) {
-    title.textContent = "次は、何にする？";
-    lead.textContent = "棚から引くか、興味から探すか。次の一歩だけ決める。";
+    setText(title, "次は、何にする？");
+    setText(lead, "棚から引くか、興味から探すか。次の一歩だけ決める。");
     return;
   }
-  title.textContent = "興味から、次を探す。";
-  lead.textContent = "ジャンルやテーマを入口に、次に触れる作品を見つける。";
+  setText(title, "興味から、次を探す。");
+  setText(lead, "ジャンルやテーマを入口に、次に触れる作品を見つける。");
 }
 
 function composeContinue(zone) {
@@ -130,9 +137,10 @@ function ensureExploreTabs(zone) {
 }
 
 function syncExploreTabs(zone) {
-  zone.dataset.exploreMode = exploreMode;
+  if (zone.dataset.exploreMode !== exploreMode) zone.dataset.exploreMode = exploreMode;
   zone.querySelectorAll("[data-home-explore-mode]").forEach((button) => {
-    button.setAttribute("aria-selected", String(button.dataset.homeExploreMode === exploreMode));
+    const selected = String(button.dataset.homeExploreMode === exploreMode);
+    if (button.getAttribute("aria-selected") !== selected) button.setAttribute("aria-selected", selected);
   });
 }
 
@@ -180,10 +188,12 @@ export function applyHomeComposition() {
 
   const hasActive = activeWorks().length > 0;
   const chooseAvailable = chooseHasCandidates();
-  zones.continue.hidden = state.loaded && !hasActive;
-  zones.choose.hidden = state.loaded && !chooseAvailable;
-  zones.explore.hidden = false;
-  zones.reflect.hidden = false;
+  const hideContinue = state.loaded && !hasActive;
+  const hideChoose = state.loaded && !chooseAvailable;
+  if (zones.continue.hidden !== hideContinue) zones.continue.hidden = hideContinue;
+  if (zones.choose.hidden !== hideChoose) zones.choose.hidden = hideChoose;
+  if (zones.explore.hidden) zones.explore.hidden = false;
+  if (zones.reflect.hidden) zones.reflect.hidden = false;
   updateIntro(home, hasActive, chooseAvailable);
 }
 
