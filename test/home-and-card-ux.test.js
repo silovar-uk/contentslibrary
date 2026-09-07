@@ -55,9 +55,10 @@ test('カードの★は詳細を経由せずstate.worksを直接更新し、409
   assert.match(body, /await loadSnapshot\(\)/);
 });
 
-test('ホームの読書中カードはstate.worksから引き直し、notify購読で★の変更が即反映される', async () => {
+test('ホームの読書中カードはresume情報を保持しつつstate.worksの通常フィールドを最新化する', async () => {
   const home = await read('public/views/home.js');
-  assert.match(home, /state\.works\.get\(String\(item\.id\)\) \|\| item/);
+  assert.match(home, /\{ \.\.\.item, \.\.\.\(state\.works\.get\(String\(item\.id\)\) \|\| \{\}\) \}/);
+  assert.match(home, /Home APIのresume_\*/);
   assert.match(home, /subscribe\(renderHome\)/);
 });
 

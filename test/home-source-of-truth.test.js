@@ -17,9 +17,9 @@ test("CHOOSEは旧開始・評価・メモDOMを生成しない", async () => {
 
 test("CONTINUEはTOP用カードに評価操作を生成しない", async () => {
   const source = await read("public/views/home.js");
-  const readingBlock = source.slice(source.indexOf('$("#readingStrip")'), source.indexOf('$("#recentNotes")'));
-  assert.doesNotMatch(readingBlock, /card-rating|cardRatingMarkup|data-card-rating/);
-  assert.match(readingBlock, /reading-card-main/);
+  const readingCardBlock = source.match(/function readingCardMarkup[\s\S]*?\n}/)?.[0] || "";
+  assert.match(readingCardBlock, /reading-card-main/);
+  assert.doesNotMatch(readingCardBlock, /card-rating|cardRatingMarkup|data-card-rating/);
 });
 
 test("ジャンル棚はHome自身が全件表示用DOMを生成し展開状態を持たない", async () => {
