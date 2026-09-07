@@ -66,8 +66,8 @@ function readingCardMarkup(work) {
   const progress = resumeProgressText(work);
   const recency = resumeRecencyLabel(work.resume_at);
   const recencyTitle = work.resume_at ? `最終接点 ${fmtDate(work.resume_at)}` : "";
-  const progressBar = Number(work.progress_total) > 0
-    ? `<div class="progress-track"><span style="width:${Math.min(100, Math.max(0, ((Number(work.progress_current) || 0) / Number(work.progress_total)) * 100))}%"></span></div>`
+  const progressBar = progress && Number(work.progress_total) > 0
+    ? `<div class="progress-track"><span style="width:${Math.min(100, Math.max(0, (Number(work.progress_current) / Number(work.progress_total)) * 100))}%"></span></div>`
     : "";
   return `<article class="reading-card" data-work-id="${esc(work.id)}">
       <button type="button" class="reading-card-main" data-open-work="${esc(work.id)}">
