@@ -28,10 +28,11 @@ export function prioritySummaryCounts(works = []) {
   return counts;
 }
 
-function surfaceMarkup(work, context) {
+export function readingPrioritySurfaceMarkup(work, context = "library") {
+  if (!isReadingPriorityEligible(work)) return "";
   const value = readingPriority(work);
   const current = LEVEL_BY_VALUE.get(value);
-  const label = current?.label || "優先度";
+  const label = current?.label || (context === "choose" ? "優先度を決める" : "優先度");
   const title = current ? `読む優先度：${current.label}` : "読む優先度を設定";
   const choices = READING_PRIORITY_LEVELS.map((item) => `
     <button type="button"
@@ -57,7 +58,7 @@ function syncSurface(host, work, context, insert) {
   const value = readingPriority(work);
   if (current?.dataset.priorityValue === value) return;
   const wrap = document.createElement("div");
-  wrap.innerHTML = surfaceMarkup(work, context).trim();
+  wrap.innerHTML = readingPrioritySurfaceMarkup(work, context).trim();
   const next = wrap.firstElementChild;
   if (current) current.replaceWith(next);
   else insert(next);
@@ -92,7 +93,7 @@ function decorateDetail() {
   wrap.className = "reading-priority-detail-wrap";
   wrap.dataset.readingPriorityDetailWrap = "";
   wrap.dataset.priorityValue = value;
-  wrap.innerHTML = `<span class="reading-priority-detail-label">読む優先度</span>${surfaceMarkup(work, "detail")}`;
+  wrap.innerHTML = `<span class="reading-priority-detail-label">読む優先度</span>${readingPrioritySurfaceMarkup(work, "detail")}`;
   if (old) old.replaceWith(wrap); else preference.append(wrap);
 }
 
