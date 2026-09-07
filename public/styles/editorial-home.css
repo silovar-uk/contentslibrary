@@ -59,8 +59,10 @@
 
 @media(min-width:768px) and (max-width:1279px){
   .editorial-random-feature{overflow:hidden}
-  .editorial-random-feature .random-pick-grid{display:grid;grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:220px;overflow-x:auto;overscroll-behavior-inline:contain;scroll-snap-type:inline proximity;padding:0 0 6px;scrollbar-width:thin}
+  .editorial-random-feature .random-pick-grid{display:grid;grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:220px;overflow-x:auto;overscroll-behavior-inline:contain;scroll-snap-type:inline proximity;padding:0 34px 8px 0;scroll-padding-inline:0 34px;scrollbar-width:thin}
   .editorial-random-feature .random-pick-card{scroll-snap-align:start}
+  .editorial-random-feature.has-horizontal-overflow::after{content:"";position:absolute;z-index:2;top:38px;right:0;bottom:0;width:68px;pointer-events:none;border-radius:0 24px 24px 0;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--surface) 92%,transparent));opacity:1;transition:opacity .18s ease}
+  .editorial-random-feature.is-scroll-end::after{opacity:0}
 }
 
 @media(max-width:980px){
