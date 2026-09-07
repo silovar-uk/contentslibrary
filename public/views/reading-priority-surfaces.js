@@ -1,5 +1,5 @@
 import { $, esc } from "../core/dom.js";
-import { state, subscribe, setView } from "../core/store.js";
+import { state, subscribe } from "../core/store.js";
 import { READING_PRIORITY_LEVELS, isReadingPriorityEligible, readingPriority } from "./reading-priority.js";
 
 let initialized = false;
@@ -76,17 +76,6 @@ function decorateLibraryCards() {
   });
 }
 
-function decorateRandomCards() {
-  document.querySelectorAll("#randomStage .random-pick-card").forEach((card) => {
-    const id = card.querySelector("[data-open-work]")?.dataset.openWork;
-    const work = id ? state.works.get(String(id)) : null;
-    syncSurface(card, work, "random", (surface) => {
-      const main = card.querySelector(":scope > .random-pick-main");
-      if (main) main.after(surface); else card.prepend(surface);
-    });
-  });
-}
-
 function decorateDetail() {
   const panel = $("#detailPanel");
   if (!panel) return;
@@ -107,38 +96,6 @@ function decorateDetail() {
   if (old) old.replaceWith(wrap); else preference.append(wrap);
 }
 
-function homeSummaryMarkup(counts, loaded) {
-  const items = [
-    ["top", "最優先"],
-    ["high", "高"],
-    ["medium", "中"],
-    ["low", "低"],
-    ["unset", "未設定"]
-  ];
-  return items.map(([value, label]) => `<button type="button" class="reading-priority-home-stat is-${value}" data-reading-priority-home-filter="${value}" ${loaded && counts.total === 0 ? "disabled" : ""}><span>${label}</span><strong>${loaded ? counts[value] : "…"}</strong></button>`).join("");
-}
-
-function ensureHomeHub() {
-  const controls = document.querySelector("#homeView .random-controls");
-  if (!controls) return;
-  let hub = $("#readingPriorityHomeHub");
-  if (!hub) {
-    hub = document.createElement("section");
-    hub.id = "readingPriorityHomeHub";
-    hub.className = "reading-priority-home-hub";
-    hub.setAttribute("aria-label", "読む優先度");
-    hub.innerHTML = `<div class="reading-priority-home-head">
-      <div><span>READING PRIORITY</span><strong>読む順番</strong></div>
-      <button type="button" class="ghost-button reading-priority-home-organize" data-reading-priority-organize>読む順番を整理</button>
-    </div><div class="reading-priority-home-stats" aria-live="polite"></div>`;
-    controls.after(hub);
-  }
-  const counts = prioritySummaryCounts(Array.from(state.works.values()));
-  const stats = hub.querySelector(".reading-priority-home-stats");
-  const next = homeSummaryMarkup(counts, state.loaded);
-  if (stats.innerHTML !== next) stats.innerHTML = next;
-}
-
 function emphasizeOrganizerEntry() {
   const button = document.querySelector(".list-tools [data-reading-priority-organize]");
   if (!button) return;
@@ -148,9 +105,7 @@ function emphasizeOrganizerEntry() {
 
 function applySurfaces() {
   decorateLibraryCards();
-  decorateRandomCards();
   decorateDetail();
-  ensureHomeHub();
   emphasizeOrganizerEntry();
 }
 
@@ -159,33 +114,16 @@ function scheduleApply() {
   applyFrame = requestAnimationFrame(applySurfaces);
 }
 
-function goToPriorityFilter(value) {
-  setView("library");
-  requestAnimationFrame(() => {
-    const select = $("#filterReadingPriority");
-    if (!select) return;
-    select.value = value;
-    select.dispatchEvent(new Event("change", { bubbles: true }));
-    $("#libraryTitle")?.scrollIntoView({ block: "start", behavior: "smooth" });
-  });
-}
-
 export function initReadingPrioritySurfaces() {
   if (initialized) return;
   initialized = true;
   ensureStyle();
 
   observer = new MutationObserver(scheduleApply);
-  [$("#workList"), $("#randomStage"), $("#detailPanel")].filter(Boolean).forEach((node) => observer.observe(node, { childList: true, subtree: true }));
+  [$("#workList"), $("#detailPanel")].filter(Boolean).forEach((node) => observer.observe(node, { childList: true, subtree: true }));
   subscribe(scheduleApply);
 
   document.addEventListener("click", (event) => {
-    const filter = event.target.closest("[data-reading-priority-home-filter]");
-    if (filter) {
-      event.preventDefault();
-      goToPriorityFilter(filter.dataset.readingPriorityHomeFilter);
-      return;
-    }
     const choice = event.target.closest(".reading-priority-surface [data-reading-priority-set]");
     if (choice) choice.closest("details")?.removeAttribute("open");
   });
