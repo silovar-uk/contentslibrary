@@ -38,7 +38,7 @@ test('一覧は先頭PAGE_SIZE件だけ描画し、もっと見るで追加表�
   assert.match(library, /if \(filtersKey !== lastFiltersKey\) \{ lastFiltersKey = filtersKey; visibleCount = PAGE_SIZE; \}/);
 });
 
-test('カードメモの開閉状態と保存処理はstore.jsで一覧・ホーム共通に持つ', async () => {
+test('カードメモの開閉状態と保存処理はstore.jsで一覧・詳細向けに共通保持する', async () => {
   const store = await read('public/core/store.js');
   const app = await read('public/app.js');
   const library = await read('public/views/library.js');
@@ -49,14 +49,14 @@ test('カードメモの開閉状態と保存処理はstore.jsで一覧・ホー
   assert.match(app, /data-toggle-card-note/);
   assert.match(app, /data-card-note-form/);
   assert.doesNotMatch(library, /document\.addEventListener\("submit"/);
-  assert.doesNotMatch(home, /data-toggle-card-note/);
+  assert.doesNotMatch(home, /data-toggle-card-note|cardNoteMarkup|openNoteCardIds/);
 });
 
-test('抽選6冊のカードにも★とメモ入力を置き、state.worksから引き直して描画する', async () => {
+test('抽選6冊は軽量な候補カードを描画し、state.worksから引き直して顔ぶれを維持する', async () => {
   const home = await read('public/views/home.js');
   const body = home.match(/function randomPickMarkup[\s\S]*?\n}/)[0];
-  assert.match(body, /cardRatingMarkup\(work\)/);
-  assert.match(body, /cardNoteMarkup\(work, openNoteCardIds\.has\(work\.id\)\)/);
+  assert.doesNotMatch(body, /cardRatingMarkup|cardNoteMarkup|data-random-start/);
+  assert.match(body, /data-open-work/);
   assert.match(home, /randomPickIds\.map\(\(id\) => state\.works\.get\(id\)\)/);
   assert.match(home, /renderRandomPicks\(\); \/\/ 抽選のやり直しはしない/);
 });
