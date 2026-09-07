@@ -17,27 +17,29 @@ test("読みたさUIはアプリ初期化から撤去する", async () => {
   assert.doesNotMatch(app, /views\/reading-desire\.js/);
 });
 
-test("ランダム一覧では読む優先度を選べる", async () => {
+test("ランダム一覧では読む優先度の管理UIを混ぜない", async () => {
   const surface = await read("public/views/reading-priority-surfaces.js");
-  assert.match(surface, /function decorateRandomCards/);
-  assert.match(surface, /syncSurface\(card, work, "random"/);
-  assert.match(surface, /data-reading-priority-set/);
+  assert.doesNotMatch(surface, /function decorateRandomCards/);
+  assert.doesNotMatch(surface, /syncSurface\(card, work, "random"/);
+  const composition = await read("public/views/home-composition.js");
+  assert.match(composition, /data\.readingPriorityOrganize/);
+  assert.match(composition, /読む順番を整理/);
 });
 
-test("通常一覧と詳細でも読む優先度を選べる", async () => {
+test("通常一覧と詳細では読む優先度を選べる", async () => {
   const surface = await read("public/views/reading-priority-surfaces.js");
   assert.match(surface, /decorateLibraryCards/);
   assert.match(surface, /decorateDetail/);
   assert.match(surface, /reading-priority-detail-wrap/);
+  assert.match(surface, /data-reading-priority-set/);
 });
 
-test("スマホのランダム優先度は現在値だけ見せ、選択はBottom Sheetに委譲する", async () => {
-  const css = await read("public/styles/ui-polish.css");
-  const lightEdit = await read("public/views/light-edit-surfaces.js");
-  assert.match(css, /reading-priority-surface-random\{[\s\S]*display:flex!important/);
-  assert.match(css, /reading-priority-surface-random \.reading-priority-surface-menu\{display:none!important\}/);
-  assert.match(lightEdit, /openPrioritySheet/);
-  assert.match(lightEdit, /\.reading-priority-surface > summary/);
+test("読む優先度はFeaturedではなくLibraryとDetailの管理文脈に限定する", async () => {
+  const css = await read("public/styles/reading-priority-surfaces.css");
+  assert.match(css, /reading-priority-surface-library/);
+  assert.match(css, /reading-priority-detail-wrap/);
+  assert.doesNotMatch(css, /reading-priority-surface-random/);
+  assert.doesNotMatch(css, /reading-priority-home-hub/);
 });
 
 test("旧読みたさ表示はランダムカードから隠す", async () => {
