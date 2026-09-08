@@ -60,8 +60,7 @@ async function attachLabels(env: Env, rows: Array<Record<string, unknown>>) {
     ...resumeTiming(row),
     metadata_json: undefined,
     resume_note_at: undefined,
-    resume_experience_at: undefined,
-    rescue_engagement_at: undefined
+    resume_experience_at: undefined
   }));
 }
 
@@ -110,7 +109,7 @@ export async function getHomeRescue(env: Env, auth: AuthContext): Promise<Respon
       ORDER BY updated_at DESC
       LIMIT 8
     ), rescue_base AS (
-      SELECT w.*,
+      SELECT w.id, w.title, w.creator, w.short_note, w.updated_at,
         (SELECT n.content FROM notes n WHERE n.work_id = w.id ORDER BY n.updated_at DESC LIMIT 1) AS resume_note,
         (SELECT n.updated_at FROM notes n WHERE n.work_id = w.id ORDER BY n.updated_at DESC LIMIT 1) AS resume_note_at,
         (SELECT e.updated_at FROM experiences e WHERE e.work_id = w.id ORDER BY e.updated_at DESC LIMIT 1) AS resume_experience_at
@@ -139,6 +138,14 @@ export async function getHomeRescue(env: Env, auth: AuthContext): Promise<Respon
   ).bind(owner, owner, cutoff, cutoff).first<Record<string, unknown>>();
 
   if (!candidate) return json({ rescue: null });
-  const [rescue] = await attachLabels(env, [candidate]);
-  return json({ rescue: rescue ?? null });
+  return json({
+    rescue: {
+      id: candidate.id,
+      title: candidate.title,
+      creator: candidate.creator,
+      short_note: candidate.short_note,
+      resume_note: candidate.resume_note,
+      ...resumeTiming(candidate)
+    }
+  });
 }
