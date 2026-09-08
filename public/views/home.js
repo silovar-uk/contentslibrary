@@ -1,6 +1,7 @@
 import { $, $$, esc, fmtDate, skeletonCards, skeletonShelf } from "../core/dom.js";
 import { api } from "../core/api.js";
 import { TYPE_LABELS, statusLabel } from "../core/format.js";
+import { resumeRecencyLabel } from "../core/resume-time.js";
 import { state, shelfData, themeData, subscribe } from "../core/store.js";
 import { pickRandomWorks } from "../core/random-pick.js";
 import { getRandomMode, initRandomMode } from "./random-mode.js";
@@ -39,25 +40,6 @@ function resumeProgressText(work) {
   const totalText = formatProgressNumber(total);
   const percent = Math.min(100, Math.max(0, Math.round((current / total) * 100)));
   return `進捗 ${currentText} / ${totalText}${unit ? ` ${unit}` : ""} · ${percent}%`;
-}
-
-function resumeRecencyLabel(value, source, now = Date.now()) {
-  if (!value) return "";
-  const timestamp = Date.parse(String(value));
-  if (!Number.isFinite(timestamp)) return "";
-  const elapsed = Math.max(0, now - timestamp);
-  const day = 24 * 60 * 60 * 1000;
-  const isWorkUpdate = source !== "note" && source !== "experience";
-  if (isWorkUpdate) {
-    if (elapsed < day) return "今日更新";
-    if (elapsed < 7 * day) return "今週更新";
-    if (elapsed < 30 * day) return "少し前に更新";
-    return "最終更新から久しぶり";
-  }
-  if (elapsed < day) return "今日触った";
-  if (elapsed < 7 * day) return "今週触った";
-  if (elapsed < 30 * day) return "少し空いている";
-  return "久しぶり";
 }
 
 function resumeRecencyTitle(value, source) {
