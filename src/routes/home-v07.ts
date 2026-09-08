@@ -4,6 +4,9 @@ import type { AuthContext, Env } from "../types";
 
 type ResumeSource = "note" | "experience" | "work_update";
 
+const RESCUE_AFTER_DAYS = 30;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 function parseJsonSafe<T>(value: string | null, fallback: T): T {
   if (!value) return fallback;
   try { return JSON.parse(value) as T; } catch { return fallback; }
@@ -16,6 +19,10 @@ function timestampValue(value: unknown): string | null {
 function newestTimestamp(...values: unknown[]): string | null {
   const timestamps = values.map(timestampValue).filter((value): value is string => Boolean(value));
   return timestamps.sort().at(-1) ?? null;
+}
+
+function rescueCutoffIso(now = Date.now()): string {
+  return new Date(now - RESCUE_AFTER_DAYS * DAY_MS).toISOString();
 }
 
 function resumeTiming(row: Record<string, unknown>): {
@@ -88,5 +95,57 @@ export async function getHomeV07(env: Env, auth: AuthContext): Promise<Response>
     recentNotes: recentNotes.results,
     stats: stats ?? {},
     openSecurityCount: security?.count ?? 0
+  });
+}
+
+export async function getHomeRescue(env: Env, auth: AuthContext): Promise<Response> {
+  const owner = auth.member.id;
+  const cutoff = rescueCutoffIso();
+  const candidate = await env.DB.prepare(
+    `WITH recent_active AS (
+      SELECT id
+      FROM works
+      WHERE owner_id = ? AND deleted_at IS NULL AND status = 'active'
+      ORDER BY updated_at DESC
+      LIMIT 8
+    ), rescue_base AS (
+      SELECT w.id, w.title, w.creator, w.short_note, w.updated_at,
+        (SELECT n.content FROM notes n WHERE n.work_id = w.id ORDER BY n.updated_at DESC LIMIT 1) AS resume_note,
+        (SELECT n.updated_at FROM notes n WHERE n.work_id = w.id ORDER BY n.updated_at DESC LIMIT 1) AS resume_note_at,
+        (SELECT e.updated_at FROM experiences e WHERE e.work_id = w.id ORDER BY e.updated_at DESC LIMIT 1) AS resume_experience_at
+      FROM works w
+      WHERE w.owner_id = ?
+        AND w.deleted_at IS NULL
+        AND w.status = 'active'
+        AND w.id NOT IN (SELECT id FROM recent_active)
+        AND w.updated_at <= ?
+    ), rescue_candidates AS (
+      SELECT *,
+        CASE
+          WHEN resume_note_at IS NULL THEN resume_experience_at
+          WHEN resume_experience_at IS NULL THEN resume_note_at
+          WHEN resume_note_at >= resume_experience_at THEN resume_note_at
+          ELSE resume_experience_at
+        END AS rescue_engagement_at
+      FROM rescue_base
+    )
+    SELECT *
+    FROM rescue_candidates
+    WHERE rescue_engagement_at IS NOT NULL
+      AND rescue_engagement_at <= ?
+    ORDER BY rescue_engagement_at DESC, updated_at DESC
+    LIMIT 1`
+  ).bind(owner, owner, cutoff, cutoff).first<Record<string, unknown>>();
+
+  if (!candidate) return json({ rescue: null });
+  return json({
+    rescue: {
+      id: candidate.id,
+      title: candidate.title,
+      creator: candidate.creator,
+      short_note: candidate.short_note,
+      resume_note: candidate.resume_note,
+      ...resumeTiming(candidate)
+    }
   });
 }

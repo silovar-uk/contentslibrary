@@ -5,6 +5,7 @@ import { ratingLevel } from "./core/format.js";
 import { state, loadSnapshot, setWorkRating, subscribe, setView, closeDetail, toggleQuickEdit, openNoteCardIds, toggleCardNote, submitCardNote } from "./core/store.js";
 import { renderAccount, loadAdmin } from "./views/admin.js";
 import { initHome, loadHome, drawRandomPicks } from "./views/home.js";
+import { initHomeRescue } from "./views/home-rescue.js";
 import { initRandomScopeOptions } from "./views/random-scope-options.js";
 import { initHomeExperience } from "./views/home-experience.js";
 import { initEditorialHome } from "./views/editorial-home.js";
@@ -141,6 +142,7 @@ async function init() {
     initHomeExperience();
     initEditorialHome();
     initHomeComposition();
+    initHomeRescue();
     initDetail();
     initAmazonTitleSearch();
     initDetailTopNotes();

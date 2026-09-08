@@ -14,7 +14,7 @@ import { getLibrarySnapshot } from "./routes/library-snapshot";
 import { deleteExperienceV04, deleteNoteV04, reorderNotesV04, updateExperienceV04, updateNoteV04 } from "./routes/content-v04";
 import { blockUser, createInvitation, listAuditEvents, listSecurityEvents, listUsers, resolveSecurityEvent, revokeUserSession, suspendUser, unblockUser } from "./routes/admin";
 import { getNotionImportStatus, importNotionSeed } from "./routes/notion-import";
-import { getHomeV07 } from "./routes/home-v07";
+import { getHomeRescue, getHomeV07 } from "./routes/home-v07";
 import {
   commitImportBatch,
   createImportBatch,
@@ -53,6 +53,7 @@ async function handleApi(request: Request, env: Env, auth: AuthContext): Promise
     });
   }
   if (request.method === "GET" && path === "/api/home") return getHomeV07(env, auth);
+  if (request.method === "GET" && path === "/api/home/rescue") return getHomeRescue(env, auth);
   if (request.method === "GET" && path === "/api/works") return listWorksV13(request, env, auth);
   if (request.method === "GET" && path === "/api/library/snapshot") return getLibrarySnapshot(env, auth);
   if (request.method === "POST" && path === "/api/works") return createWork(request, env, auth);

@@ -36,6 +36,22 @@
 .home-zone-continue .reading-card-memory>p{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin:0;color:var(--ink);font-size:11px;line-height:1.55}
 .home-zone-continue .reading-card .progress-track{margin-top:12px}
 
+/* Rescueは新しいZoneにせず、通常CONTINUEの下へ1件だけ置く。 */
+.home-rescue-cue{display:grid;grid-template-columns:minmax(170px,.72fr) minmax(0,1.45fr);gap:14px;align-items:stretch;margin-top:14px;padding-top:14px;border-top:1px solid color-mix(in srgb,var(--line) 76%,transparent)}
+.home-rescue-intro{display:flex;flex-direction:column;justify-content:center;min-width:0;padding:4px 6px}
+.home-rescue-intro>span{color:var(--accent);font-size:9px;font-weight:850;letter-spacing:.15em}
+.home-rescue-intro>strong{margin-top:5px;font-size:17px;line-height:1.25;letter-spacing:-.02em}
+.home-rescue-intro>p{margin:6px 0 0;color:var(--muted);font-size:10px;line-height:1.55}
+.home-rescue-work{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:14px;align-items:center;width:100%;min-height:82px;border:1px solid color-mix(in srgb,var(--line) 78%,transparent);border-radius:14px;background:color-mix(in srgb,var(--surface) 92%,transparent);padding:13px 15px;text-align:left;color:inherit}
+.home-rescue-work:hover{background:var(--surface);border-color:color-mix(in srgb,var(--accent) 24%,var(--line))}
+.home-rescue-work:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.home-rescue-work-label{grid-column:1;color:var(--muted);font-size:9px;font-weight:800;letter-spacing:.04em}
+.home-rescue-work>strong{grid-column:1;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;line-height:1.35}
+.home-rescue-work>small{grid-column:1;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:10px}
+.home-rescue-work>p{grid-column:1;margin:8px 0 0;color:var(--ink);font-size:10px;line-height:1.5;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.home-rescue-work>p>span{display:block;margin-bottom:2px;color:var(--muted);font-size:8px;font-weight:800;letter-spacing:.04em}
+.home-rescue-work>b{grid-column:2;grid-row:1/6;align-self:center;color:var(--accent);font-size:10px;white-space:nowrap}
+
 .home-zone-choose .random-controls{display:flex;margin:0 0 12px;padding:0 2px}
 .home-zone-choose .editorial-random-feature{background:linear-gradient(145deg,color-mix(in srgb,var(--accent) 7%,var(--surface)),var(--surface) 52%)}
 .home-zone-choose .editorial-random-feature::before{display:none}
@@ -98,6 +114,13 @@
   .home-zone-continue .reading-card-recency,
   .home-zone-continue .reading-card-progress{min-height:28px;padding:5px 9px;font-size:10px}
   .home-zone-continue .reading-card-memory>p{-webkit-line-clamp:3;font-size:12px}
+  .home-rescue-cue{grid-template-columns:1fr;gap:9px;margin-top:12px;padding-top:12px}
+  .home-rescue-intro{padding:2px 2px 0}
+  .home-rescue-intro>strong{font-size:16px}
+  .home-rescue-intro>p{margin-top:4px}
+  .home-rescue-work{grid-template-columns:minmax(0,1fr);min-height:96px;padding:13px 14px}
+  .home-rescue-work>p{-webkit-line-clamp:3;font-size:11px}
+  .home-rescue-work>b{grid-column:1;grid-row:auto;margin-top:9px;min-height:24px;display:flex;align-items:center;font-size:11px}
 
   .home-zone-choose .random-controls{gap:8px;align-items:flex-end;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px}
   .home-zone-choose .random-controls label{min-width:190px}
