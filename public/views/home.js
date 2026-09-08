@@ -41,16 +41,33 @@ function resumeProgressText(work) {
   return `進捗 ${currentText} / ${totalText}${unit ? ` ${unit}` : ""} · ${percent}%`;
 }
 
-function resumeRecencyLabel(value, now = Date.now()) {
+function resumeRecencyLabel(value, source, now = Date.now()) {
   if (!value) return "";
   const timestamp = Date.parse(String(value));
   if (!Number.isFinite(timestamp)) return "";
   const elapsed = Math.max(0, now - timestamp);
   const day = 24 * 60 * 60 * 1000;
+  const isWorkUpdate = source !== "note" && source !== "experience";
+  if (isWorkUpdate) {
+    if (elapsed < day) return "今日更新";
+    if (elapsed < 7 * day) return "今週更新";
+    if (elapsed < 30 * day) return "少し前に更新";
+    return "最終更新から久しぶり";
+  }
   if (elapsed < day) return "今日触った";
   if (elapsed < 7 * day) return "今週触った";
   if (elapsed < 30 * day) return "少し空いている";
   return "久しぶり";
+}
+
+function resumeRecencyTitle(value, source) {
+  if (!value) return "";
+  const prefix = source === "note"
+    ? "前回メモ"
+    : source === "experience"
+      ? "体験更新"
+      : "作品情報の更新";
+  return `${prefix} ${fmtDate(value)}`;
 }
 
 function resumeMemoryMarkup(work) {
@@ -64,8 +81,8 @@ function resumeMemoryMarkup(work) {
 
 function readingCardMarkup(work) {
   const progress = resumeProgressText(work);
-  const recency = resumeRecencyLabel(work.resume_at);
-  const recencyTitle = work.resume_at ? `最終接点 ${fmtDate(work.resume_at)}` : "";
+  const recency = resumeRecencyLabel(work.resume_at, work.resume_source);
+  const recencyTitle = resumeRecencyTitle(work.resume_at, work.resume_source);
   const progressBar = progress && Number(work.progress_total) > 0
     ? `<div class="progress-track"><span style="width:${Math.min(100, Math.max(0, (Number(work.progress_current) / Number(work.progress_total)) * 100))}%"></span></div>`
     : "";
