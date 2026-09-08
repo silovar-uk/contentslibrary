@@ -1,9 +1,13 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { isEngagementResumeSource, resumeRecencyLabel } from "../public/core/resume-time.js";
 
 const root = new URL("../", import.meta.url);
 const read = (path) => readFile(new URL(path, root), "utf8");
+const DAY = 24 * 60 * 60 * 1000;
+const NOW = Date.parse("2026-09-08T00:00:00.000Z");
+const ago = (days) => new Date(NOW - days * DAY).toISOString();
 
 test("Home APIはactive作品へ最新メモと最新experience時刻を添えるが並び順は変えない", async () => {
   const route = await read("src/routes/home-v07.ts");
@@ -32,28 +36,51 @@ test("resume_atは最新の手掛かりを維持し、由来をnote・experience
 
 test("CONTINUEカードはresume情報をstate更新で失わず、時期・進捗・前回メモを出す", async () => {
   const home = await read("public/views/home.js");
+  assert.match(home, /from "\.\.\/core\/resume-time\.js"/);
   assert.match(home, /\{ \.\.\.item, \.\.\.\(state\.works\.get\(String\(item\.id\)\) \|\| \{\}\) \}/);
-  assert.match(home, /function resumeRecencyLabel/);
-  assert.match(home, /今日触った/);
-  assert.match(home, /今週触った/);
-  assert.match(home, /少し空いている/);
-  assert.match(home, /久しぶり/);
+  assert.match(home, /resumeRecencyLabel\(work\.resume_at, work\.resume_source\)/);
   assert.match(home, /function resumeProgressText/);
   assert.match(home, /reading-card-progress/);
   assert.match(home, /前回のメモ/);
   assert.match(home, /reading-card-memory/);
 });
 
-test("work update由来の時刻は「触った」と呼ばず更新表現へ切り替える", async () => {
+test("noteとexperienceだけをengagement由来として扱う", () => {
+  assert.equal(isEngagementResumeSource("note"), true);
+  assert.equal(isEngagementResumeSource("experience"), true);
+  assert.equal(isEngagementResumeSource("work_update"), false);
+  assert.equal(isEngagementResumeSource(undefined), false);
+});
+
+test("engagement由来は1日・7日・30日の境界で再開ラベルを切り替える", () => {
+  assert.equal(resumeRecencyLabel(ago(0.5), "note", NOW), "今日触った");
+  assert.equal(resumeRecencyLabel(ago(1), "note", NOW), "今週触った");
+  assert.equal(resumeRecencyLabel(ago(6.9), "experience", NOW), "今週触った");
+  assert.equal(resumeRecencyLabel(ago(7), "experience", NOW), "少し空いている");
+  assert.equal(resumeRecencyLabel(ago(29.9), "note", NOW), "少し空いている");
+  assert.equal(resumeRecencyLabel(ago(30), "note", NOW), "久しぶり");
+});
+
+test("work update由来は「触った」と呼ばず更新表現へ切り替える", () => {
+  assert.equal(resumeRecencyLabel(ago(0.5), "work_update", NOW), "今日更新");
+  assert.equal(resumeRecencyLabel(ago(1), "work_update", NOW), "今週更新");
+  assert.equal(resumeRecencyLabel(ago(7), "work_update", NOW), "少し前に更新");
+  assert.equal(resumeRecencyLabel(ago(30), "work_update", NOW), "最終更新から久しぶり");
+});
+
+test("invalid dateは表示せず、未来時刻は時計ずれとして今日扱いに丸める", () => {
+  assert.equal(resumeRecencyLabel("not-a-date", "note", NOW), "");
+  assert.equal(resumeRecencyLabel("", "note", NOW), "");
+  assert.equal(resumeRecencyLabel(new Date(NOW + DAY).toISOString(), "note", NOW), "今日触った");
+  assert.equal(resumeRecencyLabel(new Date(NOW + DAY).toISOString(), "work_update", NOW), "今日更新");
+});
+
+test("Homeはwork update由来の補足を作品情報の更新として説明する", async () => {
   const home = await read("public/views/home.js");
-  const body = home.match(/function resumeRecencyLabel[\s\S]*?\n}/)?.[0] || "";
-  assert.match(body, /source !== "note" && source !== "experience"/);
-  assert.match(body, /今日更新/);
-  assert.match(body, /今週更新/);
-  assert.match(body, /少し前に更新/);
-  assert.match(body, /最終更新から久しぶり/);
   assert.match(home, /function resumeRecencyTitle/);
   assert.match(home, /作品情報の更新/);
+  assert.match(home, /前回メモ/);
+  assert.match(home, /体験更新/);
 });
 
 test("Resume Signalsはカードを管理画面化せず、最大3種類の手掛かりとして控えめに見せる", async () => {
