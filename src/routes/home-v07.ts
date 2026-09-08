@@ -2,14 +2,45 @@ import { getLabelsForWorks } from "../db";
 import { json } from "../http";
 import type { AuthContext, Env } from "../types";
 
+type ResumeSource = "note" | "experience" | "work_update";
+
 function parseJsonSafe<T>(value: string | null, fallback: T): T {
   if (!value) return fallback;
   try { return JSON.parse(value) as T; } catch { return fallback; }
 }
 
+function timestampValue(value: unknown): string | null {
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
 function newestTimestamp(...values: unknown[]): string | null {
-  const timestamps = values.filter((value): value is string => typeof value === "string" && value.length > 0);
+  const timestamps = values.map(timestampValue).filter((value): value is string => Boolean(value));
   return timestamps.sort().at(-1) ?? null;
+}
+
+function resumeTiming(row: Record<string, unknown>): {
+  engagement_at: string | null;
+  resume_at: string | null;
+  resume_source: ResumeSource | null;
+} {
+  const noteAt = timestampValue(row.resume_note_at);
+  const experienceAt = timestampValue(row.resume_experience_at);
+  const workAt = timestampValue(row.updated_at);
+  const engagementAt = newestTimestamp(noteAt, experienceAt);
+  const resumeAt = newestTimestamp(workAt, engagementAt);
+
+  let resumeSource: ResumeSource | null = null;
+  if (resumeAt) {
+    if (noteAt === resumeAt) resumeSource = "note";
+    else if (experienceAt === resumeAt) resumeSource = "experience";
+    else resumeSource = "work_update";
+  }
+
+  return {
+    engagement_at: engagementAt,
+    resume_at: resumeAt,
+    resume_source: resumeSource
+  };
 }
 
 async function attachLabels(env: Env, rows: Array<Record<string, unknown>>) {
@@ -19,7 +50,7 @@ async function attachLabels(env: Env, rows: Array<Record<string, unknown>>) {
     ...row,
     metadata: parseJsonSafe(String(row.metadata_json ?? "{}"), {}),
     labels: labels.get(String(row.id)) ?? { genre: [], theme: [], tag: [] },
-    resume_at: newestTimestamp(row.updated_at, row.resume_note_at, row.resume_experience_at),
+    ...resumeTiming(row),
     metadata_json: undefined,
     resume_note_at: undefined,
     resume_experience_at: undefined

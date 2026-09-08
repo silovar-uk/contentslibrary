@@ -1,6 +1,7 @@
 import { $, $$, esc, fmtDate, skeletonCards, skeletonShelf } from "../core/dom.js";
 import { api } from "../core/api.js";
 import { TYPE_LABELS, statusLabel } from "../core/format.js";
+import { resumeRecencyLabel } from "../core/resume-time.js";
 import { state, shelfData, themeData, subscribe } from "../core/store.js";
 import { pickRandomWorks } from "../core/random-pick.js";
 import { getRandomMode, initRandomMode } from "./random-mode.js";
@@ -41,16 +42,14 @@ function resumeProgressText(work) {
   return `進捗 ${currentText} / ${totalText}${unit ? ` ${unit}` : ""} · ${percent}%`;
 }
 
-function resumeRecencyLabel(value, now = Date.now()) {
+function resumeRecencyTitle(value, source) {
   if (!value) return "";
-  const timestamp = Date.parse(String(value));
-  if (!Number.isFinite(timestamp)) return "";
-  const elapsed = Math.max(0, now - timestamp);
-  const day = 24 * 60 * 60 * 1000;
-  if (elapsed < day) return "今日触った";
-  if (elapsed < 7 * day) return "今週触った";
-  if (elapsed < 30 * day) return "少し空いている";
-  return "久しぶり";
+  const prefix = source === "note"
+    ? "前回メモ"
+    : source === "experience"
+      ? "体験更新"
+      : "作品情報の更新";
+  return `${prefix} ${fmtDate(value)}`;
 }
 
 function resumeMemoryMarkup(work) {
@@ -64,8 +63,8 @@ function resumeMemoryMarkup(work) {
 
 function readingCardMarkup(work) {
   const progress = resumeProgressText(work);
-  const recency = resumeRecencyLabel(work.resume_at);
-  const recencyTitle = work.resume_at ? `最終接点 ${fmtDate(work.resume_at)}` : "";
+  const recency = resumeRecencyLabel(work.resume_at, work.resume_source);
+  const recencyTitle = resumeRecencyTitle(work.resume_at, work.resume_source);
   const progressBar = progress && Number(work.progress_total) > 0
     ? `<div class="progress-track"><span style="width:${Math.min(100, Math.max(0, (Number(work.progress_current) / Number(work.progress_total)) * 100))}%"></span></div>`
     : "";
