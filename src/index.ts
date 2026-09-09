@@ -2,7 +2,8 @@ import { authenticate } from "./auth";
 import { HttpError, assertSameOriginMutation, errorResponse, json, withSecurityHeaders } from "./http";
 import type { AuthContext, Env } from "./types";
 import { assertProgressMutation } from "./v02-validation";
-import { addExperience, addNote, createWork, deleteWork, getWork, updateWork } from "./routes/works";
+import { addExperience, addNote, createWork, deleteWork, getWork } from "./routes/works";
+import { updateWorkWithProgressEngagement } from "./routes/work-progress-engagement";
 import { exportDataV12 } from "./routes/export-v12";
 import { getWorkFactPackageV21, importWorkFactsV21 } from "./routes/work-tools-v21";
 import { updateWorkPreferenceV131 } from "./routes/work-preference-v131";
@@ -74,7 +75,7 @@ async function handleApi(request: Request, env: Env, auth: AuthContext): Promise
   if (m) {
     const id = decodeURIComponent(m[1]!);
     if (request.method === "GET") return getWork(env, auth, id);
-    if (request.method === "PATCH") return updateWork(request, env, auth, id);
+    if (request.method === "PATCH") return updateWorkWithProgressEngagement(request, env, auth, id);
     if (request.method === "DELETE") return deleteWork(env, auth, id);
   }
   m = match(path, /^\/api\/works\/([^/]+)\/preferences$/);

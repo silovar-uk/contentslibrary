@@ -1,5 +1,5 @@
 export function isEngagementResumeSource(source) {
-  return source === "note" || source === "experience";
+  return source === "note" || source === "experience" || source === "progress";
 }
 
 export function resumeRecencyLabel(value, source, now = Date.now()) {
