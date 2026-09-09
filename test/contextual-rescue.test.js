@@ -22,11 +22,13 @@ test("Rescueはengagementとwork更新の両方に30日の保守的cutoffを要�
   assert.match(route, /\.bind\(owner, owner, cutoff, cutoff\)/);
 });
 
-test("Rescueのengagementはnoteかexperienceが存在するときだけ成立する", async () => {
+test("Rescueのengagementはnote・experience・progressの最新から成立する", async () => {
   const route = await read("src/routes/home-v07.ts");
-  assert.match(route, /WHEN resume_note_at IS NULL THEN resume_experience_at/);
-  assert.match(route, /WHEN resume_experience_at IS NULL THEN resume_note_at/);
-  assert.match(route, /WHEN resume_note_at >= resume_experience_at THEN resume_note_at/);
+  assert.match(route, /w\.progress_engagement_at/);
+  assert.match(route, /NULLIF\(MAX\(/);
+  assert.match(route, /COALESCE\(resume_note_at, ''\)/);
+  assert.match(route, /COALESCE\(resume_experience_at, ''\)/);
+  assert.match(route, /COALESCE\(progress_engagement_at, ''\)/);
   assert.match(route, /rescue_engagement_at IS NOT NULL/);
 });
 
