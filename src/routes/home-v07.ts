@@ -2,7 +2,7 @@ import { getLabelsForWorks } from "../db";
 import { json } from "../http";
 import type { AuthContext, Env } from "../types";
 
-type ResumeSource = "note" | "experience" | "work_update";
+type ResumeSource = "note" | "experience" | "progress" | "work_update";
 
 const RESCUE_AFTER_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -32,14 +32,16 @@ function resumeTiming(row: Record<string, unknown>): {
 } {
   const noteAt = timestampValue(row.resume_note_at);
   const experienceAt = timestampValue(row.resume_experience_at);
+  const progressAt = timestampValue(row.progress_engagement_at);
   const workAt = timestampValue(row.updated_at);
-  const engagementAt = newestTimestamp(noteAt, experienceAt);
+  const engagementAt = newestTimestamp(noteAt, experienceAt, progressAt);
   const resumeAt = newestTimestamp(workAt, engagementAt);
 
   let resumeSource: ResumeSource | null = null;
   if (resumeAt) {
     if (noteAt === resumeAt) resumeSource = "note";
     else if (experienceAt === resumeAt) resumeSource = "experience";
+    else if (progressAt === resumeAt) resumeSource = "progress";
     else resumeSource = "work_update";
   }
 
@@ -109,7 +111,7 @@ export async function getHomeRescue(env: Env, auth: AuthContext): Promise<Respon
       ORDER BY updated_at DESC
       LIMIT 8
     ), rescue_base AS (
-      SELECT w.id, w.title, w.creator, w.short_note, w.updated_at,
+      SELECT w.id, w.title, w.creator, w.short_note, w.updated_at, w.progress_engagement_at,
         (SELECT n.content FROM notes n WHERE n.work_id = w.id ORDER BY n.updated_at DESC LIMIT 1) AS resume_note,
         (SELECT n.updated_at FROM notes n WHERE n.work_id = w.id ORDER BY n.updated_at DESC LIMIT 1) AS resume_note_at,
         (SELECT e.updated_at FROM experiences e WHERE e.work_id = w.id ORDER BY e.updated_at DESC LIMIT 1) AS resume_experience_at
@@ -121,12 +123,11 @@ export async function getHomeRescue(env: Env, auth: AuthContext): Promise<Respon
         AND w.updated_at <= ?
     ), rescue_candidates AS (
       SELECT *,
-        CASE
-          WHEN resume_note_at IS NULL THEN resume_experience_at
-          WHEN resume_experience_at IS NULL THEN resume_note_at
-          WHEN resume_note_at >= resume_experience_at THEN resume_note_at
-          ELSE resume_experience_at
-        END AS rescue_engagement_at
+        NULLIF(MAX(
+          COALESCE(resume_note_at, ''),
+          COALESCE(resume_experience_at, ''),
+          COALESCE(progress_engagement_at, '')
+        ), '') AS rescue_engagement_at
       FROM rescue_base
     )
     SELECT *
