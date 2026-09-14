@@ -11,11 +11,11 @@ const works = [
   { id: "5", title: "戊", creator: "著者C" }
 ];
 
-test("レーベル棚は2作品以上だけを件数順で返す", () => {
+test("レーベル棚は2作品以上だけを件数順・名称順で返す", () => {
   const data = sourceShelfData(works, "label");
   assert.deepEqual(data.map(({ name, count }) => ({ name, count })), [
-    { name: "新潮文庫", count: 2 },
-    { name: "講談社現代新書", count: 2 }
+    { name: "講談社現代新書", count: 2 },
+    { name: "新潮文庫", count: 2 }
   ]);
   assert.equal(data[0].works.length, 2);
 });
