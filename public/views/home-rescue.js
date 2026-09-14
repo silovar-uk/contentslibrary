@@ -1,6 +1,7 @@
 import { $, esc } from "../core/dom.js";
 import { api } from "../core/api.js";
 import { state, subscribe } from "../core/store.js";
+import { workFaceMarkup } from "../core/work-face.js";
 
 let initialized = false;
 let rescue = null;
@@ -9,10 +10,12 @@ let lastView = null;
 
 export function contextualRescueMarkup(work) {
   if (!work?.id || !work?.title) return "";
+  const fullWork = { ...(state.works.get(String(work.id)) || {}), ...work };
   const creator = String(work.creator || "").trim();
   const note = String(work.resume_note || work.short_note || "").trim().slice(0, 120);
   return `<div class="home-rescue-intro"><span>REMEMBER</span><strong>これ、途中だった。</strong><p>最近の棚から少し離れていた作品をひとつ。</p></div>
     <button type="button" class="home-rescue-work" data-open-work="${esc(work.id)}">
+      <span class="work-face-rescue" data-shuhari-face="rescue">${workFaceMarkup(fullWork)}</span>
       <span class="home-rescue-work-label">途中の作品</span>
       <strong>${esc(work.title)}</strong>
       ${creator ? `<small>${esc(creator)}</small>` : ""}
