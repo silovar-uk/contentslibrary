@@ -34,6 +34,7 @@ import { initBulkJsonAdd } from "./views/bulk-json-add.js";
 import { initBulkJsonOpenFix } from "./views/bulk-json-open-fix.js";
 import { initAddEntryFlow } from "./views/add-entry-flow.js";
 import { initUiShuhariPr1 } from "./views/ui-shuhari-pr1.js";
+import { initUiShuhariPr2 } from "./views/ui-shuhari-pr2.js";
 
 function applyView() {
   const view = state.view;
@@ -124,6 +125,7 @@ async function init() {
     renderAccount();
     initAdmin();
     initUiShuhariPr1();
+    initUiShuhariPr2();
 
     bindShell();
     initWorkDomainUi();
