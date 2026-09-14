@@ -2,6 +2,7 @@ import { $, esc } from "../core/dom.js";
 import { state, clearFilters, setFilters, setView } from "../core/store.js";
 import { openDetail } from "./detail.js";
 import { openWorkDialog } from "./dialogs.js";
+import { openCoverHunt } from "./cover-hunt.js";
 
 let initialized = false;
 let activeIndex = 0;
@@ -10,6 +11,7 @@ let composing = false;
 
 const ACTIONS = [
   { id: "new", label: "作品を追加", hint: "新しい本・映画などを登録", keywords: "追加 新規 new add", icon: "+" },
+  { id: "cover-hunt", label: "表紙を集める", hint: "表紙のない作品へ、順番に表紙を付ける", keywords: "表紙 カバー 画像 cover", icon: "▣" },
   { id: "owned", label: "所持・未読を見る", hint: "積読だけを表示", keywords: "積読 所持 未読 owned unread", icon: "▤" },
   { id: "want", label: "読みたいを見る", hint: "読みたい作品だけを表示", keywords: "読みたい want wishlist", icon: "♡" },
   { id: "top", label: "最優先を見る", hint: "読む優先度が最優先の作品", keywords: "最優先 優先度 top next", icon: "↑" },
@@ -136,6 +138,7 @@ function showPriorityTop() {
 
 function runAction(id) {
   if (id === "new") { openWorkDialog(false); return; }
+  if (id === "cover-hunt") { openCoverHunt(); return; }
   if (id === "owned") { showLibrary({ statuses: ["owned_unread"] }); return; }
   if (id === "want") { showLibrary({ statuses: ["want"] }); return; }
   if (id === "top") { showPriorityTop(); return; }
