@@ -133,8 +133,8 @@ async function init() {
     initWorkMediaUrl();
     initDialogs();
     initMobileSearch();
-    initCoverHunt();
     initCommandPalette();
+    initCoverHunt();
     initBulkAdd();
     initBulkJsonAdd();
     initBulkJsonOpenFix();
