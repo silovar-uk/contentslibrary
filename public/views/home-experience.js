@@ -1,6 +1,7 @@
 import { $, $$ } from "../core/dom.js";
 import { state, subscribe } from "../core/store.js";
 import { workFaceMarkup } from "../core/work-face.js";
+import { initWorkFaceSurfaces } from "./work-face-surfaces.js";
 
 let randomStageObserver = null;
 let initialized = false;
@@ -52,6 +53,7 @@ export function initHomeExperience() {
   if (initialized) return;
   initialized = true;
   ensureStyle();
+  initWorkFaceSurfaces();
   observeRandomStage();
   subscribe(refreshHomeExperience);
   requestAnimationFrame(refreshHomeExperience);
