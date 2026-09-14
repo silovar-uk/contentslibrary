@@ -54,6 +54,21 @@ export function extractAsinFromProductUrl(pageUrl) {
   }
 }
 
+// 詳細画面と「表紙あつめ」で同じ入力規則・文言を使う。
+// 戻り値は保存候補URLか、利用者へそのまま出せる既存文言のerror。
+export function resolveCoverInput(raw) {
+  const value = String(raw || "").trim();
+  if (!value) return { error: "URLを入力してください。" };
+  if (isAllowedCoverUrl(value)) return { url: value };
+  const asin = extractAsinFromProductUrl(value);
+  if (asin) {
+    const candidate = amazonCoverUrlFromIsbn10(asin);
+    if (candidate) return { url: candidate };
+    return { error: "この商品は自動で取得できません。商品ページで画像を右クリックし「画像アドレスをコピー」から貼り付けてください。" };
+  }
+  return { error: "Amazonの商品ページURL、またはAmazon画像のURLを貼り付けてください。" };
+}
+
 // 既存データには旧仕様の中サイズ(MZZZZZZZ/SL300)が残っている。
 // DBを一括更新しなくても、詳細表示だけは高解像度候補へ引き上げる。
 export function coverDisplayUrl(url) {

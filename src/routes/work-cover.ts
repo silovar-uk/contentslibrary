@@ -58,31 +58,21 @@ function parseCoverUrl(raw: string): URL {
 }
 
 function normalizeAmazonCoverPath(url: URL): string | null {
-  // /images/P/<ISBN等>.<edition>.<SIZE>.jpg 形式(主に書籍)。大サイズへ正規化する。
   const productMatch = url.pathname.match(/^\/images\/P\/([^./]+)\.(\d+)\.[A-Za-z0-9]+\.jpg$/);
   if (productMatch) {
     return `https://${url.hostname}/images/P/${productMatch[1]}.${productMatch[2]}.LZZZZZZZ.jpg`;
   }
-
-  // /images/I/<画像ID>[._変換指定_].jpg 形式(商品ページから貼った画像URL)。
-  // queryはURL.pathnameに含まれないため、aicid等が付いていても形式判定には影響させない。
-  // 変換指定の中身は解釈せず、保存時には長辺800px相当の既知形式へ正規化する。
   const itemMatch = url.pathname.match(AMAZON_ITEM_IMAGE_PATH);
   if (itemMatch) {
     return `https://${url.hostname}/images/I/${itemMatch[1]}._SL800_.jpg`;
   }
-
   return null;
 }
 
-// クライアントは候補URLを一度自分で読み込んで確認してから送ってくる(空の1x1 GIFを弾くため)。
-// サーバー側はURLとしての妥当性とAmazonホストを先に検証し、その後pathだけを正規化する。
-// 一覧・ホームではクライアント側で中解像度へ落とし、詳細だけ高解像度を使う。
 function normalizeCoverUrl(raw: string): string {
   const url = parseCoverUrl(raw);
   const normalized = normalizeAmazonCoverPath(url);
   if (normalized) return normalized;
-
   throw new HttpError(422, "VALIDATION_ERROR", "認識できないAmazon画像URLの形式です。", { field: "cover_url" });
 }
 
@@ -111,9 +101,11 @@ export async function updateWorkCover(request: Request, env: Env, auth: AuthCont
   if (serialized.length > 100_000) throw new HttpError(422, "VALIDATION_ERROR", "作品情報が大きすぎます。");
 
   const now = nowIso();
+  // 表紙は管理メタデータ。追加・削除だけで「つづきをすすめる」の最近更新扱いにしないため、
+  // works.updated_at は保持し、競合検知用versionだけ進める。
   const result = await env.DB.prepare(
-    "UPDATE works SET metadata_json = ?, version = version + 1, updated_at = ? WHERE id = ? AND owner_id = ? AND version = ? AND deleted_at IS NULL"
-  ).bind(serialized, now, workId, auth.member.id, version).run();
+    "UPDATE works SET metadata_json = ?, version = version + 1 WHERE id = ? AND owner_id = ? AND version = ? AND deleted_at IS NULL"
+  ).bind(serialized, workId, auth.member.id, version).run();
   if ((result.meta.changes ?? 0) === 0) {
     throw new HttpError(409, "CONFLICT", "別の画面で更新されています。作品を開き直してください。");
   }

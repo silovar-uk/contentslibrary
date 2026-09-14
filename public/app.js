@@ -18,6 +18,7 @@ import { initDetail, openDetail } from "./views/detail.js";
 import { initDetailTopNotes } from "./views/detail-top-notes.js";
 import { initAmazonTitleSearch } from "./views/amazon-title-search.js";
 import { initCoverResolution } from "./views/cover-resolution.js";
+import { initCoverHunt } from "./views/cover-hunt.js";
 import { initWordMemos } from "./views/word-memos.js";
 import { initWordMemoBulkSelection } from "./views/word-memo-bulk-selection.js";
 import { initReviewSummary } from "./views/review-summary.js";
@@ -133,6 +134,7 @@ async function init() {
     initDialogs();
     initMobileSearch();
     initCommandPalette();
+    initCoverHunt();
     initBulkAdd();
     initBulkJsonAdd();
     initBulkJsonOpenFix();
