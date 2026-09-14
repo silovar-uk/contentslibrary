@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const moduleSource = readFileSync(new URL("../public/views/home-experience.js", import.meta.url), "utf8");
+const faceSource = readFileSync(new URL("../public/core/work-face.js", import.meta.url), "utf8");
 const cssSource = readFileSync(new URL("../public/styles/home-experience.css", import.meta.url), "utf8");
 const appSource = readFileSync(new URL("../public/app.js", import.meta.url), "utf8");
 
@@ -13,10 +14,11 @@ test("Home Experienceは最近編集した本を生成せずFeaturedの表紙装
   assert.match(moduleSource, /decorateRandomCards/);
 });
 
-test("random cards use registered covers with a designed fallback", () => {
-  assert.match(moduleSource, /isAllowedCoverUrl/);
-  assert.match(moduleSource, /coverThumbUrl/);
-  assert.match(moduleSource, /home-cover-fallback/);
+test("random cards use the shared work face with registered cover priority", () => {
+  assert.match(moduleSource, /workFaceMarkup/);
+  assert.match(faceSource, /isAllowedCoverUrl/);
+  assert.match(faceSource, /coverThumbUrl/);
+  assert.match(faceSource, /work-face--/);
   assert.match(moduleSource, /decorateRandomCards/);
   assert.match(moduleSource, /data-home-cover-for/);
 });

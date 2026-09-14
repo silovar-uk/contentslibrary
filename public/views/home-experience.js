@@ -1,6 +1,7 @@
-import { $, $$, esc } from "../core/dom.js";
+import { $, $$ } from "../core/dom.js";
 import { state, subscribe } from "../core/store.js";
-import { isAllowedCoverUrl, coverThumbUrl } from "../core/cover.js";
+import { workFaceMarkup } from "../core/work-face.js";
+import { initWorkFaceSurfaces } from "./work-face-surfaces.js";
 
 let randomStageObserver = null;
 let initialized = false;
@@ -14,15 +15,7 @@ function ensureStyle() {
 }
 
 function coverMarkup(work, context) {
-  const rawUrl = work?.metadata?.cover_url || "";
-  const validCover = isAllowedCoverUrl(rawUrl);
-  const title = String(work?.title || "作品");
-  const shortTitle = title.length > 28 ? `${title.slice(0, 27)}…` : title;
-  return `<span class="home-cover-frame home-cover-frame--${context}" data-home-cover-for="${esc(work.id)}">
-    ${validCover
-      ? `<img src="${esc(coverThumbUrl(rawUrl))}" alt="${esc(title)}の表紙" loading="lazy" decoding="async" width="220" height="330">`
-      : `<span class="home-cover-fallback" aria-label="表紙未設定"><small>MY SHELF</small><strong>${esc(shortTitle)}</strong><i aria-hidden="true"></i></span>`}
-  </span>`;
+  return `<span class="home-cover-frame home-cover-frame--${context}" data-home-cover-for="${work.id}" data-shuhari-face="choose">${workFaceMarkup(work)}</span>`;
 }
 
 function decorateRandomCards() {
@@ -60,6 +53,7 @@ export function initHomeExperience() {
   if (initialized) return;
   initialized = true;
   ensureStyle();
+  initWorkFaceSurfaces();
   observeRandomStage();
   subscribe(refreshHomeExperience);
   requestAnimationFrame(refreshHomeExperience);
