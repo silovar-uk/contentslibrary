@@ -1,0 +1,46 @@
+.work-face-frame{display:block;overflow:hidden;background:var(--surface-2);aspect-ratio:2/3}
+.work-face-image{display:block;width:100%;height:100%;object-fit:contain;background:#f3f0e8}
+.work-face{--fb:#2f4f45;--ff:#f3efe6;--fband:#e8e0d0;--fbi:#2f4f45;position:relative;display:block;width:100%;height:100%;min-height:0;overflow:hidden;isolation:isolate;border-radius:2px 5px 5px 2px;background:var(--fb);color:var(--ff);container-type:inline-size;box-shadow:inset 4px 0 0 rgba(0,0,0,.12),inset 5px 0 0 rgba(255,255,255,.07)}
+.work-face::after{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;background:linear-gradient(118deg,rgba(255,255,255,.15),rgba(255,255,255,0) 40%),repeating-linear-gradient(90deg,rgba(0,0,0,.022) 0 1px,transparent 1px 4px)}
+.work-face[data-tone="0"]{--fb:#2f4f45;--ff:#f3efe6;--fband:#e8e0d0;--fbi:#2f4f45}
+.work-face[data-tone="1"]{--fb:#274866;--ff:#f1f3f5;--fband:#dde5ee;--fbi:#274866}
+.work-face[data-tone="2"]{--fb:#a9452f;--ff:#fff5ec;--fband:#f2ddd2;--fbi:#8c3824}
+.work-face[data-tone="3"]{--fb:#c9a24c;--ff:#2a2415;--fband:#2a2415;--fbi:#f4e9cf}
+.work-face[data-tone="4"]{--fb:#6d6e69;--ff:#f7f5f0;--fband:#e3e2dc;--fbi:#4b4c48}
+.work-face[data-tone="5"]{--fb:#5a3d57;--ff:#f7eef5;--fband:#e7d9e5;--fbi:#5a3d57}
+.work-face[data-tone="6"]{--fb:#8b4c38;--ff:#fbf1e9;--fband:#ecd8cd;--fbi:#8b4c38}
+.work-face[data-tone="7"]{--fb:#6c9a80;--ff:#0f231a;--fband:#0f231a;--fbi:#e2eee6}
+.work-face[data-tone="8"]{--fb:#2a2a28;--ff:#eee8dc;--fband:#c9a24c;--fbi:#2a2a28}
+.work-face[data-tone="9"]{--fb:#ddd1ba;--ff:#39322a;--fband:#39322a;--fbi:#f5efe3}
+.work-face[data-tone="10"]{--fb:#203c6e;--ff:#eef2fb;--fband:#d6dff0;--fbi:#203c6e}
+.work-face[data-tone="11"]{--fb:#c7a8a4;--ff:#34292a;--fband:#34292a;--fbi:#f4e8e6}
+.work-face-title,.work-face-author,.work-face-band,.work-face-kind,.work-face-vol{position:absolute;z-index:2}
+.work-face[data-band="0"]::before{content:"";position:absolute;inset:6%;z-index:1;border:1px solid color-mix(in srgb,var(--ff) 34%,transparent)}
+.work-face-band{left:0;right:0;bottom:0;height:17%;display:grid;align-content:center;padding-inline:8%;background:var(--fband);color:var(--fbi)}
+.work-face-band>span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-align:center;font-size:clamp(7px,6.2cqi,12px);font-weight:700;letter-spacing:.06em}
+.work-face--vertical .work-face-title{top:8%;right:12%;max-height:66%;max-width:64%;overflow:hidden;writing-mode:vertical-rl;font-family:"Hiragino Mincho ProN","Yu Mincho",YuMincho,serif;font-weight:700;font-size:clamp(11px,12.5cqi,26px);line-height:1.32;letter-spacing:.08em}
+.work-face--vertical .work-face-author{left:12%;bottom:23%;max-height:40%;overflow:hidden;writing-mode:vertical-rl;font-family:"Hiragino Mincho ProN","Yu Mincho",YuMincho,serif;font-size:clamp(8px,6.4cqi,13px);letter-spacing:.14em;opacity:.86}
+.work-face--vertical[data-band="0"] .work-face-author{bottom:10%}
+.work-face--horizontal .work-face-title{left:11%;right:11%;top:12%;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:5;overflow:hidden;font-weight:760;font-size:clamp(11px,11cqi,22px);line-height:1.28}
+.work-face--horizontal .work-face-author{left:11%;right:11%;bottom:22%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:clamp(8px,6cqi,12px);opacity:.86}
+.work-face--horizontal[data-band="0"] .work-face-author{bottom:11%}
+.work-face--manga .work-face-title{left:0;right:0;top:0;padding:10% 9% 8%;background:color-mix(in srgb,var(--fb) 72%,#000);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;font-weight:900;font-size:clamp(12px,12cqi,24px);line-height:1.15}
+.work-face--manga .work-face-vol{right:9%;bottom:20%;font-family:"Hiragino Mincho ProN","Yu Mincho",YuMincho,serif;font-weight:700;font-size:clamp(22px,36cqi,70px);line-height:1;opacity:.92}
+.work-face--manga .work-face-author{left:9%;bottom:22%;max-width:50%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:clamp(8px,6cqi,12px)}
+.work-face--poster{background:linear-gradient(180deg,#141413 0 10%,var(--fb) 10% 88%,#141413 88%)}
+.work-face--poster::before{content:"";position:absolute;z-index:1;width:95%;aspect-ratio:1;left:-22%;top:16%;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--ff) 24%,transparent),transparent 70%)}
+.work-face--poster .work-face-kind{left:8%;top:2.6%;color:#f0ede6;font-size:clamp(7px,5.4cqi,10px);font-weight:700;letter-spacing:.2em;opacity:.82}
+.work-face--poster .work-face-title{left:8%;right:8%;bottom:16%;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;font-weight:850;font-size:clamp(12px,12cqi,24px);line-height:1.2}
+.work-face--poster .work-face-author{left:8%;right:8%;bottom:3%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:#f0ede6;font-size:clamp(7px,5.6cqi,11px);opacity:.82}
+.home-cover-frame[data-shuhari-face]{display:block;aspect-ratio:2/3;overflow:hidden}
+.home-cover-frame[data-shuhari-face]>.work-face,.home-cover-frame[data-shuhari-face]>.work-face-image{width:100%;height:100%}
+.home-cover-frame--continue{width:100%;margin:0 0 10px;border-radius:3px 6px 6px 3px}
+.work-face-list-thumb{display:block;width:44px;min-width:44px;height:62px;overflow:hidden;border-radius:2px 4px 4px 2px}
+.work-face-rescue{display:block;width:48px;min-width:48px;aspect-ratio:2/3;overflow:hidden;border-radius:2px 4px 4px 2px}
+@container (max-width:64px){.work-face .work-face-title,.work-face .work-face-author,.work-face .work-face-vol,.work-face .work-face-kind,.work-face .work-face-band>span{display:none}}
+@media(max-width:767px){
+  .reading-card-main:has(>.home-cover-frame--continue){display:grid;grid-template-columns:96px minmax(0,1fr);gap:0 12px;align-items:start}
+  .reading-card-main:has(>.home-cover-frame--continue)>.home-cover-frame--continue{grid-column:1;grid-row:1/span 20;margin:0;width:96px}
+  .reading-card-main:has(>.home-cover-frame--continue)>:not(.home-cover-frame--continue){grid-column:2}
+}
+@media(prefers-reduced-motion:reduce){.work-face,.work-face-image{animation:none!important;transition:none!important}}
