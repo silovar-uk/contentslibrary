@@ -29,8 +29,8 @@ test("背表紙幅は題の長さに応じて22〜34pxに収まる", () => {
 test("書架モードはlocalStorageへ保存し、選択モードを無効化する", async () => {
   const source = await read("public/views/library-bookcase.js");
   assert.match(source, /sakuhin-log-library-view-v1/);
-  assert.match(source, /try \{ localStorage\.getItem/);
-  assert.match(source, /try \{ localStorage\.setItem/);
+  assert.match(source, /try \{[\s\S]*localStorage\.getItem\(STORAGE_KEY\)/);
+  assert.match(source, /try \{[\s\S]*localStorage\.setItem\(STORAGE_KEY, next\)/);
   assert.match(source, /selection\.disabled = mode === "bookcase"/);
   assert.match(source, /aria-pressed/);
 });
