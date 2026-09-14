@@ -3,7 +3,7 @@ import { api } from "./core/api.js";
 import { toast, setBusy } from "./core/dom.js";
 import { ratingLevel } from "./core/format.js";
 import { state, loadSnapshot, setWorkRating, subscribe, setView, closeDetail, toggleQuickEdit, openNoteCardIds, toggleCardNote, submitCardNote } from "./core/store.js";
-import { renderAccount, loadAdmin } from "./views/admin.js";
+import { renderAccount, loadAdmin, initAdmin } from "./views/admin.js";
 import { initHome, loadHome, drawRandomPicks } from "./views/home.js";
 import { initHomeRescue } from "./views/home-rescue.js";
 import { initRandomScopeOptions } from "./views/random-scope-options.js";
@@ -33,7 +33,7 @@ import { initBulkAdd } from "./views/bulk-add.js";
 import { initBulkJsonAdd } from "./views/bulk-json-add.js";
 import { initBulkJsonOpenFix } from "./views/bulk-json-open-fix.js";
 import { initAddEntryFlow } from "./views/add-entry-flow.js";
-import "./views/admin.js";
+import { initUiShuhariPr1 } from "./views/ui-shuhari-pr1.js";
 
 function applyView() {
   const view = state.view;
@@ -122,6 +122,8 @@ async function init() {
     $("#avatarInitial").textContent = (state.me.display_name || state.me.email || "U").slice(0, 1).toUpperCase();
     $("#adminButton").hidden = !["owner", "admin"].includes(state.me.role);
     renderAccount();
+    initAdmin();
+    initUiShuhariPr1();
 
     bindShell();
     initWorkDomainUi();
