@@ -36,7 +36,7 @@ function writeMode(next) {
 }
 
 export function spineWidth(work) {
-  const cleanTitle = labelFromTitle(work?.title || "").title;
+  const cleanTitle = labelFromTitle(work?.title || "").main || String(work?.title || "");
   const length = Array.from(cleanTitle).length;
   return Math.max(22, Math.min(34, 22 + Math.ceil(length / 4) * 2));
 }
@@ -101,7 +101,7 @@ function spineMarkup(work) {
   const author = String(work.creator || "").trim();
   const aria = `${work.title}${author ? ` / ${author}` : ""}`;
   return `<button type="button" class="spine ${spineTypeClass(work.type)} ${label ? "has-band" : ""}" data-open-work="${esc(work.id)}" data-tone="${binding.tone}" aria-label="${esc(aria)}" style="--spine-w:${spineWidth(work)}px">
-    <span class="spine-title">${esc(parsed.title || work.title)}</span>
+    <span class="spine-title">${esc(parsed.main || work.title)}</span>
     ${label ? `<span class="spine-band" aria-hidden="true">${esc(label)}</span>` : ""}
   </button>`;
 }
@@ -132,22 +132,25 @@ export function renderBookcase() {
   const list = $("#workList");
   if (!list) return;
   rendering = true;
-  const shelves = bookcaseShelfGroups(filteredWorks());
-  const started = performance.now();
-  renderShelves(list, shelves);
-  const elapsed = performance.now() - started;
-  list.dataset.bookcaseRenderMs = elapsed.toFixed(1);
-
-  if (!chunked && elapsed > CHUNK_THRESHOLD_MS && shelves.some((shelf) => shelf.works.length > CHUNK_SIZE)) {
-    chunked = true;
+  try {
+    const shelves = bookcaseShelfGroups(filteredWorks());
+    const started = performance.now();
     renderShelves(list, shelves);
-    list.dataset.bookcaseChunked = "true";
-  } else {
-    list.dataset.bookcaseChunked = String(chunked);
+    const elapsed = performance.now() - started;
+    list.dataset.bookcaseRenderMs = elapsed.toFixed(1);
+
+    if (!chunked && elapsed > CHUNK_THRESHOLD_MS && shelves.some((shelf) => shelf.works.length > CHUNK_SIZE)) {
+      chunked = true;
+      renderShelves(list, shelves);
+      list.dataset.bookcaseChunked = "true";
+    } else {
+      list.dataset.bookcaseChunked = String(chunked);
+    }
+    const summary = $("#resultSummary");
+    if (summary) summary.textContent = `${shelves.reduce((sum, shelf) => sum + shelf.works.length, 0)}件を書架で表示`;
+  } finally {
+    rendering = false;
   }
-  const summary = $("#resultSummary");
-  if (summary) summary.textContent = `${shelves.reduce((sum, shelf) => sum + shelf.works.length, 0)}件を書架で表示`;
-  rendering = false;
 }
 
 function setMode(next) {
