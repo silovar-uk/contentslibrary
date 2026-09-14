@@ -1,5 +1,5 @@
-import { $, esc } from "../core/dom.js";
-import { state, setWorkCover } from "../core/store.js";
+import { $, esc, toast, setBusy } from "../core/dom.js";
+import { state, setWorkCover, subscribe } from "../core/store.js";
 import { isAllowedCoverUrl, probeCoverImage, resolveCoverInput, coverThumbUrl } from "../core/cover.js";
 import { workFaceMarkup, labelFromTitle } from "../core/work-face.js";
 import { statusLabel } from "../core/format.js";
@@ -19,6 +19,7 @@ let queueIds = [];
 let cursor = 0;
 let saving = false;
 let advanceTimer = null;
+let detailDecorationQueued = false;
 
 export function coverHuntQueue(works = []) {
   return works
@@ -171,6 +172,70 @@ async function saveRaw(raw) {
   }
 }
 
+async function saveDetailCover(form) {
+  const workId = state.selectedId;
+  if (!workId) return;
+  const section = form.closest(".cover-section");
+  const status = $(".cover-error", section);
+  const button = form.querySelector('[type="submit"]');
+  const resolved = resolveCoverInput(form.cover_input.value);
+  status.textContent = "";
+  if (resolved.error) { status.textContent = resolved.error; return; }
+  setBusy(button, true, "確認中…");
+  try {
+    const ok = await probeCoverImage(resolved.url);
+    if (!ok) {
+      status.textContent = "この画像は取得できませんでした。商品ページで画像を右クリックし「画像アドレスをコピー」から貼り付けてください。";
+      return;
+    }
+    await setWorkCover(workId, resolved.url);
+    toast("表紙を設定しました。");
+  } catch (error) {
+    status.textContent = error.message;
+  } finally {
+    setBusy(button, false);
+  }
+}
+
+function decorateDetailCover() {
+  detailDecorationQueued = false;
+  const panel = $("#detailPanel");
+  const section = $(".cover-section", panel);
+  const work = state.selected?.work;
+  if (!panel || !section || !work) return;
+  const hasCover = isAllowedCoverUrl(work.metadata?.cover_url || "");
+  const currentFace = $("[data-cover-hunt-detail-face]", section);
+  const currentLink = $("[data-cover-hunt-start]", section);
+  if (hasCover) {
+    currentFace?.remove();
+    currentLink?.remove();
+    return;
+  }
+  if (!currentFace) {
+    const face = document.createElement("div");
+    face.className = "detail-cover-face";
+    face.dataset.coverHuntDetailFace = "";
+    face.innerHTML = workFaceMarkup(work);
+    const intro = $(".muted", section);
+    (intro || section.firstElementChild)?.insertAdjacentElement("afterend", face);
+  }
+  if (["book", "manga"].includes(work.type) && !currentLink) {
+    const link = document.createElement("button");
+    link.type = "button";
+    link.className = "text-button cover-hunt-detail-link";
+    link.dataset.coverHuntStart = String(work.id);
+    link.textContent = "表紙あつめで続けて付ける →";
+    const error = $(".cover-error", section);
+    if (error) error.insertAdjacentElement("afterend", link); else section.append(link);
+  }
+}
+
+function queueDetailDecoration() {
+  if (detailDecorationQueued) return;
+  detailDecorationQueued = true;
+  queueMicrotask(decorateDetailCover);
+}
+
 export function openCoverHunt(startWorkId) {
   ensureStyles();
   const dialog = ensureDialog();
@@ -195,6 +260,9 @@ export function initCoverHunt() {
     tools.insertBefore(button, $("#selectionExportToggle", tools) || tools.firstChild);
   }
 
+  subscribe(queueDetailDecoration);
+  requestAnimationFrame(queueDetailDecoration);
+
   document.addEventListener("click", (event) => {
     if (event.target.closest("[data-action='open-cover-hunt']")) { openCoverHunt(); return; }
     const start = event.target.closest("[data-cover-hunt-start]")?.dataset.coverHuntStart;
@@ -202,6 +270,15 @@ export function initCoverHunt() {
     if (event.target.closest("[data-cover-hunt-skip]")) { advance(); return; }
     if (event.target.closest("[data-cover-hunt-close]")) { clearTimeout(advanceTimer); dialog.close(); }
   });
+
+  // 既存detail.jsの表紙フォームも共通resolveCoverInput()へ寄せる。
+  document.addEventListener("submit", (event) => {
+    const detailForm = event.target.closest("[data-cover-form]");
+    if (!detailForm || detailForm.closest("#coverHuntDialog")) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    void saveDetailCover(detailForm);
+  }, true);
 
   dialog.addEventListener("submit", (event) => {
     const form = event.target.closest("[data-cover-hunt-form]");
