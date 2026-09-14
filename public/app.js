@@ -11,6 +11,7 @@ import { initHomeExperience } from "./views/home-experience.js";
 import { initEditorialHome } from "./views/editorial-home.js";
 import { initHomeComposition } from "./views/home-composition.js";
 import { initLibrary, renderWorkList } from "./views/library.js";
+import { initLibraryBookcase } from "./views/library-bookcase.js";
 import { initReadingPriority } from "./views/reading-priority.js";
 import { initReadingPrioritySurfaces } from "./views/reading-priority-surfaces.js";
 import { initLightEditSurfaces } from "./views/light-edit-surfaces.js";
@@ -140,6 +141,7 @@ async function init() {
     initBulkJsonOpenFix();
     initAddEntryFlow();
     initLibrary();
+    initLibraryBookcase();
     initReadingPriority();
     initHome();
     initRandomScopeOptions();
