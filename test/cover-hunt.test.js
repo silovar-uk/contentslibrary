@@ -44,8 +44,8 @@ test("表紙あつめは一覧・詳細・コマンドパレットから開け�
   const hunt = await read("public/views/cover-hunt.js");
   const palette = await read("public/views/command-palette.js");
   const home = await read("public/views/home.js");
-  assert.match(hunt, /data\.action = "open-cover-hunt"/);
-  assert.match(hunt, /data\.coverHuntStart/);
+  assert.match(hunt, /dataset\.action = "open-cover-hunt"/);
+  assert.match(hunt, /dataset\.coverHuntStart/);
   assert.match(palette, /id: "cover-hunt"/);
   assert.match(palette, /openCoverHunt\(\)/);
   assert.doesNotMatch(home, /open-cover-hunt|表紙を集める/);
