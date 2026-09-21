@@ -176,12 +176,38 @@ function enhanceChooseCards(stage) {
 function composeChoose(zone) {
   const controls = document.querySelector("#homeView .random-controls");
   const stage = $("#randomStage");
-  if (controls) moveIntoBody(zone, controls);
+  const body = zone.querySelector(".home-zone-body");
+  let scopeControl = zone.querySelector(".random-scope-control");
+  let rerollActions = zone.querySelector(".random-reroll-actions");
+
+  if (controls && body) {
+    if (!scopeControl) {
+      scopeControl = document.createElement("div");
+      scopeControl.className = "random-scope-control";
+      const label = controls.querySelector(":scope > label");
+      if (label) scopeControl.append(label);
+    }
+    if (!rerollActions) {
+      rerollActions = document.createElement("div");
+      rerollActions.className = "random-reroll-actions";
+      const draw = controls.querySelector(":scope > [data-action='draw-random']");
+      if (draw) {
+        draw.textContent = "↻ 候補を引き直す";
+        draw.dataset.rerollLabel = "↻ 候補を引き直す";
+        rerollActions.append(draw);
+      }
+    }
+    if (scopeControl?.parentElement !== body) body.append(scopeControl);
+  }
+
   if (stage) {
     stage.classList.add("home-featured-shelf", "home-featured-choose");
     moveIntoBody(zone, stage);
     enhanceChooseCards(stage);
   }
+
+  if (rerollActions && body && rerollActions.parentElement !== body) body.append(rerollActions);
+  if (controls && controls.childElementCount === 0) controls.remove();
 
   const actions = zone.querySelector(".home-zone-actions");
   if (actions && !actions.querySelector("[data-reading-priority-organize]")) {
