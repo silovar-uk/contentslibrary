@@ -183,15 +183,13 @@ function composeChoose(zone) {
       const label = controls.querySelector(":scope > label");
       if (label) scopeControl.append(label);
     }
-    const modeToggle = controls.querySelector(":scope > .random-mode-toggle");
-    if (modeToggle && modeToggle.parentElement !== scopeControl) scopeControl.append(modeToggle);
     if (!rerollActions) {
       rerollActions = document.createElement("div");
       rerollActions.className = "random-reroll-actions";
       const draw = controls.querySelector(":scope > [data-action='draw-random']");
       if (draw) {
-        draw.textContent = "↻ 候補を引き直す";
-        draw.dataset.rerollLabel = "↻ 候補を引き直す";
+        draw.textContent = "↻ 3件を引き直す";
+        draw.dataset.rerollLabel = "↻ 3件を引き直す";
         rerollActions.append(draw);
       }
     }
