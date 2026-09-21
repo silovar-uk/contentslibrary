@@ -62,6 +62,7 @@ async function attachLabels(env: Env, rows: Array<Record<string, unknown>>) {
     ...resumeTiming(row),
     metadata_json: undefined,
     resume_note_at: undefined,
+    resume_note_created_at: undefined,
     resume_experience_at: undefined
   }));
 }
@@ -70,12 +71,15 @@ export async function getHomeV07(env: Env, auth: AuthContext): Promise<Response>
   const owner = auth.member.id;
   const active = await env.DB.prepare(
     `SELECT w.*,
-      (SELECT n.content FROM notes n WHERE n.work_id = w.id ORDER BY n.updated_at DESC LIMIT 1) AS resume_note,
-      (SELECT n.updated_at FROM notes n WHERE n.work_id = w.id ORDER BY n.updated_at DESC LIMIT 1) AS resume_note_at,
+      (SELECT n.content FROM notes n WHERE n.work_id = w.id ORDER BY n.created_at DESC, n.id DESC LIMIT 1) AS resume_note,
+      (SELECT n.updated_at FROM notes n WHERE n.work_id = w.id ORDER BY n.created_at DESC, n.id DESC LIMIT 1) AS resume_note_at,
+      (SELECT n.created_at FROM notes n WHERE n.work_id = w.id ORDER BY n.created_at DESC, n.id DESC LIMIT 1) AS resume_note_created_at,
       (SELECT e.updated_at FROM experiences e WHERE e.work_id = w.id ORDER BY e.updated_at DESC LIMIT 1) AS resume_experience_at
     FROM works w
     WHERE w.owner_id = ? AND w.deleted_at IS NULL AND w.status = 'active'
-    ORDER BY w.updated_at DESC
+    ORDER BY CASE WHEN resume_note_created_at IS NULL THEN 1 ELSE 0 END,
+      resume_note_created_at DESC,
+      w.updated_at DESC
     LIMIT 8`
   ).bind(owner).all<Record<string, unknown>>();
   const recentOther = await env.DB.prepare(
