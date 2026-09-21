@@ -207,6 +207,7 @@ async function submitNote(form) {
     $("#noteDialog").close();
     toast(isEdit ? "メモを更新しました。" : "メモを保存しました。");
     document.dispatchEvent(new CustomEvent("app:refresh-detail", { detail: workId }));
+    document.dispatchEvent(new CustomEvent("app:refresh-home"));
   } catch (e) { error.textContent = e.message; }
 }
 
