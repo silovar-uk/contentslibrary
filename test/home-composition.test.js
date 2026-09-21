@@ -87,3 +87,13 @@ test("Home CompositionはEditorial Homeの後で初期化する", async () => {
   const app = await read("public/app.js");
   assert.match(app, /initEditorialHome\(\);\s*initHomeComposition\(\);/);
 });
+
+
+test("Homeの切り替えはhero-row内、CHOOSE操作は1本のtoolbarに集約する", async () => {
+  const source = await read("public/views/home-composition.js");
+  assert.match(source, /hero\.append\(switcher\)/);
+  assert.match(source, /home-choose-toolbar/);
+  assert.match(source, /読む順番を整理 →/);
+  assert.match(source, /random-reroll-actions/);
+  assert.doesNotMatch(source, /data-genre-count/);
+});
