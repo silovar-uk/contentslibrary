@@ -48,16 +48,18 @@ test("詳細の状態変更はlight editへ一本化しQuick Editから重複sel
   assert.match(light, /status: next/);
 });
 
-test("スマホCHOOSEは棚→3候補→引き直すのDOM順に再構成する", async () => {
+test("スマホCHOOSEは操作をtoolbarへ集約し、3候補を横長カードにする", async () => {
   const source = await read("public/views/home-composition.js");
   const css = await read("public/styles/home-decision-surface.css");
-  const scopeAt = source.indexOf("body.append(scopeControl)");
-  const stageAt = source.indexOf("moveIntoBody(zone, stage)");
-  const rerollAt = source.indexOf("body.append(rerollActions)");
-  assert.ok(scopeAt >= 0 && stageAt > scopeAt && rerollAt > stageAt);
+  assert.match(source, /home-choose-toolbar/);
+  assert.match(source, /toolbar\.append\(scopeControl\)/);
+  assert.match(source, /toolbar\.append\(rerollActions\)/);
+  assert.match(source, /moveIntoBody\(zone, stage\)/);
   assert.match(source, /↻ 3件を引き直す/);
   assert.doesNotMatch(source, /random-mode-toggle|modeToggle/);
-  assert.match(css, /random-reroll-actions \.draw-button\{width:100%/);
+  assert.match(css, /grid-template-columns:72px minmax\(0,1fr\)/);
+  assert.match(css, /width:72px/);
+  assert.match(css, /height:108px/);
   assert.match(css, /decision-candidate-keep/);
 });
 
