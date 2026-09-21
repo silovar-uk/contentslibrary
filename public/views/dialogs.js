@@ -2,6 +2,7 @@ import { $, $$, toast, setBusy } from "../core/dom.js";
 import { api } from "../core/api.js";
 import { mediaConfig } from "../core/format.js";
 import { state, upsertWork, setSelectedDetail, setView, selectWork } from "../core/store.js";
+import { refreshStatusPicker } from "./status-visuals.js";
 
 const DRAFT_KEY = "sakuhin-log-work-draft-v2";
 
@@ -51,6 +52,7 @@ function syncWorkFormMedia(form, { forceUnit = false } = {}) {
   if (forceUnit || !form.unit_label.value || form.unit_label.value === previousAuto) form.unit_label.value = config.unit;
   form.dataset.autoUnit = config.unit;
   Array.from(form.status.options).forEach((option) => { option.textContent = config.statuses[option.value] || option.textContent; });
+  refreshStatusPicker(form.status);
 }
 
 export function openWorkDialog(edit = false) {
