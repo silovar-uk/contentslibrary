@@ -5,7 +5,7 @@ import { resumeRecencyLabel } from "../core/resume-time.js";
 import { state, shelfData, themeData, subscribe } from "../core/store.js";
 import { randomScopeWorks } from "../core/random-pick.js";
 import { buildDecisionDeck, DECISION_SLOT_LABELS } from "../core/decision-deck.js";
-import { recordDecision, recentDecisionIds } from "../core/decision-memory.js";
+import { recordDecisionAndSync, recentDecisionIds } from "../core/decision-memory.js";
 import { shelfNavigateToGenre, shelfClearGenreFilter, themeNavigate } from "./library.js";
 import { statusChipMarkup } from "./status-visuals.js";
 import { workFaceMarkup } from "../core/work-face.js";
@@ -209,7 +209,7 @@ function rememberDecision(workId) {
   const candidate = decisionDeck.find((item) => String(item.id) === id);
   const work = state.works.get(id);
   if (!candidate || !work) return null;
-  return recordDecision({
+  return recordDecisionAndSync({
     work_id: id,
     title: work.title || "",
     creator: work.creator || "",
