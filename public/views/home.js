@@ -144,7 +144,7 @@ function updateDecisionRerollControls() {
   const count = decisionDeck.length;
   const kept = decisionDeck.filter((candidate) => keptDecisionIds.has(String(candidate.id))).length;
   const remaining = Math.max(0, count - kept);
-  $("[data-action='draw-random']").forEach((button) => {
+  document.querySelectorAll("[data-action='draw-random']").forEach((button) => {
     const label = kept > 0
       ? (remaining > 0 ? `↻ 残り${remaining}件を引き直す` : "3件すべて残しています")
       : `↻ ${count || 3}件を引き直す`;
@@ -201,7 +201,7 @@ function toggleDecisionKeep(workId) {
 
 function drawRandomPicksWithFeedback() {
   const stage = $("#randomStage");
-  const buttons = $("[data-action='draw-random']");
+  const buttons = document.querySelectorAll("[data-action='draw-random']");
   buttons.forEach((button) => {
     button.disabled = true;
     button.textContent = "↻ 引き直しています…";
