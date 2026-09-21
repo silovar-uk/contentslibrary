@@ -56,6 +56,8 @@ test("スマホCHOOSEは棚→候補→引き直すのDOM順に再構成する",
   const rerollAt = source.indexOf("body.append(rerollActions)");
   assert.ok(scopeAt >= 0 && stageAt > scopeAt && rerollAt > stageAt);
   assert.match(source, /↻ 候補を引き直す/);
+  assert.match(source, /random-mode-toggle/);
+  assert.match(source, /scopeControl\.append\(modeToggle\)/);
   assert.match(css, /random-reroll-actions \.draw-button\{width:100%/);
   assert.doesNotMatch(css, /home-zone-choose \.random-controls\{gap:8px;align-items:flex-end;flex-wrap:nowrap;overflow-x:auto/);
 });
