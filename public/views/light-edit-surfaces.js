@@ -33,10 +33,15 @@ function ensureSheet() {
 }
 
 export function lightSheetChoiceMarkup(items = []) {
-  return items.map((item) => `<button type="button" class="light-edit-sheet-choice ${item.active ? "is-active" : ""}" data-light-sheet-value="${esc(item.value)}"><span>${esc(item.label)}</span>${item.active ? '<strong>✓</strong>' : '<i aria-hidden="true">›</i>'}</button>`).join("");
+  return items.map((item) => {
+    if (item.heading) return `<div class="light-edit-sheet-group">${esc(item.heading)}</div>`;
+    const statusAttr = item.status ? ` data-status="${esc(item.status)}"` : "";
+    const symbol = item.symbol ? `<span class="status-symbol" aria-hidden="true">${esc(item.symbol)}</span>` : "";
+    return `<button type="button" class="light-edit-sheet-choice ${item.active ? "is-active" : ""}" data-light-sheet-value="${esc(item.value)}"${statusAttr}><span class="status-option-main">${symbol}<span>${esc(item.label)}</span></span>${item.active ? '<strong>✓</strong>' : '<i aria-hidden="true">›</i>'}</button>`;
+  }).join("");
 }
 
-function openSheet({ title, eyebrow = "QUICK EDIT", items, onChoose }) {
+export function openChoiceSheet({ title, eyebrow = "QUICK EDIT", items, onChoose }) {
   const dialog = ensureSheet();
   $("#lightEditSheetEyebrow").textContent = eyebrow;
   $("#lightEditSheetTitle").textContent = title;
@@ -50,7 +55,7 @@ function openSheet({ title, eyebrow = "QUICK EDIT", items, onChoose }) {
   if (!dialog.open) dialog.showModal();
 }
 
-function closeSheet() {
+export function closeChoiceSheet() {
   const dialog = $("#lightEditSheet");
   if (dialog?.open) dialog.close();
 }
@@ -65,21 +70,21 @@ function priorityItems(surface) {
 
 function openPrioritySheet(surface) {
   const items = priorityItems(surface);
-  openSheet({
+  openChoiceSheet({
     title: "読む優先度",
     eyebrow: "READING PRIORITY",
     items,
     onChoose: (value) => {
       const source = [...surface.querySelectorAll("[data-reading-priority-set]")].find((button) => button.dataset.readingPrioritySet === value);
       source?.click();
-      closeSheet();
+      closeChoiceSheet();
     }
   });
 }
 
 function statusSurfaceMarkup(work) {
   const statuses = mediaConfig(work.type).statuses || {};
-  const choices = Object.entries(statuses).map(([value, label]) => `<button type="button" class="light-edit-popover-choice ${work.status === value ? "is-active" : ""}" data-light-status-set="${esc(value)}" data-work-id="${esc(work.id)}"><span>${esc(label)}</span>${work.status === value ? "<strong>✓</strong>" : ""}</button>`).join("");
+  const choices = Object.entries(statuses).map(([value, label]) => `<button type="button" class="light-edit-popover-choice ${work.status === value ? "is-active" : ""}" data-status="${esc(value)}" data-light-status-set="${esc(value)}" data-work-id="${esc(work.id)}"><span>${esc(label)}</span>${work.status === value ? "<strong>✓</strong>" : ""}</button>`).join("");
   return `<details class="light-edit-popover light-edit-status" data-light-status-surface data-work-id="${esc(work.id)}" data-status="${esc(work.status)}">
     <summary><span>${esc(statusLabel(work.type, work.status))}</span><i aria-hidden="true">⌄</i></summary>
     <div class="light-edit-popover-menu" role="group" aria-label="状態を変更">${choices}</div>
@@ -106,7 +111,7 @@ async function updateStatus(button) {
   const work = state.selected?.work;
   const next = button.dataset.lightStatusSet;
   if (!work || !next || next === work.status) {
-    closeSheet();
+    closeChoiceSheet();
     button.closest("details")?.removeAttribute("open");
     return;
   }
@@ -115,7 +120,7 @@ async function updateStatus(button) {
     const data = await api(`/api/works/${encodeURIComponent(work.id)}`, { method: "PATCH", body: JSON.stringify({ version: Number(work.version), status: next }) });
     setSelectedDetail(data);
     toast(`状態を「${statusLabel(data.work.type, data.work.status)}」に変更しました。`);
-    closeSheet();
+    closeChoiceSheet();
   } catch (error) {
     toast(error.message, "error");
   } finally {
@@ -126,8 +131,15 @@ async function updateStatus(button) {
 function openStatusSheet(surface) {
   const work = state.selected?.work;
   if (!work) return;
-  const items = Object.entries(mediaConfig(work.type).statuses || {}).map(([value, label]) => ({ value, label, active: value === work.status }));
-  openSheet({
+  const symbols = { want: "○", owned_unread: "○", active: "▶", completed: "✓", paused: "Ⅱ", dropped: "■" };
+  const entries = Object.entries(mediaConfig(work.type).statuses || {});
+  const items = [
+    { heading: "通常の流れ" },
+    ...entries.filter(([value]) => ["want", "owned_unread", "active", "completed"].includes(value)).map(([value, label]) => ({ value, label, active: value === work.status, status: value, symbol: symbols[value] })),
+    { heading: "止める" },
+    ...entries.filter(([value]) => ["paused", "dropped"].includes(value)).map(([value, label]) => ({ value, label, active: value === work.status, status: value, symbol: symbols[value] }))
+  ];
+  openChoiceSheet({
     title: "状態",
     eyebrow: "STATUS",
     items,
@@ -159,7 +171,7 @@ function openSortSheet() {
   const select = $("#sortSelect");
   if (!select) return;
   const items = [...select.options].map((option) => ({ value: option.value, label: option.textContent, active: option.selected }));
-  openSheet({
+  openChoiceSheet({
     title: "並び替え",
     eyebrow: "SORT",
     items,
@@ -167,7 +179,7 @@ function openSortSheet() {
       select.value = value;
       select.dispatchEvent(new Event("change", { bubbles: true }));
       ensureMobileSortButton();
-      closeSheet();
+      closeChoiceSheet();
     }
   });
 }
@@ -237,7 +249,7 @@ export function initLightEditSurfaces() {
   subscribe(scheduleApply);
 
   document.addEventListener("click", (event) => {
-    if (event.target.closest("[data-light-sheet-close]")) { closeSheet(); return; }
+    if (event.target.closest("[data-light-sheet-close]")) { closeChoiceSheet(); return; }
     if (event.target.closest("#filterSheetBackdrop,[data-filter-sheet-close]")) { setFilterSheetOpen(false); return; }
     if (event.target.closest("[data-light-sort-open]")) { event.preventDefault(); openSortSheet(); return; }
 
@@ -272,7 +284,7 @@ export function initLightEditSurfaces() {
   }, true);
 
   $("#lightEditSheet")?.addEventListener("click", (event) => {
-    if (event.target === event.currentTarget) closeSheet();
+    if (event.target === event.currentTarget) closeChoiceSheet();
   });
   $("#lightEditSheet")?.addEventListener("cancel", () => closeSheet());
   $("#sortSelect")?.addEventListener("change", ensureMobileSortButton);
