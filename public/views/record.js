@@ -3,7 +3,7 @@ import { api } from "../core/api.js";
 import { TYPE_LABELS, statusLabel } from "../core/format.js";
 import { state, subscribe } from "../core/store.js";
 import { statusChipMarkup } from "./status-visuals.js";
-import { readDecisionMemory } from "../core/decision-memory.js";
+import { readDecisionMemory, syncDecisionMemory } from "../core/decision-memory.js";
 import { DECISION_SLOT_LABELS } from "../core/decision-deck.js";
 
 let recordData = null;
@@ -86,7 +86,11 @@ export async function loadRecord({ force = false } = {}) {
   }
   loading = true;
   try {
-    recordData = await api("/api/home");
+    const [home] = await Promise.all([
+      api("/api/home"),
+      syncDecisionMemory().catch(() => readDecisionMemory())
+    ]);
+    recordData = home;
   } finally {
     loading = false;
   }
