@@ -3,8 +3,8 @@ import { api } from "../core/api.js";
 import { TYPE_LABELS, statusLabel } from "../core/format.js";
 import { resumeRecencyLabel } from "../core/resume-time.js";
 import { state, shelfData, themeData, subscribe } from "../core/store.js";
-import { pickRandomWorks } from "../core/random-pick.js";
-import { getRandomMode, initRandomMode } from "./random-mode.js";
+import { randomScopeWorks } from "../core/random-pick.js";
+import { buildDecisionDeck, DECISION_SLOT_LABELS } from "../core/decision-deck.js";
 import { shelfNavigateToGenre, shelfClearGenreFilter, themeNavigate } from "./library.js";
 import { statusChipMarkup } from "./status-visuals.js";
 import { workFaceMarkup } from "../core/work-face.js";
@@ -13,7 +13,8 @@ let homeData = null;
 let shelfScope = "all";
 let activeShelfFilter = null;
 let themeExpanded = false;
-let randomPickIds = []; // ★を押しても顔ぶれが変わらないよう、IDだけ保持し表示のたびstate.worksから引く
+let decisionDeck = [];
+const keptDecisionIds = new Set();
 
 const RANDOM_HISTORY_KEY = "sakuhin-log-random-history-v2";
 function previousRandomIds() {
@@ -119,37 +120,82 @@ function readingResumeMarkup(reading) {
   </div>`;
 }
 
-function randomPickMarkup(work) {
+function decisionCandidateMarkup(candidate, work) {
   const genre = work.labels?.genre?.[0] || "未分類";
-  return `<article class="random-pick-card">
+  const kept = keptDecisionIds.has(String(work.id));
+  return `<article class="random-pick-card decision-candidate is-${esc(candidate.slot)} ${kept ? "is-kept" : ""}" data-decision-slot="${esc(candidate.slot)}">
+    <div class="decision-candidate-meta">
+      <span class="decision-candidate-kind">${esc(DECISION_SLOT_LABELS[candidate.slot] || candidate.slot)}</span>
+      <span class="decision-candidate-reason">${esc(candidate.reason || "")}</span>
+    </div>
     <button type="button" class="random-pick-main" data-open-work="${esc(work.id)}">
       <span class="genre-badge">${esc(genre)}</span>
       <h3>${esc(work.title)}</h3>
       <p class="random-pick-creator">${esc(work.creator || "作者情報なし")}</p>
       <div class="random-pick-status">${statusChipMarkup(work.type, work.status)}</div>
     </button>
+    <button type="button" class="decision-candidate-keep" data-decision-keep="${esc(work.id)}" aria-pressed="${kept}">
+      <span aria-hidden="true">${kept ? "✓" : "＋"}</span>${kept ? "残しています" : "残す"}
+    </button>
   </article>`;
 }
 
-// randomPickIdsが指すIDをstate.worksから引き直して描画するだけの関数。抽選のやり直しはしない。
-// renderHome()の末尾から呼ぶことで、表示中(state.view==="home")のときだけ動く一括描画に乗せる。
-function renderRandomPicks() {
-  const stage = $("#randomStage");
-  if (!state.loaded) { stage.innerHTML = `<div class="random-pick-grid">${skeletonCards(6)}</div>`; return; }
-  const picks = randomPickIds.map((id) => state.works.get(id)).filter(Boolean);
-  stage.innerHTML = picks.length
-    ? `<div class="random-pick-grid">${picks.map(randomPickMarkup).join("")}</div>`
-    : '<div class="random-empty">この棚には候補がありません。抽選する棚を切り替えるか、作品を追加してください。</div>';
+function updateDecisionRerollControls() {
+  const count = decisionDeck.length;
+  const kept = decisionDeck.filter((candidate) => keptDecisionIds.has(String(candidate.id))).length;
+  const remaining = Math.max(0, count - kept);
+  $("[data-action='draw-random']").forEach((button) => {
+    const label = kept > 0
+      ? (remaining > 0 ? `↻ 残り${remaining}件を引き直す` : "3件すべて残しています")
+      : `↻ ${count || 3}件を引き直す`;
+    button.dataset.rerollLabel = label;
+    button.textContent = label;
+    button.disabled = state.loaded && count > 0 && remaining === 0;
+  });
 }
 
-// ホーム表示のたびに呼ばれるrenderHome()と違い、抽選のやり直しは初回読み込みと
-// 「引き直す」を押したときだけ行う。優先度などstate全体のnotifyに反応してしまうと、
-// そのたびに6冊の顔ぶれが変わってしまうため。
-export function drawRandomPicks() {
-  const scope = $("#randomScope").value;
-  const mode = getRandomMode();
-  randomPickIds = pickRandomWorks(scope, 6, previousRandomIds(), mode).map((w) => String(w.id));
-  if (randomPickIds.length) rememberRandom(randomPickIds);
+// decisionDeckが指すIDをstate.worksから引き直して描画するだけ。再描画自体では候補を変えない。
+function renderRandomPicks() {
+  const stage = $("#randomStage");
+  if (!stage) return;
+  if (!state.loaded) {
+    stage.innerHTML = `<div class="random-pick-grid">${skeletonCards(3)}</div>`;
+    updateDecisionRerollControls();
+    return;
+  }
+  const candidates = decisionDeck
+    .map((candidate) => ({ candidate, work: state.works.get(String(candidate.id)) }))
+    .filter(({ work }) => Boolean(work));
+  stage.innerHTML = candidates.length
+    ? `<div class="random-pick-grid">${candidates.map(({ candidate, work }) => decisionCandidateMarkup(candidate, work)).join("")}</div>`
+    : '<div class="random-empty">この棚には候補がありません。抽選する棚を切り替えるか、作品を追加してください。</div>';
+  updateDecisionRerollControls();
+}
+
+// PRIORITY / REMEMBER / WILD CARD の3役を保ち、KEEPされた候補だけ固定して残りを再抽選する。
+export function drawRandomPicks({ preserveKept = true } = {}) {
+  const scope = $("#randomScope")?.value || "next";
+  if (!preserveKept) {
+    keptDecisionIds.clear();
+    decisionDeck = [];
+  }
+  const pool = randomScopeWorks(scope);
+  decisionDeck = buildDecisionDeck(pool, {
+    current: decisionDeck,
+    keptIds: keptDecisionIds,
+    historyIds: previousRandomIds()
+  });
+  const validIds = new Set(decisionDeck.map((candidate) => String(candidate.id)));
+  [...keptDecisionIds].forEach((id) => { if (!validIds.has(String(id))) keptDecisionIds.delete(String(id)); });
+  if (decisionDeck.length) rememberRandom(decisionDeck.map((candidate) => String(candidate.id)));
+  renderRandomPicks();
+}
+
+function toggleDecisionKeep(workId) {
+  const id = String(workId || "");
+  if (!id || !decisionDeck.some((candidate) => String(candidate.id) === id)) return;
+  if (keptDecisionIds.has(id)) keptDecisionIds.delete(id);
+  else keptDecisionIds.add(id);
   renderRandomPicks();
 }
 
@@ -157,18 +203,14 @@ function drawRandomPicksWithFeedback() {
   const stage = $("#randomStage");
   const buttons = $("[data-action='draw-random']");
   buttons.forEach((button) => {
-    if (!button.dataset.rerollLabel) button.dataset.rerollLabel = button.textContent.trim() || "↻ 候補を引き直す";
     button.disabled = true;
     button.textContent = "↻ 引き直しています…";
   });
   stage?.classList.add("is-rerolling");
   requestAnimationFrame(() => requestAnimationFrame(() => {
-    drawRandomPicks();
+    drawRandomPicks({ preserveKept: true });
     stage?.classList.remove("is-rerolling");
-    buttons.forEach((button) => {
-      button.disabled = false;
-      button.textContent = button.dataset.rerollLabel || "↻ 候補を引き直す";
-    });
+    updateDecisionRerollControls();
   }));
 }
 
@@ -297,10 +339,15 @@ async function setupNotionImport() {
 
 export function initHome() {
   subscribe(renderHome);
-  initRandomMode();
-  document.addEventListener("random-mode-change", drawRandomPicks);
-  $("#randomScope").addEventListener("change", drawRandomPicks);
+  $("#randomScope").addEventListener("change", () => drawRandomPicks({ preserveKept: false }));
   document.addEventListener("click", (event) => {
+    const keepButton = event.target.closest("[data-decision-keep]");
+    if (keepButton) {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleDecisionKeep(keepButton.dataset.decisionKeep);
+      return;
+    }
     if (event.target.closest("[data-action='draw-random']")) { event.preventDefault(); drawRandomPicksWithFeedback(); return; }
 
     const scope = event.target.closest("[data-shelf-scope]")?.dataset.shelfScope;
