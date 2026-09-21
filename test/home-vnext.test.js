@@ -20,7 +20,10 @@ test("CONTINUEはPrimary Resume 1件とSecondary最大3件に分ける", async (
   assert.match(home, /function readingResumeMarkup/);
   assert.match(home, /const primary = ordered\[0\]/);
   assert.match(home, /const secondary = ordered\.slice\(1, 4\)/);
-  assert.match(home, /home-resume-primary/);
+  assert.match(home, /readingCardMarkup\(primary, \{ primary: true \}\)/);
+  assert.match(home, /reading-card\$\{primary \? " home-resume-primary" : ""\}/);
+  assert.match(home, /home-cover-frame--continue/);
+  assert.match(home, /workFaceMarkup\(work\)/);
   assert.match(home, /home-resume-secondary-item/);
 });
 
@@ -86,4 +89,14 @@ test("Home layoutはdecision surfaceが所有しlegacy CSSは列数を上書き�
   assert.match(decision, /@media\(max-width:767px\)[\s\S]*grid-template-columns:minmax\(0,1fr\)/);
   assert.doesNotMatch(polish, /#randomStage \.random-pick-grid,[\s\S]{0,180}grid-template-columns/);
   assert.doesNotMatch(resilience, /\.random-pick-grid\{grid-template-columns/);
+});
+
+
+test("PC Homeは高さ560px以上でページスクロールを発生させない舞台を持つ", async () => {
+  const css = await read("public/styles/home-decision-surface.css");
+  assert.match(css, /min-width:1024px/);
+  assert.match(css, /min-height:560px/);
+  assert.match(css, /height:calc\(100dvh - var\(--topbar\)\)/);
+  assert.match(css, /\.home-decision-flow\{flex:1;min-height:0\}/);
+  assert.match(css, /\.home-zone:not\(\[hidden\]\)\{height:100%;min-height:0\}/);
 });

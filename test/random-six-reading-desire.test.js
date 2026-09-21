@@ -37,7 +37,7 @@ test("ランダム一覧では読む優先度の管理UIを直接生成せずCom
   assert.doesNotMatch(surface, /function decorateRandomCards/);
   assert.doesNotMatch(surface, /syncSurface\(card, work, "random"/);
   const composition = await read("public/views/home-composition.js");
-  assert.match(composition, /dataset\.readingPriorityOrganize/);
+  assert.match(composition, /data-reading-priority-organize/);
   assert.match(composition, /読む順番を整理/);
 });
 

@@ -37,7 +37,7 @@ test("Rescueは独立GET endpointでHome本体の並び順を変更しない", a
   const index = await read("src/index.ts");
   assert.match(index, /getHomeRescue, getHomeV07/);
   assert.match(index, /path === "\/api\/home\/rescue"\) return getHomeRescue/);
-  assert.match(route, /export async function getHomeV07[\s\S]*ORDER BY w\.updated_at DESC\s+LIMIT 8/);
+  assert.match(route, /export async function getHomeV07[\s\S]*ORDER BY CASE WHEN resume_note_created_at IS NULL THEN 1 ELSE 0 END,[\s\S]*resume_note_created_at DESC,[\s\S]*w\.updated_at DESC[\s\S]*LIMIT 8/);
   assert.doesNotMatch(route.match(/export async function getHomeV07[\s\S]*?export async function getHomeRescue/)?.[0] || "", /rescue_engagement_at/);
 });
 
