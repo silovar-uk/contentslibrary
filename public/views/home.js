@@ -7,6 +7,7 @@ import { pickRandomWorks } from "../core/random-pick.js";
 import { getRandomMode, initRandomMode } from "./random-mode.js";
 import { shelfNavigateToGenre, shelfClearGenreFilter, themeNavigate } from "./library.js";
 import { statusChipMarkup } from "./status-visuals.js";
+import { workFaceMarkup } from "../core/work-face.js";
 
 let homeData = null;
 let shelfScope = "all";
@@ -78,6 +79,44 @@ function readingCardMarkup(work) {
         ${progressBar}
       </button>
     </article>`;
+}
+
+function resumeSortValue(work) {
+  const raw = work?.resume_at || work?.updated_at || "";
+  const value = Date.parse(raw);
+  return Number.isFinite(value) ? value : 0;
+}
+
+function secondaryResumeMarkup(work) {
+  const progress = resumeProgressText(work);
+  const recency = resumeRecencyLabel(work.resume_at, work.resume_source);
+  return `<button type="button" class="home-resume-secondary-item" data-open-work="${esc(work.id)}">
+    <span class="home-resume-secondary-cover">${workFaceMarkup(work)}</span>
+    <span class="home-resume-secondary-copy">
+      <strong>${esc(work.title)}</strong>
+      <small>${esc([recency, progress].filter(Boolean).join(" · ") || statusLabel(work.type, work.status))}</small>
+    </span>
+    <b aria-hidden="true">›</b>
+  </button>`;
+}
+
+function readingResumeMarkup(reading) {
+  if (!reading.length) {
+    return '<div class="empty-state home-resume-empty">進行中の作品はありません。<br><button class="text-button" data-action="open-work-dialog">作品を追加する</button></div>';
+  }
+
+  const ordered = [...reading].sort((a, b) => resumeSortValue(b) - resumeSortValue(a));
+  const primary = ordered[0];
+  const secondary = ordered.slice(1, 4);
+  const remaining = Math.max(0, ordered.length - 4);
+
+  return `<div class="home-resume-layout">
+    <div class="home-resume-primary-wrap">${readingCardMarkup(primary)}</div>
+    ${secondary.length ? `<div class="home-resume-secondary" aria-label="他の進行中作品">
+      ${secondary.map(secondaryResumeMarkup).join("")}
+    </div>` : ""}
+    <button type="button" class="text-button home-resume-all" data-preset="reading">進行中をすべて見る${remaining ? `（ほか${remaining}件）` : ""} →</button>
+  </div>`;
 }
 
 function randomPickMarkup(work) {
@@ -198,9 +237,7 @@ export function renderHome() {
   const h = homeData || {};
   // Home APIのresume_*はstate.worksにないため保持しつつ、通常フィールドだけ最新stateで上書きする。
   const reading = (h.reading || []).map((item) => ({ ...item, ...(state.works.get(String(item.id)) || {}) }));
-  $("#readingStrip").innerHTML = reading.length
-    ? reading.map(readingCardMarkup).join("")
-    : '<div class="empty-state">現在読書中の本はありません。<br><button class="text-button" data-action="open-work-dialog">本を追加する</button></div>';
+  $("#readingStrip").innerHTML = readingResumeMarkup(reading);
 
   $("#recentNotes").innerHTML = (h.recentNotes || []).length
     ? h.recentNotes.map((n) => `<button class="note-item" data-open-work="${esc(n.work_id)}"><time>${fmtDate(n.updated_at)}</time><strong>${esc(n.title)}</strong><p>${esc(n.content).slice(0, 150)}</p></button>`).join("")
