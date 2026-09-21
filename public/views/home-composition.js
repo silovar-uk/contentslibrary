@@ -113,16 +113,6 @@ function syncModeSwitcher(home, mode) {
   });
 }
 
-function ensureSwipeHint(zone) {
-  const actions = zone.querySelector(".home-zone-actions");
-  if (!actions || actions.querySelector(".home-swipe-hint")) return;
-  const hint = document.createElement("span");
-  hint.className = "home-swipe-hint";
-  hint.setAttribute("aria-hidden", "true");
-  hint.textContent = "横にスワイプ →";
-  actions.append(hint);
-}
-
 function enhanceContinueCards(zone) {
   zone.querySelectorAll(".reading-card[data-work-id]").forEach((card) => {
     card.querySelector(":scope > .card-rating")?.remove();
