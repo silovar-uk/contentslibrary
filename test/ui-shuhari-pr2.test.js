@@ -18,10 +18,9 @@ test("スワイプヒントは実際の横はみ出しで表示する", () => {
   assert.doesNotMatch(moduleSource, /new MutationObserver/);
 });
 
-test("スマホCHOOSEは2列比較面、操作列は2段格子", () => {
-  assert.match(css, /grid-template-columns:minmax\(100px,\.8fr\) minmax\(120px,1fr\)/);
-  assert.match(css, /\.random-mode-toggle\{grid-column:1/);
-  assert.match(css, /\.draw-button\{grid-column:2/);
+test("スマホCHOOSEは2列比較面を維持し、操作列はHome Compositionへ委ねる", () => {
+  assert.doesNotMatch(css, /grid-template-columns:minmax\(100px,\.8fr\) minmax\(120px,1fr\)/);
+  assert.match(css, /home-decision-surface\.css/);
   const existing = fs.readFileSync("public/styles/ui-polish.css", "utf8");
   assert.match(existing, /grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/);
 });
