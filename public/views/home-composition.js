@@ -187,6 +187,8 @@ function composeChoose(zone) {
       const label = controls.querySelector(":scope > label");
       if (label) scopeControl.append(label);
     }
+    const modeToggle = controls.querySelector(":scope > .random-mode-toggle");
+    if (modeToggle && modeToggle.parentElement !== scopeControl) scopeControl.append(modeToggle);
     if (!rerollActions) {
       rerollActions = document.createElement("div");
       rerollActions.className = "random-reroll-actions";
