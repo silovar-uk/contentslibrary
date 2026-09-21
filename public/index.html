@@ -27,6 +27,7 @@
       </label>
       <div class="top-actions">
         <button class="ghost-button" type="button" data-action="draw-random" title="所持・未読から5冊引き直す">引き直す</button>
+        <button class="ghost-button" type="button" data-action="open-record">記録</button>
         <button class="ghost-button" type="button" data-action="open-admin" id="adminButton" hidden>管理</button>
         <button class="primary-button compact" type="button" data-action="open-work-dialog">＋ 追加</button>
         <button class="avatar-button" type="button" data-action="open-settings" aria-label="設定"><span id="avatarInitial">U</span></button>
@@ -201,6 +202,15 @@
       </aside>
     </main>
 
+    <section id="recordView" class="record-view" hidden>
+      <div class="record-header"><div><p class="eyebrow">RECORD</p><h1>記録</h1></div></div>
+      <div class="record-grid">
+        <section class="record-card"><h2>最近のメモ</h2><div id="recordRecentNotes"></div></section>
+        <section class="record-card"><h2>最近触れた作品</h2><div id="recordRecentWorks"></div></section>
+        <section class="record-stats" id="recordStats" aria-label="記録の概要"></section>
+      </div>
+    </section>
+
     <section id="settingsView" class="standalone-view" hidden>
       <div class="standalone-header"><div><p class="eyebrow">SETTINGS</p><h1>設定とデータ</h1></div><button class="ghost-button" type="button" data-action="go-home">閉じる</button></div>
       <div class="settings-grid">
@@ -229,9 +239,9 @@
 
     <nav class="mobile-nav" aria-label="主要メニュー">
       <button type="button" data-mobile-view="home"><span>⌂</span>ホーム</button>
-      <button type="button" data-mobile-view="library"><span>⌕</span>探す</button>
-      <button type="button" class="mobile-add" data-action="open-work-dialog"><span>＋</span>追加</button>
-      <button type="button" data-preset="completed"><span>≡</span>記録</button>
+      <button type="button" data-mobile-view="library"><span>⌕</span>ライブラリ</button>
+      <button type="button" class="mobile-add" data-action="open-work-dialog" aria-label="作品を追加"><span>＋</span>追加</button>
+      <button type="button" data-mobile-view="record"><span>≡</span>記録</button>
       <button type="button" data-mobile-view="settings"><span>•</span>設定</button>
     </nav>
   </div>
