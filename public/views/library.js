@@ -3,6 +3,7 @@ import { api } from "../core/api.js";
 import { TYPE_LABELS, STATUS_LABELS, statusLabel, cardRatingMarkup, cardNoteMarkup } from "../core/format.js";
 import { state, setFilters, clearFilters as clearStoreFilters, filteredWorks, subscribe, setView, openNoteCardIds } from "../core/store.js";
 import { isAllowedCoverUrl, coverThumbUrl } from "../core/cover.js";
+import { refreshStatusPicker, statusChipMarkup, statusSymbol } from "./status-visuals.js";
 
 let savedViews = [];
 let defaultApplied = false;
@@ -25,6 +26,7 @@ function syncControlsFromState() {
   $("#filterNotes").checked = state.filters.has_notes;
   $("#sortSelect").value = state.filters.sort;
   $("#globalSearch").value = state.filters.q;
+  refreshStatusPicker($("#filterStatus"));
 }
 
 function readControlsIntoFilters() {
@@ -78,7 +80,7 @@ export function renderWorkList() {
         ${selectionMode ? `<span class="select-mark" aria-hidden="true">${selected ? "✓" : ""}</span>` : ""}
         ${coverImg}
         <div class="work-card-body">
-          <div class="work-card-top"><div class="type-status"><span class="type-pill">${TYPE_LABELS[work.type]}</span><span>${statusLabel(work.type, work.status)}</span></div>${favorite ? '<span class="favorite-mark">栞</span>' : ""}</div>
+          <div class="work-card-top"><div class="type-status"><span class="type-pill">${TYPE_LABELS[work.type]}</span>${statusChipMarkup(work.type, work.status)}</div>${favorite ? '<span class="favorite-mark">栞</span>' : ""}</div>
           <h3>${esc(work.title)}</h3><div class="creator">${esc(work.creator || "")}</div>
           ${work.short_note ? `<p class="short-note">${esc(work.short_note)}</p>` : ""}
           <div class="label-row">${labels.slice(0, 6).map(labelChip).join("")}</div>
@@ -98,17 +100,22 @@ export function renderWorkList() {
 function renderActiveFilters() {
   const f = state.filters;
   const chips = [];
-  if (f.q) chips.push(`検索「${f.q}」`);
-  if (f.type) chips.push(TYPE_LABELS[f.type]);
-  if (f.statuses[0]) chips.push(STATUS_LABELS[f.statuses[0]]);
-  if (f.rating_exact) chips.push(f.rating_exact === "unrated" ? "未評価" : `評価 ${f.rating_exact}`);
-  else if (f.rating_min) chips.push(`評価${f.rating_min}以上`);
-  if (f.favorite === "true") chips.push("お気に入りのみ");
-  if (f.favorite === "false") chips.push("栞なし");
-  if (f.theme) chips.push(`テーマ：${f.theme}`);
-  if (f.label) chips.push(`分類：${f.label}`);
-  if (f.has_notes) chips.push("メモあり");
-  $("#activeFilters").innerHTML = chips.map((c, i) => `<button type="button" class="filter-chip" data-chip-index="${i}">${esc(c)} <span aria-hidden="true">×</span></button>`).join("");
+  const addChip = (text, status = "") => chips.push({ text, status });
+  if (f.q) addChip(`検索「${f.q}」`);
+  if (f.type) addChip(TYPE_LABELS[f.type]);
+  if (f.statuses[0]) addChip(STATUS_LABELS[f.statuses[0]], f.statuses[0]);
+  if (f.rating_exact) addChip(f.rating_exact === "unrated" ? "未評価" : `評価 ${f.rating_exact}`);
+  else if (f.rating_min) addChip(`評価${f.rating_min}以上`);
+  if (f.favorite === "true") addChip("お気に入りのみ");
+  if (f.favorite === "false") addChip("栞なし");
+  if (f.theme) addChip(`テーマ：${f.theme}`);
+  if (f.label) addChip(`分類：${f.label}`);
+  if (f.has_notes) addChip("メモあり");
+  $("#activeFilters").innerHTML = chips.map((chip, i) => {
+    const statusAttr = chip.status ? ` data-status="${esc(chip.status)}"` : "";
+    const symbol = chip.status ? `<span class="status-symbol" aria-hidden="true">${esc(statusSymbol(chip.status))}</span> ` : "";
+    return `<button type="button" class="filter-chip" data-chip-index="${i}" data-chip-text="${esc(chip.text)}"${statusAttr}>${symbol}${esc(chip.text)} <span aria-hidden="true">×</span></button>`;
+  }).join("");
 }
 
 function clearChipByText(text) {
@@ -281,7 +288,7 @@ export function initLibrary() {
   $("#activeFilters").addEventListener("click", (event) => {
     const chip = event.target.closest(".filter-chip");
     if (!chip) return;
-    clearChipByText(chip.textContent.replace(/×\s*$/, "").trim());
+    clearChipByText(chip.dataset.chipText || chip.textContent.replace(/×\s*$/, "").trim());
     syncControlsFromState();
   });
 
