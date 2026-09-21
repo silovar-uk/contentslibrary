@@ -11,19 +11,13 @@ test("仕上げCSSは最終レイヤーとして動的に読み込む", async ()
   assert.match(source, /document\.head\.append\(link\)/);
 });
 
-test("スマホのランダム抽選は本カード自体を2列に並べる", async () => {
-  const css = await read("public/styles/ui-polish.css");
-  assert.match(css, /#randomStage \.random-pick-grid,[\s\S]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/);
-  assert.match(css, /grid-auto-flow:row!important/);
-  assert.match(css, /#randomStage \.random-pick-card\{[\s\S]*grid-column:span 1!important/);
-  assert.match(css, /width:100%!important/);
-});
-
-test("390px以下でも2列を維持し1列へ落とさない", async () => {
-  const resilience = await read("public/styles/mobile-text-resilience.css");
+test("スマホのランダム抽選レイアウトはHome decision surfaceが所有する", async () => {
   const polish = await read("public/styles/ui-polish.css");
-  assert.match(resilience, /@media\(max-width:390px\)[\s\S]*\.random-pick-grid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)\}/);
-  assert.match(polish, /@media\(max-width:390px\)[\s\S]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/);
+  const decision = await read("public/styles/home-decision-surface.css");
+  const resilience = await read("public/styles/mobile-text-resilience.css");
+  assert.doesNotMatch(polish, /#randomStage \.random-pick-grid,[\s\S]{0,180}grid-template-columns/);
+  assert.doesNotMatch(resilience, /\.random-pick-grid\{grid-template-columns/);
+  assert.match(decision, /home-zone-choose \.editorial-random-feature \.random-pick-grid\{[\s\S]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
 });
 
 test("ランダムカードは表紙・タイトル・作者・読む優先度を前面に置く", async () => {
