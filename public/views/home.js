@@ -5,6 +5,7 @@ import { resumeRecencyLabel } from "../core/resume-time.js";
 import { state, shelfData, themeData, subscribe } from "../core/store.js";
 import { randomScopeWorks } from "../core/random-pick.js";
 import { buildDecisionDeck, DECISION_SLOT_LABELS } from "../core/decision-deck.js";
+import { recordDecision, recentDecisionIds } from "../core/decision-memory.js";
 import { shelfNavigateToGenre, shelfClearGenreFilter, themeNavigate } from "./library.js";
 import { statusChipMarkup } from "./status-visuals.js";
 import { workFaceMarkup } from "../core/work-face.js";
@@ -134,9 +135,12 @@ function decisionCandidateMarkup(candidate, work) {
       <p class="random-pick-creator">${esc(work.creator || "作者情報なし")}</p>
       <div class="random-pick-status">${statusChipMarkup(work.type, work.status)}</div>
     </button>
-    <button type="button" class="decision-candidate-keep" data-decision-keep="${esc(work.id)}" aria-pressed="${kept}">
-      <span aria-hidden="true">${kept ? "✓" : "＋"}</span>${kept ? "残しています" : "残す"}
-    </button>
+    <div class="decision-candidate-actions">
+      <button type="button" class="decision-candidate-choose" data-decision-choose="${esc(work.id)}" data-open-work="${esc(work.id)}">これにする →</button>
+      <button type="button" class="decision-candidate-keep" data-decision-keep="${esc(work.id)}" aria-pressed="${kept}">
+        <span aria-hidden="true">${kept ? "✓" : "＋"}</span>${kept ? "残しています" : "残す"}
+      </button>
+    </div>
   </article>`;
 }
 
@@ -183,7 +187,8 @@ export function drawRandomPicks({ preserveKept = true } = {}) {
   decisionDeck = buildDecisionDeck(pool, {
     current: decisionDeck,
     keptIds: keptDecisionIds,
-    historyIds: previousRandomIds()
+    historyIds: previousRandomIds(),
+    avoidIds: recentDecisionIds({ withinDays: 30, max: 12 })
   });
   const validIds = new Set(decisionDeck.map((candidate) => String(candidate.id)));
   [...keptDecisionIds].forEach((id) => { if (!validIds.has(String(id))) keptDecisionIds.delete(String(id)); });
@@ -197,6 +202,22 @@ function toggleDecisionKeep(workId) {
   if (keptDecisionIds.has(id)) keptDecisionIds.delete(id);
   else keptDecisionIds.add(id);
   renderRandomPicks();
+}
+
+function rememberDecision(workId) {
+  const id = String(workId || "");
+  const candidate = decisionDeck.find((item) => String(item.id) === id);
+  const work = state.works.get(id);
+  if (!candidate || !work) return null;
+  return recordDecision({
+    work_id: id,
+    title: work.title || "",
+    creator: work.creator || "",
+    slot: candidate.slot,
+    reason: candidate.reason || "",
+    scope: $("#randomScope")?.value || "next",
+    decided_at: new Date().toISOString()
+  });
 }
 
 function drawRandomPicksWithFeedback() {
@@ -341,6 +362,12 @@ export function initHome() {
   subscribe(renderHome);
   $("#randomScope").addEventListener("change", () => drawRandomPicks({ preserveKept: false }));
   document.addEventListener("click", (event) => {
+    const chooseButton = event.target.closest("[data-decision-choose]");
+    if (chooseButton) {
+      rememberDecision(chooseButton.dataset.decisionChoose);
+      return;
+    }
+
     const keepButton = event.target.closest("[data-decision-keep]");
     if (keepButton) {
       event.preventDefault();
