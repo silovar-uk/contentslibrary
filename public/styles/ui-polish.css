@@ -47,15 +47,15 @@
     background:var(--surface);
   }
 
-  #randomStage .random-pick-main,
-  #randomStage .random-pick-main.is-cover-led{
+  #randomStage .random-pick-card:not(.decision-candidate) .random-pick-main,
+  #randomStage .random-pick-card:not(.decision-candidate) .random-pick-main.is-cover-led{
     display:flex!important;
     flex-direction:column!important;
     width:100%!important;
     min-width:0!important;
     padding:0 10px 10px!important;
   }
-  #randomStage .random-pick-main.is-cover-led .home-cover-frame{
+  #randomStage .random-pick-card:not(.decision-candidate) .random-pick-main.is-cover-led .home-cover-frame{
     width:calc(100% + 20px)!important;
     margin:0 -10px 10px!important;
     aspect-ratio:2/3!important;
@@ -67,7 +67,7 @@
   #randomStage .home-cover-fallback strong{font-size:11px!important;-webkit-line-clamp:5}
 
   #randomStage .genre-badge{display:none!important}
-  #randomStage .random-pick-card h3{
+  #randomStage .random-pick-card:not(.decision-candidate) h3{
     display:-webkit-box;
     -webkit-box-orient:vertical;
     -webkit-line-clamp:2;
@@ -77,7 +77,7 @@
     font-size:12px!important;
     line-height:1.38;
   }
-  #randomStage .random-pick-creator{
+  #randomStage .random-pick-card:not(.decision-candidate) .random-pick-creator{
     display:block;
     margin:0!important;
     overflow:hidden;
@@ -86,7 +86,7 @@
     font-size:9px!important;
     line-height:1.4;
   }
-  #randomStage .random-pick-status{display:none!important}
+  #randomStage .random-pick-card:not(.decision-candidate) .random-pick-status{display:none!important}
 
   /* Reading priority is the single pre-reading axis. Keep it selectable in every eligible list. */
   #randomStage .reading-priority-surface-random{
@@ -141,16 +141,16 @@
 }
 
 @media(max-width:390px){
-  #randomStage .random-pick-main,
-  #randomStage .random-pick-main.is-cover-led{padding:0 8px 9px!important}
-  #randomStage .random-pick-main.is-cover-led .home-cover-frame{width:calc(100% + 16px)!important;margin:0 -8px 9px!important}
-  #randomStage .random-pick-card h3{font-size:11px!important}
+  #randomStage .random-pick-card:not(.decision-candidate) .random-pick-main,
+  #randomStage .random-pick-card:not(.decision-candidate) .random-pick-main.is-cover-led{padding:0 8px 9px!important}
+  #randomStage .random-pick-card:not(.decision-candidate) .random-pick-main.is-cover-led .home-cover-frame{width:calc(100% + 16px)!important;margin:0 -8px 9px!important}
+  #randomStage .random-pick-card:not(.decision-candidate) h3{font-size:11px!important}
   #randomStage .reading-priority-surface-random{width:calc(100% - 14px)!important;margin-inline:7px!important}
   #randomStage .random-pick-card>[data-random-start]{width:calc(100% - 14px)!important;margin-inline:7px!important}
 }
 
 @media(max-width:340px){
-  #randomStage .random-pick-creator{display:none!important}
+  #randomStage .random-pick-card:not(.decision-candidate) .random-pick-creator{display:none!important}
   #randomStage .home-cover-fallback strong{font-size:10px!important}
   #randomStage .reading-priority-surface-random summary{min-height:32px!important;font-size:8px!important}
 }
