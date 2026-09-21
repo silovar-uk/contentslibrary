@@ -18,6 +18,7 @@ const STATUS_SELECTORS = [
 
 let initialized = false;
 let openDesktopShell = null;
+let pickerSequence = 0;
 
 function ensureStyle() {
   if ($('link[href="/styles/status-visuals.css"]')) return;
@@ -169,13 +170,14 @@ export function enhanceStatusSelect(select) {
   trigger.type = "button";
   trigger.className = "status-picker-trigger";
   trigger.dataset.statusPickerTrigger = "";
-  trigger.setAttribute("aria-haspopup", "listbox");
   trigger.setAttribute("aria-expanded", "false");
 
   const menu = document.createElement("div");
   menu.className = "status-picker-popover";
-  menu.setAttribute("role", "listbox");
-  menu.setAttribute("aria-label", "状態");
+  menu.id = `status-picker-menu-${++pickerSequence}`;
+  menu.setAttribute("role", "group");
+  menu.setAttribute("aria-label", "状態を選択");
+  trigger.setAttribute("aria-controls", menu.id);
 
   shell.append(trigger, menu);
   select.dataset.statusEnhanced = "true";
@@ -227,14 +229,4 @@ export function initStatusVisuals() {
     }
   });
 
-  const observer = new MutationObserver((records) => {
-    for (const record of records) {
-      record.addedNodes.forEach((node) => {
-        if (!(node instanceof Element)) return;
-        if (node.matches?.("select[name='status'],#filterStatus")) enhanceStatusSelect(node);
-        enhanceKnownSelects(node);
-      });
-    }
-  });
-  observer.observe(document.body, { childList: true, subtree: true });
 }
