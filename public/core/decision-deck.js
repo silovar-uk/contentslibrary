@@ -36,18 +36,24 @@ function priorityValue(work) {
   return Object.hasOwn(PRIORITY_RANK, value) ? value : "";
 }
 
-function priorityPick(source, rng) {
+function preferFresh(source, historyIds) {
+  const fresh = source.filter((work) => !historyIds.has(String(work.id)));
+  return fresh.length ? fresh : source;
+}
+
+function priorityPick(source, historyIds, rng) {
   if (!source.length) return null;
   const ranked = source.map((work) => ({ work, value: priorityValue(work) }));
   const best = Math.max(0, ...ranked.map(({ value }) => PRIORITY_RANK[value] || 0));
-  const candidates = ranked.filter(({ value }) => (PRIORITY_RANK[value] || 0) === best).map(({ work }) => work);
-  return randomOne(candidates, rng);
+  const bestRank = ranked.filter(({ value }) => (PRIORITY_RANK[value] || 0) === best).map(({ work }) => work);
+  return randomOne(preferFresh(bestRank, historyIds), rng);
 }
 
-function rememberPick(source, rng) {
+function rememberPick(source, historyIds, rng) {
   if (!source.length) return null;
-  const dated = source.filter((work) => Number.isFinite(timestamp(work)));
-  if (!dated.length) return randomOne(source, rng);
+  const preferred = preferFresh(source, historyIds);
+  const dated = preferred.filter((work) => Number.isFinite(timestamp(work)));
+  if (!dated.length) return randomOne(preferred, rng);
   const oldest = Math.min(...dated.map(timestamp));
   return randomOne(dated.filter((work) => timestamp(work) === oldest), rng);
 }
@@ -67,17 +73,14 @@ function reasonFor(slot, work, now) {
   return "この棚から完全ランダム";
 }
 
-function slotPick(slot, source, rng) {
-  if (slot === "priority") return priorityPick(source, rng);
-  if (slot === "remember") return rememberPick(source, rng);
-  return randomOne(source, rng);
+function slotPick(slot, source, historyIds, rng) {
+  if (slot === "priority") return priorityPick(source, historyIds, rng);
+  if (slot === "remember") return rememberPick(source, historyIds, rng);
+  return randomOne(preferFresh(source, historyIds), rng);
 }
 
-function sourceForSlot(pool, usedIds, historyIds) {
-  const available = pool.filter((work) => !usedIds.has(String(work.id)));
-  if (!available.length) return [];
-  const fresh = available.filter((work) => !historyIds.has(String(work.id)));
-  return fresh.length ? fresh : available;
+function sourceForSlot(pool, usedIds) {
+  return pool.filter((work) => !usedIds.has(String(work.id)));
 }
 
 export function buildDecisionDeck(
@@ -114,8 +117,8 @@ export function buildDecisionDeck(
 
   for (const slot of SLOT_ORDER) {
     if (result.some((candidate) => candidate.slot === slot)) continue;
-    const source = sourceForSlot(rows, used, history);
-    const work = slotPick(slot, source, rng);
+    const source = sourceForSlot(rows, used);
+    const work = slotPick(slot, source, history, rng);
     if (!work) continue;
     used.add(String(work.id));
     result.push({
