@@ -162,7 +162,8 @@ function enhanceChooseCards(stage) {
     if (!host) {
       host = document.createElement("div");
       host.className = "home-choice-priority";
-      card.append(host);
+      const actions = card.querySelector(":scope > .decision-candidate-actions");
+      if (actions) actions.before(host); else card.append(host);
     }
     host.dataset.priorityValue = value;
     host.innerHTML = markup;
