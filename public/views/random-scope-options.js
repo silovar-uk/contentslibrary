@@ -1,4 +1,4 @@
-import { $, $ } from "../core/dom.js";
+import { $ } from "../core/dom.js";
 import { RANDOM_PICK_SCOPES, randomScopeCounts, state, subscribe } from "../core/store.js";
 
 let initialized = false;
@@ -31,7 +31,7 @@ function renderRandomScopeOptions() {
   select.value = nextValue;
   select.disabled = state.loaded && available.length === 0;
 
-  $("[data-action='draw-random']").forEach((draw) => {
+  document.querySelectorAll("[data-action='draw-random']").forEach((draw) => {
     draw.disabled = state.loaded && available.length === 0;
   });
 
