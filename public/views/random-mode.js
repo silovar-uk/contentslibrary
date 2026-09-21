@@ -53,7 +53,7 @@ export function setRandomMode(mode, { notify = true } = {}) {
   if (changed && notify) document.dispatchEvent(new CustomEvent("random-mode-change", { detail: { mode: currentMode } }));
 }
 
-export function initRandomMode() {
+function initRandomMode() {
   if (initialized) return;
   initialized = true;
   ensureStyle();
