@@ -15,6 +15,7 @@ import { initLibraryBookcase } from "./views/library-bookcase.js";
 import { initReadingPriority } from "./views/reading-priority.js";
 import { initReadingPrioritySurfaces } from "./views/reading-priority-surfaces.js";
 import { initLightEditSurfaces } from "./views/light-edit-surfaces.js";
+import { initStatusVisuals } from "./views/status-visuals.js";
 import { initDetail, openDetail } from "./views/detail.js";
 import { initDetailTopNotes } from "./views/detail-top-notes.js";
 import { initAmazonTitleSearch } from "./views/amazon-title-search.js";
@@ -147,6 +148,7 @@ async function init() {
     initRandomScopeOptions();
     initReadingPrioritySurfaces();
     initLightEditSurfaces();
+    initStatusVisuals();
     initHomeExperience();
     initEditorialHome();
     initHomeComposition();
