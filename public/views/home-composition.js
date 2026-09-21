@@ -102,8 +102,10 @@ function ensureModeSwitcher(home, flow) {
     switcher.className = "home-mode-switcher";
     switcher.setAttribute("aria-label", "ホームの表示");
     switcher.innerHTML = `<button type="button" data-home-mode="continue" aria-pressed="false">続き</button><button type="button" data-home-mode="choose" aria-pressed="false">次を選ぶ</button><button type="button" data-home-mode="explore" aria-pressed="false">探す</button>`;
-    flow.before(switcher);
   }
+  const hero = home.querySelector(".hero-row");
+  if (hero && switcher.parentElement !== hero) hero.append(switcher);
+  else if (!hero && switcher.parentElement !== flow.parentElement) flow.before(switcher);
   return switcher;
 }
 
@@ -174,27 +176,43 @@ function composeChoose(zone) {
   const controls = document.querySelector("#homeView .random-controls");
   const stage = $("#randomStage");
   const body = zone.querySelector(".home-zone-body");
-  let scopeControl = zone.querySelector(".random-scope-control");
-  let rerollActions = zone.querySelector(".random-reroll-actions");
+  if (!body) return;
 
-  if (controls && body) {
-    if (!scopeControl) {
-      scopeControl = document.createElement("div");
-      scopeControl.className = "random-scope-control";
-      const label = controls.querySelector(":scope > label");
-      if (label) scopeControl.append(label);
-    }
-    if (!rerollActions) {
-      rerollActions = document.createElement("div");
-      rerollActions.className = "random-reroll-actions";
-      const draw = controls.querySelector(":scope > [data-action='draw-random']");
-      if (draw) {
-        draw.textContent = "↻ 3件を引き直す";
-        draw.dataset.rerollLabel = "↻ 3件を引き直す";
-        rerollActions.append(draw);
-      }
-    }
-    if (scopeControl?.parentElement !== body) body.append(scopeControl);
+  let toolbar = body.querySelector(".home-choose-toolbar");
+  if (!toolbar) {
+    toolbar = document.createElement("div");
+    toolbar.className = "home-choose-toolbar";
+    body.prepend(toolbar);
+  }
+
+  let scopeControl = toolbar.querySelector(".random-scope-control");
+  if (!scopeControl) {
+    scopeControl = document.createElement("div");
+    scopeControl.className = "random-scope-control";
+    toolbar.append(scopeControl);
+  }
+  const label = controls?.querySelector(":scope > label");
+  if (label && label.parentElement !== scopeControl) scopeControl.append(label);
+
+  let secondary = toolbar.querySelector(".home-choose-secondary-actions");
+  if (!secondary) {
+    secondary = document.createElement("div");
+    secondary.className = "home-choose-secondary-actions";
+    secondary.innerHTML = `<button type="button" class="text-button home-priority-link" data-reading-priority-organize>読む順番を整理 →</button>`;
+    toolbar.append(secondary);
+  }
+
+  let rerollActions = toolbar.querySelector(".random-reroll-actions");
+  if (!rerollActions) {
+    rerollActions = document.createElement("div");
+    rerollActions.className = "random-reroll-actions";
+    toolbar.append(rerollActions);
+  }
+  const draw = controls?.querySelector(":scope > [data-action='draw-random']");
+  if (draw && draw.parentElement !== rerollActions) {
+    draw.textContent = "↻ 3件を引き直す";
+    draw.dataset.rerollLabel = "↻ 3件を引き直す";
+    rerollActions.append(draw);
   }
 
   if (stage) {
@@ -202,21 +220,7 @@ function composeChoose(zone) {
     moveIntoBody(zone, stage);
     enhanceChooseCards(stage);
   }
-
-  if (rerollActions && body && rerollActions.parentElement !== body) body.append(rerollActions);
   if (controls && controls.childElementCount === 0) controls.remove();
-
-  if (body && !body.querySelector(".home-choose-secondary-actions")) {
-    const actions = document.createElement("div");
-    actions.className = "home-choose-secondary-actions";
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "text-button home-priority-link";
-    button.dataset.readingPriorityOrganize = "";
-    button.textContent = "読む順番を整理 →";
-    actions.append(button);
-    body.append(actions);
-  }
 }
 
 function ensureExploreTabs(zone) {
@@ -254,18 +258,6 @@ function enhanceGenreShelf(zone) {
     item.style.removeProperty("--shelf-span");
   });
 
-  if (!state.loaded) return;
-  const count = genre.querySelectorAll(".shelf-item[data-genre-id]").length;
-  const summary = genre.querySelector("#shelfSummary");
-  if (!summary) return;
-  let countNode = summary.querySelector("[data-genre-count]");
-  if (!countNode) {
-    countNode = document.createElement("span");
-    countNode.dataset.genreCount = "";
-    countNode.innerHTML = "<strong></strong>ジャンル";
-    summary.prepend(countNode);
-  }
-  setText(countNode.querySelector("strong"), String(count));
 }
 
 function composeExplore(zone) {
