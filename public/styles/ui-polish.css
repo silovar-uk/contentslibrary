@@ -188,6 +188,18 @@
     margin-top:-16px;
     font-size:28px;
   }
+  .mobile-nav button.is-active,
+  .mobile-nav button[aria-current="page"]{
+    color:var(--accent);
+    font-weight:800;
+  }
+  .mobile-nav button.is-active>span,
+  .mobile-nav button[aria-current="page"]>span{
+    background:color-mix(in srgb,var(--accent) 10%,transparent);
+    border-radius:10px;
+  }
+  .mobile-nav .mobile-add.is-active,
+  .mobile-nav .mobile-add[aria-current="page"]{color:var(--muted)}
   .mobile-nav button:active{
     background:color-mix(in srgb,var(--accent) 8%,transparent);
   }
