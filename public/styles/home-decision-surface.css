@@ -52,7 +52,7 @@
 .home-rescue-work>p>span{display:block;margin-bottom:2px;color:var(--muted);font-size:8px;font-weight:800;letter-spacing:.04em}
 .home-rescue-work>b{grid-column:2;grid-row:1/6;align-self:center;color:var(--accent);font-size:10px;white-space:nowrap}
 
-.home-zone-choose .random-scope-control{display:flex;margin:0 0 12px;padding:0 2px}
+.home-zone-choose .random-scope-control{display:flex;align-items:flex-end;gap:10px;margin:0 0 12px;padding:0 2px}
 .home-zone-choose .random-scope-control label{display:flex;flex-direction:column;gap:6px;min-width:min(260px,100%);color:var(--muted);font-size:11px;font-weight:700}
 .home-zone-choose .random-scope-control select{min-width:220px;min-height:42px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:9px 10px}
 .home-zone-choose .random-reroll-actions{display:flex;justify-content:flex-end;margin-top:12px;padding:0 2px}
@@ -128,7 +128,7 @@
   .home-rescue-work>p{-webkit-line-clamp:3;font-size:11px}
   .home-rescue-work>b{grid-column:1;grid-row:auto;margin-top:9px;min-height:24px;display:flex;align-items:center;font-size:11px}
 
-  .home-zone-choose .random-scope-control{width:100%;margin-bottom:10px;padding:0}
+  .home-zone-choose .random-scope-control{width:100%;margin-bottom:10px;padding:0;flex-direction:column;align-items:stretch;gap:8px}
   .home-zone-choose .random-scope-control label{width:100%;min-width:0}
   .home-zone-choose .random-scope-control select{width:100%;min-width:0;min-height:46px;font-size:16px}
   .home-zone-choose .random-reroll-actions{width:100%;margin-top:12px;padding:0}
