@@ -5,6 +5,7 @@ import { workFaceMarkup } from "../core/work-face.js";
 
 let expanded = false;
 let renderedMode = "";
+let lastSignature = "";
 let frame = 0;
 
 function ensureStyle() {
@@ -48,6 +49,7 @@ export function renderSourceShelves(mode = null) {
 
   if (!["creator", "label"].includes(mode)) {
     host.hidden = true;
+    lastSignature = "";
     return true;
   }
 
@@ -62,6 +64,14 @@ export function renderSourceShelves(mode = null) {
   const data = sourceShelfData(allWorks(), mode);
   const visible = expanded ? data : data.slice(0, 12);
   const label = mode === "label" ? "レーベル" : "著者";
+  const signature = JSON.stringify({
+    mode,
+    expanded,
+    items: data.map((item) => [item.name, item.count, item.works.slice(0, 3).map((work) => String(work.id))])
+  });
+  if (signature === lastSignature && host.dataset.sourceMode === mode && !host.hidden) return true;
+
+  lastSignature = signature;
   host.innerHTML = `<div class="source-shelves-head"><div><span>FROM YOUR LIBRARY</span><h3>${label}から探す</h3><p>分類を待たず、すでにある作品から棚をつくる。</p></div></div>${visible.length ? `<div class="source-shelves-grid">${visible.map(stackMarkup).join("")}</div>${data.length > 12 ? `<button type="button" class="text-button source-shelves-more" data-source-shelf-more>${expanded ? "たたむ" : `もっと見る (${data.length})`}</button>` : ""}` : `<div class="source-shelves-empty">2作品以上まとまる${label}はまだありません。</div>`}`;
   return true;
 }
