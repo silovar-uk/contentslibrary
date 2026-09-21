@@ -9,6 +9,7 @@ export const state = {
   works: new Map(), // id -> work(snapshotの1件)
   loaded: false,
   view: "home",
+  homeMode: null,
   selectedId: null,
   selected: null, // /api/works/:id のフルレスポンス(work/experiences/notes/relations)
   quickEditOpen: false,
@@ -117,6 +118,12 @@ export function clearFilters() {
 
 export function setView(view) {
   state.view = view;
+  notify();
+}
+
+export function setHomeMode(mode) {
+  if (mode !== null && !["continue", "choose", "explore"].includes(mode)) return;
+  state.homeMode = mode;
   notify();
 }
 
