@@ -204,7 +204,7 @@
   .home-resume-secondary{gap:6px}
   .home-resume-secondary-item{min-height:62px}
   .home-resume-all{grid-column:1;margin-top:0;min-height:44px;justify-self:stretch;justify-content:center}
-  .home-rescue-cue{grid-template-columns:minmax(0,1fr);gap:7px}
+  .home-rescue-cue{grid-template-columns:1fr;gap:7px}
   .home-rescue-intro{display:flex;align-items:center;gap:7px;padding:0}
   .home-rescue-intro>strong{display:inline;margin:0;font-size:11px}
   .home-rescue-work{grid-template-columns:42px minmax(0,1fr) auto;min-height:62px;padding:7px 9px}
