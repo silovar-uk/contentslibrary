@@ -23,14 +23,17 @@
         <span class="search-icon" aria-hidden="true"></span>
         <input id="globalSearch" type="search" placeholder="タイトル、作者、タグ、メモを検索" autocomplete="off">
         <span class="search-and-hint">複数語はAND検索</span>
-        <kbd>⌘K</kbd>
+        <kbd id="searchShortcut">⌘K</kbd>
       </label>
       <div class="top-actions">
         <button class="icon-button mobile-search-toggle" type="button" data-action="toggle-mobile-search" aria-label="作品を検索" aria-expanded="false"><span aria-hidden="true">⌕</span></button>
-        <button class="ghost-button" type="button" data-action="draw-random" title="所持・未読から5冊引き直す">引き直す</button>
+        <button class="ghost-button" type="button" data-action="open-library">ライブラリ</button>
         <button class="ghost-button" type="button" data-action="open-record">記録</button>
         <button class="ghost-button" type="button" data-action="open-admin" id="adminButton" hidden>管理</button>
-        <button class="primary-button compact" type="button" data-action="open-work-dialog">＋ 追加</button>
+        <div class="top-add-split" role="group" aria-label="作品を追加">
+          <button class="primary-button compact" type="button" data-action="open-work-dialog">＋ 追加</button>
+          <button class="primary-button compact top-add-menu" type="button" data-action="open-add-entry-choice" aria-label="まとめて追加">▾</button>
+        </div>
         <button class="avatar-button" type="button" data-action="open-settings" aria-label="設定"><span id="avatarInitial">U</span></button>
       </div>
     </header>
@@ -165,10 +168,9 @@
 
       <section class="list-panel" aria-labelledby="libraryTitle">
         <div class="panel-heading list-heading">
-          <div><p class="eyebrow">LIBRARY</p><h1 id="libraryTitle">作品一覧</h1><p id="resultSummary">読み込み中</p></div>
+          <div class="library-title-line"><h1 id="libraryTitle">ライブラリ</h1><span id="resultSummary">読み込み中</span></div>
           <div class="list-tools">
             <button class="ghost-button filter-toggle" type="button" data-action="toggle-filters">絞り込み</button>
-            <button class="ghost-button" type="button" id="selectionExportToggle" aria-pressed="false">選択してJSON</button>
             <select id="sortSelect" aria-label="並び順">
               <option value="updated_desc">更新が新しい順</option>
               <option value="title_asc">タイトル順</option>
@@ -177,6 +179,12 @@
               <option value="favorite_first">お気に入り・評価順</option>
               <option value="created_desc">登録が新しい順</option>
             </select>
+            <details class="list-more">
+              <summary aria-label="その他の操作">…</summary>
+              <div id="listMoreMenu" class="list-more-menu">
+                <button class="ghost-button" type="button" id="selectionExportToggle" aria-pressed="false">選択してJSON</button>
+              </div>
+            </details>
           </div>
         </div>
         <div id="activeFilters" class="active-filters" aria-live="polite"></div>
@@ -198,9 +206,7 @@
         </div>
       </section>
 
-      <aside id="detailPanel" class="detail-panel" aria-label="作品詳細">
-        <div class="detail-empty"><span>↗</span><strong>作品を選択</strong><p>一覧から作品を選ぶと、体験履歴やメモをここで確認できる。</p></div>
-      </aside>
+      <aside id="detailPanel" class="detail-panel" aria-label="作品詳細"></aside>
     </main>
 
     <section id="recordView" class="record-view" hidden>
