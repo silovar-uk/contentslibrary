@@ -3,6 +3,8 @@ import { api } from "../core/api.js";
 import { TYPE_LABELS, statusLabel } from "../core/format.js";
 import { state, subscribe } from "../core/store.js";
 import { statusChipMarkup } from "./status-visuals.js";
+import { readDecisionMemory } from "../core/decision-memory.js";
+import { DECISION_SLOT_LABELS } from "../core/decision-deck.js";
 
 let recordData = null;
 let loading = false;
@@ -29,6 +31,27 @@ function recentWorksMarkup(items = []) {
   }).join("");
 }
 
+function decisionMemoryMarkup(entries = []) {
+  if (!entries.length) return '<div class="record-empty">CHOOSEで「これにする」を押すと、ここに選択の履歴が残ります。</div>';
+  return entries.slice(0, 10).map((entry) => {
+    const work = state.works.get(String(entry.work_id));
+    const title = work?.title || entry.title || "作品";
+    const creator = work?.creator || entry.creator || "";
+    const slot = DECISION_SLOT_LABELS[entry.slot] || entry.slot || "CHOOSE";
+    const attrs = work ? `button type="button" data-open-work="${esc(entry.work_id)}"` : "div";
+    const close = work ? "button" : "div";
+    return `<${attrs} class="record-decision">
+      <span class="record-decision-kind">${esc(slot)}</span>
+      <span class="record-decision-copy">
+        <strong>${esc(title)}</strong>
+        <small>${esc([creator, entry.reason].filter(Boolean).join(" · "))}</small>
+      </span>
+      <time>${fmtDate(entry.decided_at)}</time>
+      ${work ? '<b aria-hidden="true">›</b>' : ""}
+    </${close}>`;
+  }).join("");
+}
+
 function statsMarkup(stats = {}) {
   const rows = [
     ["全作品", stats.total || 0],
@@ -51,6 +74,7 @@ export function renderRecord() {
 
   $("#recordRecentNotes").innerHTML = recentNotesMarkup(recordData.recentNotes || []);
   $("#recordRecentWorks").innerHTML = recentWorksMarkup(recordData.recentOther || []);
+  $("#recordDecisions").innerHTML = decisionMemoryMarkup(readDecisionMemory());
   $("#recordStats").innerHTML = statsMarkup(recordData.stats || {});
 }
 
@@ -74,4 +98,5 @@ export function initRecord() {
   initialized = true;
   ensureStyle();
   subscribe(renderRecord);
+  document.addEventListener("decision-memory-change", renderRecord);
 }
