@@ -1,0 +1,37 @@
+.record-view{width:min(100%,1180px);margin:0 auto;padding:44px clamp(18px,5vw,64px) 96px}
+.record-header{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:26px}
+.record-header .eyebrow{margin:0 0 6px;color:var(--accent);font-size:9px;font-weight:850;letter-spacing:.16em}
+.record-header h1{margin:0;font-size:clamp(30px,4vw,46px);line-height:1.05;letter-spacing:-.035em}
+.record-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(320px,.85fr);gap:18px}
+.record-card{min-width:0;border:1px solid var(--line);border-radius:20px;background:var(--surface);padding:20px}
+.record-card h2{margin:0 0 14px;font-size:18px;letter-spacing:-.02em}
+.record-note{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 14px;width:100%;padding:13px 0;border:0;border-bottom:1px solid color-mix(in srgb,var(--line) 78%,transparent);background:transparent;text-align:left;color:inherit}
+.record-note:last-child{border-bottom:0}
+.record-note>span{display:flex;align-items:center;gap:9px;min-width:0}
+.record-note time,.record-work time{color:var(--muted);font-size:10px;white-space:nowrap}
+.record-note strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.record-note p{grid-column:1;margin:0;color:var(--muted);font-size:11px;line-height:1.55;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.record-note b{grid-column:2;grid-row:1/3;align-self:center;color:var(--muted)}
+.record-work{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:8px 10px;align-items:center;width:100%;padding:11px 0;border:0;border-bottom:1px solid color-mix(in srgb,var(--line) 78%,transparent);background:transparent;text-align:left;color:inherit}
+.record-work:last-child{border-bottom:0}
+.record-work-copy{min-width:0}
+.record-work-copy strong,.record-work-copy small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.record-work-copy strong{font-size:12px}
+.record-work-copy small{margin-top:2px;color:var(--muted);font-size:10px}
+.record-stats{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.record-stat{display:grid;gap:2px;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.record-stat strong{font-size:25px;line-height:1;color:var(--ink)}
+.record-stat span{color:var(--muted);font-size:10px}
+.record-empty{padding:18px;border:1px dashed var(--line);border-radius:12px;color:var(--muted);font-size:12px;line-height:1.6}
+
+@media(max-width:767px){
+  .record-view{padding:22px 12px calc(92px + env(safe-area-inset-bottom))}
+  .record-header{margin-bottom:16px}
+  .record-header h1{font-size:30px}
+  .record-grid{grid-template-columns:minmax(0,1fr);gap:12px}
+  .record-card{padding:15px;border-radius:16px}
+  .record-stats{grid-column:auto;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .record-work{grid-template-columns:auto minmax(0,1fr) auto}
+  .record-work .status-chip{grid-column:2}
+  .record-work time{grid-column:3;grid-row:1}
+}
