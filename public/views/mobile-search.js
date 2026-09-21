@@ -37,9 +37,11 @@ function syncMobileSearchState() {
   const app = $("#app");
   const toggle = document.querySelector("[data-action='toggle-mobile-search']");
   if (state.view === "library") {
+    app?.classList.remove("mobile-search-open");
     toggle?.setAttribute("aria-expanded", "true");
     return;
   }
+  if (state.view !== "home") app?.classList.remove("mobile-search-open");
   toggle?.setAttribute("aria-expanded", String(app?.classList.contains("mobile-search-open") || false));
 }
 
