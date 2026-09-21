@@ -21,6 +21,11 @@ const SCOPE_PREDICATE = {
   all: () => true
 };
 
+export function randomScopeWorks(scope = "next") {
+  const predicate = SCOPE_PREDICATE[scope] || SCOPE_PREDICATE.next;
+  return allWorks().filter(predicate);
+}
+
 export function normalizeRandomMode(mode) {
   return mode === "priority" ? "priority" : "random";
 }
@@ -67,8 +72,7 @@ export function sampleRandomWorks(source, count = 5, mode = "random", rng = Math
 // 「純粋ランダム」と「読む優先度を確率へ反映」の2モードを同じ棚条件で使う。
 // 直近抽選の除外ルールは両モード共通。母数が足りなければ全候補へ戻す。
 export function pickRandomWorks(scope = "next", count = 5, excludeIds = [], mode = "random", rng = Math.random) {
-  const predicate = SCOPE_PREDICATE[scope] || SCOPE_PREDICATE.next;
-  const pool = allWorks().filter(predicate);
+  const pool = randomScopeWorks(scope);
   const excluded = new Set(excludeIds.map(String));
   const fresh = pool.filter((work) => !excluded.has(String(work.id)));
   const source = fresh.length >= Math.min(count, pool.length) ? fresh : pool;
