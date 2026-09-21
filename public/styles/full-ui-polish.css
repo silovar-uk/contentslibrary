@@ -152,33 +152,39 @@ dialog:not(.command-palette):not(.light-edit-sheet){border-radius:18px!important
   .topbar{
     min-height:0;
     grid-template-columns:minmax(0,1fr) auto;
-    grid-template-rows:40px 44px;
+    grid-template-rows:40px;
     gap:7px 8px;
     padding:calc(6px + env(safe-area-inset-top)) 10px 9px;
     border-bottom:1px solid var(--ui-border);
+  }
+  .app-shell[data-view="library"] .topbar,
+  .app-shell.mobile-search-open .topbar{
+    grid-template-rows:40px 44px;
   }
   .topbar.mobile-topbar-refined .brand,.topbar .brand{grid-column:1;grid-row:1;min-height:36px;width:max-content;max-width:100%;padding:0 4px 0 0}
   .topbar.mobile-topbar-refined .brand-mark,.topbar .brand-mark{width:32px;height:32px;flex-basis:32px;border-radius:9px}
   .topbar.mobile-topbar-refined .brand-mark img,.topbar .brand-mark img{width:19px;height:19px}
   .topbar.mobile-topbar-refined .brand::after{font-size:12px}
   .topbar.mobile-topbar-refined .top-actions,.topbar .top-actions{grid-column:2;grid-row:1;gap:5px;height:36px;overflow:visible}
-  .topbar .top-actions>[data-action="draw-random"],.topbar .top-actions #adminButton{display:none!important}
-  .topbar.mobile-topbar-refined .top-actions .primary-button.compact,.topbar .top-actions .primary-button.compact{height:34px;min-height:34px;padding-inline:9px;border-radius:8px;font-size:10px}
-  .topbar.mobile-topbar-refined .avatar-button,.topbar .avatar-button{width:34px;height:34px;flex-basis:34px}
+  .topbar .top-actions>:not(.mobile-search-toggle){display:none!important}
+  .topbar .top-actions .mobile-search-toggle{display:grid!important}
 
   .topbar.mobile-topbar-refined .global-search,.topbar .global-search{
+    display:none;
     grid-column:1/-1;
     grid-row:2;
     width:100%;
     max-width:none;
     height:42px;
     min-height:42px;
-    grid-template-columns:16px minmax(0,1fr);
+    grid-template-columns:16px minmax(0,1fr) 40px;
     gap:8px;
-    padding:0 11px;
+    padding:0 4px 0 11px;
     border-radius:11px;
     box-shadow:none;
   }
+  .app-shell[data-view="library"] .topbar .global-search,
+  .app-shell.mobile-search-open .topbar .global-search{display:grid}
   .topbar .global-search input{font-size:16px!important}
   .topbar .global-search .search-and-hint,.topbar .global-search kbd{display:none!important}
 
