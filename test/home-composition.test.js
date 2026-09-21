@@ -5,110 +5,85 @@ import test from "node:test";
 const root = new URL("../", import.meta.url);
 const read = (path) => readFile(new URL(path, root), "utf8");
 
-test("Home CompositionはCONTINUE・CHOOSE・EXPLORE・REFLECTの順を所有する", async () => {
+test("Home CompositionはCONTINUE・CHOOSE・EXPLOREの3モードだけを所有する", async () => {
   const source = await read("public/views/home-composition.js");
   assert.match(source, /key: "continue"/);
   assert.match(source, /key: "choose"/);
   assert.match(source, /key: "explore"/);
-  assert.match(source, /key: "reflect"/);
+  assert.doesNotMatch(source, /key: "reflect"/);
   const continueAt = source.indexOf('key: "continue"');
   const chooseAt = source.indexOf('key: "choose"');
   const exploreAt = source.indexOf('key: "explore"');
-  const reflectAt = source.indexOf('key: "reflect"');
-  assert.ok(continueAt < chooseAt && chooseAt < exploreAt && exploreAt < reflectAt);
-  assert.match(source, /ensureZones/);
-  assert.match(source, /moveIntoBody/);
+  assert.ok(continueAt < chooseAt && chooseAt < exploreAt);
 });
 
-test("CONTINUEとCHOOSEは同じFeatured Shelf文法を共有し、役割別クラスを持つ", async () => {
+test("HomeはMode Switcherから1つのMajor Surfaceだけを表示する", async () => {
   const source = await read("public/views/home-composition.js");
   const css = await read("public/styles/home-decision-surface.css");
-  assert.match(source, /home-featured-shelf/);
-  assert.match(source, /home-featured-continue/);
-  assert.match(source, /home-featured-choose/);
-  assert.match(css, /home-zone-continue \.editorial-reading-feature/);
-  assert.match(css, /home-zone-choose \.editorial-random-feature/);
-  assert.match(css, /home-zone-continue \.reading-strip\{display:flex/);
+  assert.match(source, /homeModeSwitcher/);
+  assert.match(source, /data-home-mode="continue"/);
+  assert.match(source, /data-home-mode="choose"/);
+  assert.match(source, /data-home-mode="explore"/);
+  assert.match(source, /zone.hidden = key !== mode/);
+  assert.match(source, /setHomeMode/);
+  assert.match(css, /.home-mode-switcher{/);
+  assert.match(css, /grid-template-columns:repeat(3,minmax(0,1fr))/);
 });
 
-test("進行中とランダム候補の有無に応じて空ゾーンを隠す", async () => {
+test("Home初期モードは進行中→候補→探索の順で決める", async () => {
   const source = await read("public/views/home-composition.js");
-  assert.match(source, /function hasContinueItems/);
-  assert.match(source, /#readingStrip \.reading-card/);
-  assert.match(source, /function chooseHasCandidates/);
-  assert.match(source, /\.random-empty/);
-  assert.match(source, /zones\.continue\.hidden/);
-  assert.match(source, /zones\.choose\.hidden/);
+  assert.match(source, /function recommendedHomeMode/);
+  assert.match(source, /if (hasContinueItems()) return "continue"/);
+  assert.match(source, /if (chooseHasCandidates()) return "choose"/);
+  assert.match(source, /return "explore"/);
+  assert.match(source, /work.status === "active"/);
+  assert.match(source, /["want", "owned_unread"].includes(work.status)/);
 });
 
-test("CHOOSEは読み始める・評価・メモを除き、読む優先度Surfaceへ置き換える", async () => {
+test("CONTINUEはHomeのResume Surfaceを使い、時刻の意味付けはhome.jsへ委ねる", async () => {
+  const source = await read("public/views/home-composition.js");
+  const home = await read("public/views/home.js");
+  const css = await read("public/styles/home-decision-surface.css");
+  assert.match(source, /enhanceContinueCards/);
+  assert.match(home, /home-resume-primary/);
+  assert.match(home, /home-resume-secondary/);
+  assert.match(home, /resumeSortValue/);
+  assert.match(css, /.home-resume-layout{/);
+});
+
+test("CHOOSEは評価・メモを除き、読む優先度Surfaceを維持する", async () => {
   const source = await read("public/views/home-composition.js");
   const css = await read("public/styles/home-decision-surface.css");
-  assert.match(source, /enhanceChooseCards/);
-  assert.match(source, /readingPrioritySurfaceMarkup\(work, "choose"\)/);
-  assert.match(source, /\[data-random-start\]/);
-  assert.match(source, /:scope > \.card-rating/);
-  assert.match(source, /:scope > \.card-note-row/);
-  assert.match(css, /editorial-random-feature \[data-random-start\]/);
+  assert.match(source, /readingPrioritySurfaceMarkup(work, "choose")/);
+  assert.match(source, /:scope > .card-rating/);
+  assert.match(source, /:scope > .card-note-row/);
+  assert.match(source, /random-reroll-actions/);
   assert.match(css, /home-choice-priority/);
 });
 
-test("CONTINUEのCompositionは戻るCTAだけを足し、時刻の意味付けはHomeのResume Signalsへ委ねる", async () => {
-  const source = await read("public/views/home-composition.js");
-  assert.match(source, /enhanceContinueCards/);
-  assert.match(source, /作品へ戻る →/);
-  assert.doesNotMatch(source, /最終更新/);
-  assert.doesNotMatch(source, /reading-card-updated/);
-  assert.doesNotMatch(source, /fmtDate/);
-});
-
-test("ジャンル棚は展開操作なしで全件を見せ、ジャンル数を明示する", async () => {
+test("EXPLOREはジャンル・テーマ・著者・レーベルを1つのSwitcherで切り替える", async () => {
   const source = await read("public/views/home-composition.js");
   const css = await read("public/styles/home-decision-surface.css");
-  assert.match(source, /enhanceGenreShelf/);
-  assert.match(source, /\[data-shelf-expand\]/);
-  assert.match(source, /dataset\.genreCount/);
-  assert.match(css, /#genreShelf \.shelf-grid\{display:grid;grid-template-columns:repeat\(auto-fit,minmax\(150px,1fr\)\)/);
-  assert.match(css, /max-height:none;overflow:visible/);
-  assert.match(css, /#genreShelf \[data-shelf-expand\]\{display:none!important\}/);
+  for (const mode of ["genre", "theme", "creator", "label"]) {
+    assert.match(source, new RegExp(`data-home-explore-mode="${mode}"`));
+  }
+  assert.match(source, /EXPLORE_STORAGE_KEY/);
+  assert.match(source, /renderSourceShelves(exploreMode)/);
+  assert.match(source, /genre.hidden = exploreMode !== "genre"/);
+  assert.match(source, /theme.hidden = exploreMode !== "theme"/);
+  assert.match(css, /grid-template-columns:repeat(4,minmax(0,1fr))/);
 });
 
-test("旧Home上位サーフェスをCompositionが除去する", async () => {
+test("Heroコピーの責務はHome Compositionだけが持つ", async () => {
   const source = await read("public/views/home-composition.js");
-  assert.match(source, /#readingPriorityHomeHub/);
-  assert.match(source, /#walletStacks/);
-  assert.match(source, /#recentlyEditedBooksSection/);
-  assert.match(source, /removeLegacyHomeSurfaces/);
-});
-
-test("HeroコピーはContinue・Choose・Exploreの状態に合わせる", async () => {
-  const source = await read("public/views/home-composition.js");
+  const shuhari = await read("public/views/ui-shuhari-pr2.js");
   assert.match(source, /今日は、どれに戻る？/);
   assert.match(source, /次は、何にする？/);
-  assert.match(source, /興味から、次を探す。/);
-});
-
-test("スマホExploreはジャンルとテーマを切り替える", async () => {
-  const source = await read("public/views/home-composition.js");
-  const css = await read("public/styles/home-decision-surface.css");
-  assert.match(source, /data-home-explore-mode="genre"/);
-  assert.match(source, /data-home-explore-mode="theme"/);
-  assert.match(css, /\.home-explore-tabs\{display:flex\}/);
-  assert.match(css, /data-explore-mode="genre"/);
-  assert.match(css, /data-explore-mode="theme"/);
-});
-
-test("スマホのCONTINUEとCHOOSEは1カード単位でsnapし、半端なカードを見せない", async () => {
-  const source = await read("public/views/home-composition.js");
-  const css = await read("public/styles/home-decision-surface.css");
-  assert.match(source, /横にスワイプ →/);
-  assert.match(css, /home-zone-continue \.reading-card\{flex:0 0 100%;min-width:100%/);
-  assert.match(css, /grid-auto-columns:100%/);
-  assert.match(css, /scroll-snap-stop:always/);
+  assert.match(source, /興味から探す。/);
+  assert.doesNotMatch(shuhari, /primeHeroCopy|YOUR CULTURE, NEXT MOVE|今日は、どれに戻る？/);
 });
 
 test("Home CompositionはEditorial Homeの後で初期化する", async () => {
   const app = await read("public/app.js");
-  assert.match(app, /import \{ initHomeComposition \} from "\.\/views\/home-composition\.js"/);
-  assert.match(app, /initEditorialHome\(\);\s*initHomeComposition\(\);/);
+  assert.match(app, /initEditorialHome();s*initHomeComposition();/);
 });
