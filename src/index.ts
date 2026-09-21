@@ -16,6 +16,7 @@ import { deleteExperienceV04, deleteNoteV04, reorderNotesV04, updateExperienceV0
 import { blockUser, createInvitation, listAuditEvents, listSecurityEvents, listUsers, resolveSecurityEvent, revokeUserSession, suspendUser, unblockUser } from "./routes/admin";
 import { getNotionImportStatus, importNotionSeed } from "./routes/notion-import";
 import { getHomeRescue, getHomeV07 } from "./routes/home-v07";
+import { listDecisions, syncDecisions } from "./routes/decisions";
 import {
   commitImportBatch,
   createImportBatch,
@@ -55,6 +56,8 @@ async function handleApi(request: Request, env: Env, auth: AuthContext): Promise
   }
   if (request.method === "GET" && path === "/api/home") return getHomeV07(env, auth);
   if (request.method === "GET" && path === "/api/home/rescue") return getHomeRescue(env, auth);
+  if (request.method === "GET" && path === "/api/decisions") return listDecisions(env, auth);
+  if (request.method === "POST" && path === "/api/decisions/sync") return syncDecisions(request, env, auth);
   if (request.method === "GET" && path === "/api/works") return listWorksV13(request, env, auth);
   if (request.method === "GET" && path === "/api/library/snapshot") return getLibrarySnapshot(env, auth);
   if (request.method === "POST" && path === "/api/works") return createWork(request, env, auth);
