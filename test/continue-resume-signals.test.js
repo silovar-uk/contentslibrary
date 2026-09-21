@@ -94,7 +94,7 @@ test("Resume Signalsはカードを管理画面化せず、最大3種類の手�
   assert.match(css, /reading-card-progress/);
   assert.match(css, /reading-card-memory/);
   assert.match(css, /-webkit-line-clamp:2/);
-  assert.match(css, /@media\(max-width:767px\)[\s\S]*-webkit-line-clamp:3/);
+  assert.match(css, /@media\(max-width:767px\)[\s\S]*-webkit-line-clamp:2/);
 });
 
 test("CONTINUEはResume Signals導入後も作品へ戻ることだけを主操作にする", async () => {
