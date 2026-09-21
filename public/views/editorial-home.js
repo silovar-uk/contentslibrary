@@ -91,8 +91,6 @@ function decorateRandom(home) {
   ensureRandomScrollTracking(home);
   const hero = home.querySelector(".hero-row");
   hero?.classList.add("editorial-hero");
-  const topDraw = document.querySelector('.top-actions [data-action="draw-random"]');
-  if (topDraw) topDraw.title = "3候補を引き直す";
 }
 
 function decorateStats(home) {
