@@ -55,6 +55,10 @@ function applyView() {
     if (active) button.setAttribute("aria-current", "page");
     else button.removeAttribute("aria-current");
   });
+  const topViewActions = { library: "open-library", record: "open-record", admin: "open-admin" };
+  document.querySelectorAll(".top-actions [aria-current='page']").forEach((button) => button.removeAttribute("aria-current"));
+  const currentAction = topViewActions[view];
+  if (currentAction) document.querySelector(`.top-actions [data-action="${currentAction}"]`)?.setAttribute("aria-current", "page");
 }
 
 function bindShell() {
@@ -65,6 +69,7 @@ function bindShell() {
       setView("home");
       await loadHome();
     }
+    if (action === "open-library") setView("library");
     if (action === "open-record") { setView("record"); await loadRecord({ force: true }); }
     if (action === "open-settings") setView("settings");
     if (action === "open-admin") { setView("admin"); await loadAdmin(); }
@@ -143,6 +148,10 @@ function bindShell() {
 
 async function init() {
   try {
+    const shortcut = $("#searchShortcut");
+    const platform = navigator.userAgentData?.platform || navigator.platform || "";
+    if (shortcut && !/Mac|iPhone|iPad|iPod/i.test(platform)) shortcut.textContent = "Ctrl K";
+
     const meData = await api("/api/me");
     state.me = meData.user;
     $("#avatarInitial").textContent = (state.me.display_name || state.me.email || "U").slice(0, 1).toUpperCase();
