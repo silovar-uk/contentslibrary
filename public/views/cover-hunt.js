@@ -250,14 +250,14 @@ export function initCoverHunt() {
   ensureStyles();
   const dialog = ensureDialog();
 
-  const tools = $(".list-tools");
+  const tools = $("#listMoreMenu") || $(".list-tools");
   if (tools && !$("[data-action='open-cover-hunt']", tools)) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "ghost-button";
     button.dataset.action = "open-cover-hunt";
     button.textContent = "表紙を集める";
-    tools.insertBefore(button, $("#selectionExportToggle", tools) || tools.firstChild);
+    tools.append(button);
   }
 
   subscribe(queueDetailDecoration);
