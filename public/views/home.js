@@ -150,7 +150,7 @@ function updateDecisionRerollControls() {
       : `↻ ${count || 3}件を引き直す`;
     button.dataset.rerollLabel = label;
     button.textContent = label;
-    button.disabled = state.loaded && count > 0 && remaining === 0;
+    button.disabled = state.loaded && (count === 0 || remaining === 0);
   });
 }
 
