@@ -5,19 +5,30 @@ import test from "node:test";
 const root = new URL("../", import.meta.url);
 const read = (path) => readFile(new URL(path, root), "utf8");
 
-test("ランダム抽選は6冊になる", async () => {
+test("CHOOSEは6冊抽選ではなく3候補Decision Deckを描画する", async () => {
   const source = await read("public/views/home.js");
-  assert.match(source, /skeletonCards\(6\)/);
-  assert.match(source, /pickRandomWorks\(scope, 6,/);
+  assert.match(source, /skeletonCards\(3\)/);
+  assert.match(source, /buildDecisionDeck/);
+  assert.match(source, /PRIORITY|DECISION_SLOT_LABELS/);
+  assert.doesNotMatch(source, /pickRandomWorks\(scope, 6/);
 });
 
-test("読みたさUIはアプリ初期化から撤去する", async () => {
+test("読みたさUIはアプリ初期化から撤去したままにする", async () => {
   const app = await read("public/app.js");
   assert.doesNotMatch(app, /initReadingDesire/);
   assert.doesNotMatch(app, /views\/reading-desire\.js/);
 });
 
-test("ランダム一覧では読む優先度の管理UIを混ぜない", async () => {
+test("CHOOSEは理由表示とKEEP操作を持つ", async () => {
+  const home = await read("public/views/home.js");
+  assert.match(home, /decision-candidate-kind/);
+  assert.match(home, /decision-candidate-reason/);
+  assert.match(home, /data-decision-keep/);
+  assert.match(home, /残しています/);
+  assert.match(home, /残り\$\{remaining\}件を引き直す/);
+});
+
+test("ランダム一覧では読む優先度の管理UIを直接生成せずCompositionへ委ねる", async () => {
   const surface = await read("public/views/reading-priority-surfaces.js");
   assert.doesNotMatch(surface, /function decorateRandomCards/);
   assert.doesNotMatch(surface, /syncSurface\(card, work, "random"/);
@@ -32,14 +43,6 @@ test("通常一覧と詳細では読む優先度を選べる", async () => {
   assert.match(surface, /decorateDetail/);
   assert.match(surface, /reading-priority-detail-wrap/);
   assert.match(surface, /data-reading-priority-set/);
-});
-
-test("読む優先度はFeaturedではなくLibraryとDetailの管理文脈に限定する", async () => {
-  const css = await read("public/styles/reading-priority-surfaces.css");
-  assert.match(css, /reading-priority-surface-library/);
-  assert.match(css, /reading-priority-detail-wrap/);
-  assert.doesNotMatch(css, /reading-priority-surface-random/);
-  assert.doesNotMatch(css, /reading-priority-home-hub/);
 });
 
 test("旧読みたさ表示はランダムカードから隠す", async () => {
