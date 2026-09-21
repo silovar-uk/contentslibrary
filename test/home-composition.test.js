@@ -27,14 +27,14 @@ test("HomeはMode Switcherから1つのMajor Surfaceだけを表示する", asyn
   assert.match(source, /zone.hidden = key !== mode/);
   assert.match(source, /setHomeMode/);
   assert.match(css, /.home-mode-switcher{/);
-  assert.match(css, /grid-template-columns:repeat(3,minmax(0,1fr))/);
+  assert.match(css, /grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
 });
 
 test("Home初期モードは進行中→候補→探索の順で決める", async () => {
   const source = await read("public/views/home-composition.js");
   assert.match(source, /function recommendedHomeMode/);
-  assert.match(source, /if (hasContinueItems()) return "continue"/);
-  assert.match(source, /if (chooseHasCandidates()) return "choose"/);
+  assert.match(source, /if \(hasContinueItems\(\)\) return "continue"/);
+  assert.match(source, /if \(chooseHasCandidates\(\)\) return "choose"/);
   assert.match(source, /return "explore"/);
   assert.match(source, /work.status === "active"/);
   assert.match(source, /["want", "owned_unread"].includes(work.status)/);
@@ -54,7 +54,7 @@ test("CONTINUEはHomeのResume Surfaceを使い、時刻の意味付けはhome.j
 test("CHOOSEは評価・メモを除き、読む優先度Surfaceを維持する", async () => {
   const source = await read("public/views/home-composition.js");
   const css = await read("public/styles/home-decision-surface.css");
-  assert.match(source, /readingPrioritySurfaceMarkup(work, "choose")/);
+  assert.match(source, /readingPrioritySurfaceMarkup\(work, "choose"\)/);
   assert.match(source, /:scope > .card-rating/);
   assert.match(source, /:scope > .card-note-row/);
   assert.match(source, /random-reroll-actions/);
@@ -68,10 +68,10 @@ test("EXPLOREはジャンル・テーマ・著者・レーベルを1つのSwitch
     assert.match(source, new RegExp(`data-home-explore-mode="${mode}"`));
   }
   assert.match(source, /EXPLORE_STORAGE_KEY/);
-  assert.match(source, /renderSourceShelves(exploreMode)/);
+  assert.match(source, /renderSourceShelves\(exploreMode\)/);
   assert.match(source, /genre.hidden = exploreMode !== "genre"/);
   assert.match(source, /theme.hidden = exploreMode !== "theme"/);
-  assert.match(css, /grid-template-columns:repeat(4,minmax(0,1fr))/);
+  assert.match(css, /grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
 });
 
 test("Heroコピーの責務はHome Compositionだけが持つ", async () => {
