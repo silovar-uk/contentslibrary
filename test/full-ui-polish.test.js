@@ -20,10 +20,12 @@ test("PCヘッダーはブランド・検索・操作の安定した3カラム�
   assert.match(css, /\.top-actions\{[\s\S]*flex-wrap:nowrap/);
 });
 
-test("スマホヘッダーは1段目ナビ・2段目検索に固定する", async () => {
+test("スマホヘッダーは通常1段、Libraryまたは検索展開時だけ2段になる", async () => {
   const css = await read("public/styles/full-ui-polish.css");
-  assert.match(css, /@media\(max-width:767px\)[\s\S]*grid-template-rows:40px 44px/);
-  assert.match(css, /\.global-search[\s\S]*grid-column:1\/-1;[\s\S]*grid-row:2/);
+  assert.match(css, /grid-template-rows:40px;/);
+  assert.match(css, /app-shell\[data-view="library"\] \.topbar,[\s\S]*app-shell\.mobile-search-open \.topbar[\s\S]*grid-template-rows:40px 44px/);
+  assert.match(css, /\.global-search[\s\S]*display:none;[\s\S]*grid-row:2/);
+  assert.match(css, /app-shell\[data-view="library"\] \.topbar \.global-search,[\s\S]*mobile-search-open[\s\S]*display:grid/);
   assert.match(css, /font-size:16px!important/);
 });
 
