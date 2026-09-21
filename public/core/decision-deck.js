@@ -89,6 +89,7 @@ export function buildDecisionDeck(
     current = [],
     keptIds = [],
     historyIds = [],
+    avoidIds = [],
     rng = Math.random,
     now = Date.now()
   } = {}
@@ -97,6 +98,9 @@ export function buildDecisionDeck(
   const byId = new Map(rows.map((work) => [String(work.id), work]));
   const kept = new Set([...keptIds].map(String));
   const history = new Set([...historyIds].map(String));
+  const avoid = new Set([...avoidIds].map(String));
+  const freshRows = rows.filter((work) => !avoid.has(String(work.id)));
+  const candidateRows = freshRows.length >= Math.min(3, rows.length) ? freshRows : rows;
   const currentBySlot = new Map(current.map((candidate) => [candidate.slot, candidate]));
   const used = new Set();
   const result = [];
@@ -117,7 +121,7 @@ export function buildDecisionDeck(
 
   for (const slot of SLOT_ORDER) {
     if (result.some((candidate) => candidate.slot === slot)) continue;
-    const source = sourceForSlot(rows, used);
+    const source = sourceForSlot(candidateRows, used);
     const work = slotPick(slot, source, history, rng);
     if (!work) continue;
     used.add(String(work.id));
