@@ -14,8 +14,9 @@ const ALLOWED_HOSTS = new Set(["m.media-amazon.com", "images-na.ssl-images-amazo
 
 // Amazonの商品画像URLは、画像IDの後ろにサイズ・フォーマット・配信用途などの変換指定が付く。
 // 変換指定はAmazon側で増減する内部表現なので、既知トークンを列挙せず「._ から末尾の _ まで」を
-// 1つのopaqueな修飾部として扱う。slashだけは許可せず、別pathへ広がらないようにする。
-const AMAZON_ITEM_IMAGE_PATH = /^\/images\/I\/([A-Za-z0-9+-]+)(?:\._[^/]+_)?\.jpg$/;
+// 1つのopaqueな修飾部として扱う。Amazonの計測用ラッパー(/images/W/<token>/images/I/...)も
+// 同じ画像IDへ正規化する。wrapper tokenにslashは許可せず、別pathへ広がらないようにする。
+const AMAZON_ITEM_IMAGE_PATH = /^\/(?:images\/W\/[^/]+\/)?images\/I\/([A-Za-z0-9+-]+)(?:\._[^/]+_)?\.jpg$/;
 
 function requireEditor(auth: AuthContext): void {
   if (!["owner", "admin", "member"].includes(auth.member.role)) {

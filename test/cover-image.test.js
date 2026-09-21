@@ -35,8 +35,12 @@ test('Amazon画像URLは変換指定内の小数点とqueryを許容し、未知
   assert.equal(sample.pathname, '/images/I/71LFLndr04L._AC_AIweblab1378949,T3_FMavif_SF516.0,327.0_PQ65_.jpg');
   assert.equal(sample.searchParams.get('aicid'), 'productui-image-1');
 
+  // 商品詳細でコピーされることがある /images/W/<計測token>/images/I/... 形式も許可する。
+  const measuredSample = new URL('https://m.media-amazon.com/images/W/BW_MEDIAX_AVIF_MEASUREMENT_1306696-T3/images/I/71Ya9jaVXRL._AC_SX296_SY426_QL65_.jpg');
+  assert.equal(measuredSample.pathname, '/images/W/BW_MEDIAX_AVIF_MEASUREMENT_1306696-T3/images/I/71Ya9jaVXRL._AC_SX296_SY426_QL65_.jpg');
+
   // Amazon内部の変換指定はopaqueに扱い、slash以外を許容する。既知トークンの列挙へ戻さない。
-  assert.ok(route.includes('const AMAZON_ITEM_IMAGE_PATH = /^\\/images\\/I\\/([A-Za-z0-9+-]+)(?:\\._[^/]+_)?\\.jpg$/;'));
+  assert.ok(route.includes('const AMAZON_ITEM_IMAGE_PATH = /^\\/(?:images\\/W\\/[^/]+\\/)?images\\/I\\/([A-Za-z0-9+-]+)(?:\\._[^/]+_)?\\.jpg$/;'));
   assert.ok(route.includes('url.pathname.match(AMAZON_ITEM_IMAGE_PATH)'));
   assert.doesNotMatch(route, /\[A-Za-z0-9,_\]\+/);
 });
