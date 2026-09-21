@@ -28,11 +28,13 @@ test("著者棚も2作品以上だけを返す", () => {
   ]);
 });
 
-test("棚UIはEXPLORE先頭・レーベル初期値・Library検索遷移を持つ", () => {
+test("棚UIはExploreから渡されたmodeだけを描画しLibrary検索へ遷移する", () => {
   const source = fs.readFileSync("public/views/source-shelves.js", "utf8");
-  assert.match(source, /let mode = "label"/);
-  assert.match(source, /body\.prepend\(host\)/);
+  assert.doesNotMatch(source, /let mode = /);
+  assert.match(source, /export function renderSourceShelves\(mode = null\)/);
+  assert.match(source, /\["creator", "label"\]\.includes\(mode\)/);
   assert.match(source, /setFilters\(\{ q: value \}\)/);
   assert.match(source, /setView\("library"\)/);
+  assert.doesNotMatch(source, /data-source-shelf-mode/);
   assert.doesNotMatch(source, /MutationObserver/);
 });
