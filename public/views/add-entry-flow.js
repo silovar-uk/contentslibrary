@@ -49,35 +49,21 @@ function mountChoiceDialog() {
 
 function mountTopEntry() {
   const singleAdd = $(".top-actions [data-action='open-work-dialog']");
+  const menuAdd = $(".top-actions [data-action='open-add-entry-choice']");
   if (!singleAdd) return;
 
-  singleAdd.textContent = "＋ 個別に追加";
+  singleAdd.textContent = "＋ 追加";
   singleAdd.title = "1作品ずつ詳しく追加";
   singleAdd.classList.add("single-add-top-trigger");
+  if (menuAdd) menuAdd.title = "複数作品をまとめて追加";
 
   const titleBulk = $("#bulkAddTopButton");
   const jsonBulk = $("#bulkJsonTopButton");
-  if (titleBulk) {
-    titleBulk.hidden = true;
-    titleBulk.setAttribute("aria-hidden", "true");
-    titleBulk.tabIndex = -1;
-  }
-  if (jsonBulk) {
-    jsonBulk.hidden = true;
-    jsonBulk.setAttribute("aria-hidden", "true");
-    jsonBulk.tabIndex = -1;
-  }
-
-  if (!$("#addEntryBulkTopButton")) {
-    const button = document.createElement("button");
-    button.id = "addEntryBulkTopButton";
-    button.type = "button";
-    button.className = "ghost-button add-entry-bulk-top-trigger";
-    button.dataset.action = "open-add-entry-choice";
-    button.textContent = "まとめて追加";
-    button.title = "複数作品をまとめて追加";
-    singleAdd.before(button);
-  }
+  [titleBulk, jsonBulk].filter(Boolean).forEach((button) => {
+    button.hidden = true;
+    button.setAttribute("aria-hidden", "true");
+    button.tabIndex = -1;
+  });
 }
 
 function enhanceChatGptEntry() {
