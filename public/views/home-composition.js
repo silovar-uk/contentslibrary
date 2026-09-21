@@ -210,7 +210,12 @@ function composeChoose(zone) {
   if (body && !body.querySelector(".home-choose-secondary-actions")) {
     const actions = document.createElement("div");
     actions.className = "home-choose-secondary-actions";
-    actions.innerHTML = '<button type="button" class="text-button home-priority-link" data-reading-priority-organize>読む順番を整理 →</button>';
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "text-button home-priority-link";
+    button.dataset.readingPriorityOrganize = "";
+    button.textContent = "読む順番を整理 →";
+    actions.append(button);
     body.append(actions);
   }
 }
