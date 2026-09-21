@@ -19,12 +19,16 @@ test("読みたさUIはアプリ初期化から撤去したままにする", asy
   assert.doesNotMatch(app, /views\/reading-desire\.js/);
 });
 
-test("CHOOSEは理由表示とKEEP操作を持つ", async () => {
+test("CHOOSEは理由表示・確定・KEEP操作を持つ", async () => {
   const home = await read("public/views/home.js");
   assert.match(home, /decision-candidate-kind/);
   assert.match(home, /decision-candidate-reason/);
+  assert.match(home, /data-decision-choose/);
+  assert.match(home, /これにする →/);
   assert.match(home, /data-decision-keep/);
   assert.match(home, /残しています/);
+  assert.match(home, /recordDecision/);
+  assert.match(home, /recentDecisionIds/);
   assert.match(home, /残り\$\{remaining\}件を引き直す/);
 });
 
