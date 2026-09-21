@@ -40,3 +40,11 @@ test("モバイル検索欄はタップしやすく、iOSの自動ズームを�
   assert.match(cssSource, /font-size:16px/);
   assert.match(cssSource, /search-cancel-button/);
 });
+
+
+test("Homeのモバイル検索は明示操作で展開しLibraryでは常時表示する", () => {
+  assert.match(searchSource, /toggle-mobile-search/);
+  assert.match(searchSource, /mobile-search-open/);
+  assert.match(searchSource, /state\.view === "library"/);
+  assert.match(cssSource, /mobile-search-toggle/);
+});
