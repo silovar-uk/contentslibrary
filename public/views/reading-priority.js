@@ -88,15 +88,14 @@ function ensureSortOption() {
 
 function ensureOrganizerButton() {
   if ($("[data-reading-priority-organize]")) return;
-  const tools = $(".list-tools");
+  const tools = $("#listMoreMenu") || $(".list-tools");
   if (!tools) return;
   const button = document.createElement("button");
   button.type = "button";
   button.className = "ghost-button reading-priority-organize-button";
   button.dataset.readingPriorityOrganize = "";
   button.textContent = "優先度整理";
-  const sort = $("#sortSelect", tools);
-  if (sort) sort.before(button); else tools.append(button);
+  tools.append(button);
 }
 
 function ensureOrganizerDialog() {
