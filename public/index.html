@@ -49,7 +49,7 @@
                 <option value="all">すべての作品</option>
               </select>
             </label>
-            <button type="button" class="draw-button" data-action="draw-random">引き直す</button>
+            <button type="button" class="draw-button" data-action="draw-random">↻ 候補を引き直す</button>
           </div>
         </div>
       </div>
@@ -127,11 +127,12 @@
             <option value="">すべて</option><option value="book">本</option><option value="manga">漫画</option><option value="movie">映画</option><option value="anime">アニメ</option><option value="drama">ドラマ</option><option value="other">その他</option>
           </select>
         </label>
-        <label class="field-label">状態
+        <div class="field-label">
+          <label for="filterStatus">状態</label>
           <select id="filterStatus">
             <option value="">すべて</option><option value="want">読みたい・見たい</option><option value="owned_unread">所持・未読</option><option value="active">進行中</option><option value="completed">完了</option><option value="paused">一時停止</option><option value="dropped">中断</option>
           </select>
-        </label>
+        </div>
         <div class="form-row">
           <label class="field-label">評価（以上）
             <select id="filterRating"><option value="">指定なし</option><option value="5">5のみ</option><option value="4">4以上</option><option value="3">3以上</option><option value="2">2以上</option><option value="1">1以上</option></select>
@@ -244,7 +245,7 @@
       <label class="field-label" id="creatorField">作者・監督<input name="creator" maxlength="300"></label>
       <div class="form-row">
         <label class="field-label">種別<span class="required-mark">必須</span><select name="type"><option value="book">本</option><option value="manga">漫画</option><option value="movie">映画</option><option value="anime">アニメ</option><option value="drama">ドラマ</option><option value="other">その他</option></select></label>
-        <label class="field-label">状態<span class="required-mark">必須</span><select name="status"><option value="want">読みたい・見たい</option><option value="owned_unread">所持・未読</option><option value="active">進行中</option><option value="completed">完了</option><option value="paused">一時停止</option><option value="dropped">中断</option></select></label>
+        <div class="field-label"><label for="workStatusSelect">状態<span class="required-mark">必須</span></label><select id="workStatusSelect" name="status"><option value="want">読みたい・見たい</option><option value="owned_unread">所持・未読</option><option value="active">進行中</option><option value="completed">完了</option><option value="paused">一時停止</option><option value="dropped">中断</option></select></div>
       </div>
       <label class="field-label">一言メモ<textarea name="short_note" maxlength="280" rows="3" placeholder="いま残しておきたいこと"></textarea><small><span data-counter="short_note">0</span>/280</small></label>
       <details class="details-fields"><summary><span>詳細も追加する</span><small>評価・分類・進捗</small></summary><div class="details-inner">
