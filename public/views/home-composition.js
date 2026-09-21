@@ -217,16 +217,12 @@ function composeChoose(zone) {
   if (rerollActions && body && rerollActions.parentElement !== body) body.append(rerollActions);
   if (controls && controls.childElementCount === 0) controls.remove();
 
-  const actions = zone.querySelector(".home-zone-actions");
-  if (actions && !actions.querySelector("[data-reading-priority-organize]")) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "text-button home-priority-link";
-    button.dataset.readingPriorityOrganize = "";
-    button.textContent = "読む順番を整理 →";
-    actions.append(button);
+  if (body && !body.querySelector(".home-choose-secondary-actions")) {
+    const actions = document.createElement("div");
+    actions.className = "home-choose-secondary-actions";
+    actions.innerHTML = '<button type="button" class="text-button home-priority-link" data-reading-priority-organize>読む順番を整理 →</button>';
+    body.append(actions);
   }
-  ensureSwipeHint(zone);
 }
 
 function ensureExploreTabs(zone) {
