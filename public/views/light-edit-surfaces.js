@@ -286,7 +286,7 @@ export function initLightEditSurfaces() {
   $("#lightEditSheet")?.addEventListener("click", (event) => {
     if (event.target === event.currentTarget) closeChoiceSheet();
   });
-  $("#lightEditSheet")?.addEventListener("cancel", () => closeSheet());
+  $("#lightEditSheet")?.addEventListener("cancel", () => closeChoiceSheet());
   $("#sortSelect")?.addEventListener("change", ensureMobileSortButton);
 
   scheduleApply();
