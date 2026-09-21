@@ -9,13 +9,12 @@ const DAY = 24 * 60 * 60 * 1000;
 const NOW = Date.parse("2026-09-08T00:00:00.000Z");
 const ago = (days) => new Date(NOW - days * DAY).toISOString();
 
-test("Home APIはactive作品へ最新メモ・experience・進捗engagementを添えるが並び順は変えない", async () => {
+test("Home APIのCONTINUEは最新メモの作成順を最優先し、メモなし作品を後ろへ回す", async () => {
   const route = await read("src/routes/home-v07.ts");
-  assert.match(route, /SELECT n\.content FROM notes n WHERE n\.work_id = w\.id ORDER BY n\.updated_at DESC LIMIT 1/);
-  assert.match(route, /SELECT n\.updated_at FROM notes n WHERE n\.work_id = w\.id ORDER BY n\.updated_at DESC LIMIT 1/);
-  assert.match(route, /SELECT e\.updated_at FROM experiences e WHERE e\.work_id = w\.id ORDER BY e\.updated_at DESC LIMIT 1/);
-  assert.match(route, /row\.progress_engagement_at/);
-  assert.match(route, /ORDER BY w\.updated_at DESC\s*LIMIT 8/);
+  assert.match(route, /SELECT n\.content FROM notes n WHERE n\.work_id = w\.id ORDER BY n\.created_at DESC, n\.id DESC LIMIT 1/);
+  assert.match(route, /SELECT n\.updated_at FROM notes n WHERE n\.work_id = w\.id ORDER BY n\.created_at DESC, n\.id DESC LIMIT 1/);
+  assert.match(route, /SELECT n\.created_at FROM notes n WHERE n\.work_id = w\.id ORDER BY n\.created_at DESC, n\.id DESC LIMIT 1/);
+  assert.match(route, /ORDER BY CASE WHEN resume_note_created_at IS NULL THEN 1 ELSE 0 END,[\s\S]*resume_note_created_at DESC,[\s\S]*w\.updated_at DESC[\s\S]*LIMIT 8/);
   assert.doesNotMatch(route, /ORDER BY resume_at|ORDER BY engagement_at/);
 });
 
@@ -102,4 +101,20 @@ test("CONTINUEはResume Signals導入後も作品へ戻ることだけを主操�
   assert.match(composition, /作品へ戻る →/);
   assert.doesNotMatch(composition, /最終更新/);
   assert.doesNotMatch(composition, /reading-card-updated/);
+});
+
+
+test("CONTINUEはAPIのメモ作成順をそのまま使い、resume_atで再ソートしない", async () => {
+  const home = await read("public/views/home.js");
+  assert.match(home, /const ordered = \[\.\.\.reading\];/);
+  assert.doesNotMatch(home, /function resumeSortValue/);
+  assert.doesNotMatch(home, /\.sort\(\(a, b\) => resumeSortValue/);
+});
+
+test("メモ保存直後にHomeを再取得し、CONTINUEの順序を更新する", async () => {
+  const app = await read("public/app.js");
+  const dialogs = await read("public/views/dialogs.js");
+  assert.match(app, /await submitCardNote\(workId, form\.content\.value\);\s*await loadHome\(\);/);
+  assert.match(app, /app:refresh-home[\s\S]*loadHome\(\)/);
+  assert.match(dialogs, /app:refresh-detail[\s\S]*app:refresh-home/);
 });
