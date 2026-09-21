@@ -1,12 +1,10 @@
-.source-shelves{display:grid;gap:14px;margin:0 0 18px;padding:18px;border:1px solid color-mix(in srgb,var(--line) 78%,transparent);border-radius:20px;background:color-mix(in srgb,var(--surface) 94%,transparent)}
+.source-shelves{display:grid;gap:14px;margin:0;padding:18px;border:1px solid color-mix(in srgb,var(--line) 78%,transparent);border-radius:20px;background:color-mix(in srgb,var(--surface) 94%,transparent)}
+.source-shelves[hidden]{display:none!important}
 .source-shelves-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px}
 .source-shelves-head>div:first-child{min-width:0}
 .source-shelves-head span{display:block;color:var(--accent);font-size:9px;font-weight:850;letter-spacing:.14em}
 .source-shelves-head h3{margin:3px 0 0;font-size:19px;line-height:1.25}
 .source-shelves-head p{margin:4px 0 0;color:var(--muted);font-size:11px;line-height:1.55}
-.source-shelves-tabs{display:flex;flex:none;gap:3px;padding:3px;border:1px solid var(--line);border-radius:999px;background:var(--surface-2)}
-.source-shelves-tabs button{border:0;border-radius:999px;background:transparent;padding:7px 12px;color:var(--muted);font-size:11px;font-weight:700}
-.source-shelves-tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 4px rgba(24,24,20,.08)}
 .source-shelves-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
 .source-shelf-stack{display:grid;grid-template-columns:74px minmax(0,1fr);gap:12px;align-items:center;min-height:94px;padding:11px;border:1px solid var(--line);border-radius:14px;background:var(--surface);text-align:left;color:inherit;cursor:pointer}
 .source-shelf-stack:hover,.source-shelf-stack:focus-visible{border-color:color-mix(in srgb,var(--accent) 42%,var(--line));background:color-mix(in srgb,var(--accent) 4%,var(--surface))}
@@ -21,9 +19,8 @@
 .source-shelves-more{justify-self:start}
 .source-shelves-empty{padding:16px;border:1px dashed var(--line);border-radius:14px;color:var(--muted);font-size:12px}
 @media(max-width:767px){
-  .source-shelves{margin-bottom:14px;padding:13px;border-radius:17px}
+  .source-shelves{padding:13px;border-radius:17px}
   .source-shelves-head{display:grid;gap:10px}
-  .source-shelves-tabs{width:max-content}
   .source-shelves-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
   .source-shelf-stack{grid-template-columns:50px minmax(0,1fr);min-height:78px;padding:9px;gap:8px}
   .source-shelf-fan{height:54px}
