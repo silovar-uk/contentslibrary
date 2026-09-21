@@ -21,6 +21,28 @@ function updateClearButton() {
   button.hidden = input.value.length === 0;
 }
 
+function setMobileSearchOpen(open) {
+  const app = $("#app");
+  const toggle = document.querySelector("[data-action='toggle-mobile-search']");
+  if (!app) return;
+  app.classList.toggle("mobile-search-open", Boolean(open));
+  toggle?.setAttribute("aria-expanded", String(Boolean(open) || state.view === "library"));
+}
+
+function syncMobileSearchState() {
+  if (!matchMedia("(max-width:767px)").matches) {
+    setMobileSearchOpen(false);
+    return;
+  }
+  const app = $("#app");
+  const toggle = document.querySelector("[data-action='toggle-mobile-search']");
+  if (state.view === "library") {
+    toggle?.setAttribute("aria-expanded", "true");
+    return;
+  }
+  toggle?.setAttribute("aria-expanded", String(app?.classList.contains("mobile-search-open") || false));
+}
+
 function applySearch(value) {
   clearTimeout(searchTimer);
   searchTimer = null;
@@ -114,7 +136,38 @@ export function initMobileSearch() {
     if (event.key === "Enter") scheduleSearch(input.value, true);
   }, true);
 
-  input.addEventListener("focus", updateClearButton);
-  subscribe(updateClearButton);
-  requestAnimationFrame(updateClearButton);
+  input.addEventListener("focus", () => {
+    updateClearButton();
+    if (matchMedia("(max-width:767px)").matches && state.view !== "library") setMobileSearchOpen(true);
+  });
+
+  document.addEventListener("click", (event) => {
+    const toggle = event.target.closest("[data-action='toggle-mobile-search']");
+    if (!toggle) return;
+    event.preventDefault();
+    if (!matchMedia("(max-width:767px)").matches || state.view === "library") {
+      input.focus({ preventScroll: true });
+      return;
+    }
+    const app = $("#app");
+    const opening = !app?.classList.contains("mobile-search-open");
+    setMobileSearchOpen(opening);
+    if (opening) requestAnimationFrame(() => input.focus({ preventScroll: true }));
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || state.view === "library") return;
+    if (!$("#app")?.classList.contains("mobile-search-open")) return;
+    setMobileSearchOpen(false);
+    document.querySelector("[data-action='toggle-mobile-search']")?.focus();
+  });
+
+  subscribe(() => {
+    updateClearButton();
+    syncMobileSearchState();
+  });
+  requestAnimationFrame(() => {
+    updateClearButton();
+    syncMobileSearchState();
+  });
 }
