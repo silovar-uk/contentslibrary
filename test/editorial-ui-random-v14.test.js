@@ -14,7 +14,7 @@ test('次に読む作品の抽選はサーバー往復せずクライアント�
   assert.doesNotMatch(index, /\/api\/random-work/);
   assert.match(store, /export function pickRandomWorks/);
   assert.match(home, /export function drawRandomPicks/);
-  assert.match(home, /pickRandomWorks/);
+  assert.match(home, /buildDecisionDeck/);
 });
 
 test('ブランドアイコンをfaviconと左上で共用する', async () => {
@@ -36,7 +36,7 @@ test('ジャンルごとの色相を一覧・棚に適用する', async () => {
   assert.match(css, /var\(--genre-color\)/);
 });
 
-test('ランダム探索をホーム・ヘッダー・スマホへ配置し、開始操作はTOPに持たない', async () => {
+test('CHOOSEをホームへ配置し、開始操作はTOPに持たない', async () => {
   const html = await read('public/index.html');
   const home = await read('public/views/home.js');
   const composition = await read('public/views/home-composition.js');
