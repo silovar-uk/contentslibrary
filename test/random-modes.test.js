@@ -32,17 +32,15 @@ test("純粋ランダムと優先度モードは同じ候補を別の確率規�
   assert.equal(sampleRandomWorks(rows, 1, "priority", fixedRandom)[0].id, "top");
 });
 
-test("モードUIは2択で、最後の選択を保存し切替時に再抽選する", async () => {
+test("旧ランダムモード実装は互換用に残すがHome CHOOSEでは使わない", async () => {
   const mode = await read("public/views/random-mode.js");
   const home = await read("public/views/home.js");
-  const css = await read("public/styles/random-mode.css");
+  const composition = await read("public/views/home-composition.js");
   assert.match(mode, /data-random-mode="random"/);
   assert.match(mode, /data-random-mode="priority"/);
   assert.match(mode, /localStorage\.setItem/);
-  assert.match(mode, /random-mode-change/);
-  assert.match(home, /getRandomMode\(\)/);
-  assert.match(home, /random-mode-change/);
-  assert.match(css, /random-mode-toggle/);
+  assert.doesNotMatch(home, /getRandomMode|initRandomMode|random-mode-change/);
+  assert.doesNotMatch(composition, /random-mode-toggle/);
 });
 
 test("0件の抽選棚は表示を残したままdisabledにし、有効な棚へ退避する", async () => {
