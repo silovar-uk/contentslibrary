@@ -4,6 +4,7 @@ import { TYPE_LABELS, NOTE_LABELS, mediaConfig, statusLabel, stars, ratingLevel 
 import { state, setSelectedDetail, selectWork, setView, closeDetail, toggleQuickEdit, subscribe, removeWorkFromStore, setWorkCover } from "../core/store.js";
 import { isAllowedCoverUrl, candidateCoverUrlFromWork, extractAsinFromProductUrl, amazonCoverUrlFromIsbn10, probeCoverImage } from "../core/cover.js";
 import { openWorkDialog, openNoteDialog, openExperienceDialog } from "./dialogs.js";
+import { statusChipMarkup } from "./status-visuals.js";
 
 let noteSort = "manual";
 let experienceSort = "desc";
@@ -121,9 +122,6 @@ function quickEditMarkup(w) {
   return `<section class="quick-edit-card"><div class="quick-edit-heading"><h3>よく変える項目</h3><button class="icon-button" type="button" data-action="toggle-quick-edit" aria-label="閉じる">×</button></div>
     <form id="quickEditForm" class="quick-edit-form">
       <input type="hidden" name="version" value="${Number(w.version)}">
-      <div class="quick-edit-grid">
-        <label class="field-label">状態<select name="status">${Object.entries(config.statuses).map(([value, label]) => `<option value="${value}" ${w.status === value ? "selected" : ""}>${esc(label)}</option>`).join("")}</select></label>
-      </div>
       <label class="field-label">一言メモ<textarea name="short_note" maxlength="280" rows="4">${esc(w.short_note || "")}</textarea><small><span data-quick-counter>${(w.short_note || "").length}</span>/280</small></label>
       <div class="quick-edit-grid progress-grid">
         <label class="field-label">${esc(config.current)}<input name="progress_current" type="number" min="0" step="0.1" value="${w.progress_current ?? ""}"></label>
@@ -165,7 +163,7 @@ export function renderDetail() {
   const labels = w.labels || { genre: [], theme: [], tag: [] };
   panel.innerHTML = `
     <div class="detail-header">
-      <div class="type-status"><span class="type-pill">${TYPE_LABELS[w.type]}</span><span>${statusLabel(w.type, w.status)}</span></div>
+      <div class="type-status"><span class="type-pill">${TYPE_LABELS[w.type]}</span>${statusChipMarkup(w.type, w.status)}</div>
       <h2>${esc(w.title)}</h2><div class="creator">${esc(w.creator || "")}</div>
       <div class="detail-actions"><button class="ghost-button desktop-only" data-action="toggle-quick-edit">${state.quickEditOpen ? "編集を閉じる" : "クイック編集"}</button><button class="ghost-button" data-action="edit-work">すべて編集</button><button class="ghost-button" data-action="open-fact-dialog">AIで事実を補完</button><button class="ghost-button" data-action="close-detail">閉じる</button></div>
     </div>
@@ -187,7 +185,7 @@ async function submitQuickEdit(form) {
   const current = nullableNumber(form.progress_current.value);
   const total = nullableNumber(form.progress_total.value);
   if (current !== null && total !== null && current > total) { $(".form-error", form).textContent = "現在の進捗は全体以下にしてください。"; return; }
-  const payload = { version: Number(form.version.value), status: form.status.value, short_note: form.short_note.value.trim(), progress_current: current, progress_total: total, unit_label: form.unit_label.value.trim() || null };
+  const payload = { version: Number(form.version.value), short_note: form.short_note.value.trim(), progress_current: current, progress_total: total, unit_label: form.unit_label.value.trim() || null };
   const button = $('[type="submit"]', form);
   setBusy(button, true);
   try {
