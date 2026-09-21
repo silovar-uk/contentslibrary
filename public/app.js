@@ -39,6 +39,7 @@ import { initAddEntryFlow } from "./views/add-entry-flow.js";
 import { initUiShuhariPr1 } from "./views/ui-shuhari-pr1.js";
 import { initUiShuhariPr2 } from "./views/ui-shuhari-pr2.js";
 import { initRecord, loadRecord } from "./views/record.js";
+import { syncDecisionMemory } from "./core/decision-memory.js";
 
 function applyView() {
   const view = state.view;
@@ -184,7 +185,7 @@ async function init() {
     initUiPolish();
     initMobileDetailNav();
 
-    await Promise.all([loadHome(), loadSnapshot()]);
+    await Promise.all([loadHome(), loadSnapshot(), syncDecisionMemory().catch(() => [])]);
     renderWorkList();
     drawRandomPicks();
     applyView();
