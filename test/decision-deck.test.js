@@ -66,3 +66,26 @@ test("直近履歴は候補が十分ある限り再登場を避ける", () => {
   });
   assert.ok(second.some((item) => item.id === "fresh"));
 });
+
+
+test("Decision MemoryのavoidIdsは母数に余裕があれば直近の選択を候補から外す", () => {
+  const deck = buildDecisionDeck(works, {
+    avoidIds: ["top"],
+    rng: () => 0,
+    now: NOW
+  });
+  assert.equal(deck.length, 3);
+  assert.doesNotMatch(deck.map((item) => item.id).join(","), /top/);
+  assert.equal(deck.find((item) => item.slot === "priority")?.id, "high");
+});
+
+test("avoidIdsで3候補を作れない場合は全候補へ安全に戻す", () => {
+  const small = works.slice(0, 3);
+  const deck = buildDecisionDeck(small, {
+    avoidIds: ["top"],
+    rng: () => 0,
+    now: NOW
+  });
+  assert.equal(deck.length, 3);
+  assert.ok(deck.some((item) => item.id === "top"));
+});
