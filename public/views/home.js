@@ -83,12 +83,6 @@ function readingCardMarkup(work) {
     </article>`;
 }
 
-function resumeSortValue(work) {
-  const raw = work?.resume_at || work?.updated_at || "";
-  const value = Date.parse(raw);
-  return Number.isFinite(value) ? value : 0;
-}
-
 function secondaryResumeMarkup(work) {
   const progress = resumeProgressText(work);
   const recency = resumeRecencyLabel(work.resume_at, work.resume_source);
@@ -107,7 +101,8 @@ function readingResumeMarkup(reading) {
     return '<div class="empty-state home-resume-empty">進行中の作品はありません。<br><button class="text-button" data-action="open-work-dialog">作品を追加する</button></div>';
   }
 
-  const ordered = [...reading].sort((a, b) => resumeSortValue(b) - resumeSortValue(a));
+  // /api/home が「最新メモを追加した順」で返す。クライアント側では順序を上書きしない。
+  const ordered = [...reading];
   const primary = ordered[0];
   const secondary = ordered.slice(1, 4);
   const remaining = Math.max(0, ordered.length - 4);
