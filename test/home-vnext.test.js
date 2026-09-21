@@ -73,7 +73,7 @@ test("Home layoutはdecision surfaceが所有しlegacy CSSは列数を上書き�
   const polish = await read("public/styles/ui-polish.css");
   const resilience = await read("public/styles/mobile-text-resilience.css");
   assert.match(decision, /home-zone-choose \.editorial-random-feature \.random-pick-grid/);
-  assert.match(decision, /grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(decision, /@media\(max-width:767px\)[\s\S]*grid-template-columns:minmax\(0,1fr\)/);
   assert.doesNotMatch(polish, /#randomStage \.random-pick-grid,[\s\S]{0,180}grid-template-columns/);
   assert.doesNotMatch(resilience, /\.random-pick-grid\{grid-template-columns/);
 });
