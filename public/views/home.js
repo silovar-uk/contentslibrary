@@ -65,15 +65,16 @@ function resumeMemoryMarkup(work) {
   return `<div class="reading-card-memory"><span>${label}</span><p>${esc(content.slice(0, 120))}</p></div>`;
 }
 
-function readingCardMarkup(work) {
+function readingCardMarkup(work, { primary = false } = {}) {
   const progress = resumeProgressText(work);
   const recency = resumeRecencyLabel(work.resume_at, work.resume_source);
   const recencyTitle = resumeRecencyTitle(work.resume_at, work.resume_source);
   const progressBar = progress && Number(work.progress_total) > 0
     ? `<div class="progress-track"><span style="width:${Math.min(100, Math.max(0, (Number(work.progress_current) / Number(work.progress_total)) * 100))}%"></span></div>`
     : "";
-  return `<article class="reading-card" data-work-id="${esc(work.id)}">
+  return `<article class="reading-card${primary ? " home-resume-primary" : ""}" data-work-id="${esc(work.id)}">
       <button type="button" class="reading-card-main" data-open-work="${esc(work.id)}">
+        ${primary ? `<span class="home-cover-frame home-cover-frame--continue" data-shuhari-face="continue">${workFaceMarkup(work)}</span>` : ""}
         <div class="type-status"><span class="type-pill">${TYPE_LABELS[work.type]}</span>${statusChipMarkup(work.type, work.status)}</div>
         <h3>${esc(work.title)}</h3><div class="creator">${esc(work.creator || "")}</div>
         ${(recency || progress) ? `<div class="reading-card-resume-signals">${recency ? `<span class="reading-card-recency" title="${esc(recencyTitle)}">${esc(recency)}</span>` : ""}${progress ? `<span class="reading-card-progress">${esc(progress)}</span>` : ""}</div>` : ""}
@@ -108,7 +109,7 @@ function readingResumeMarkup(reading) {
   const remaining = Math.max(0, ordered.length - 4);
 
   return `<div class="home-resume-layout">
-    <div class="home-resume-primary-wrap">${readingCardMarkup(primary)}</div>
+    <div class="home-resume-primary-wrap">${readingCardMarkup(primary, { primary: true })}</div>
     ${secondary.length ? `<div class="home-resume-secondary" aria-label="他の進行中作品">
       ${secondary.map(secondaryResumeMarkup).join("")}
     </div>` : ""}
