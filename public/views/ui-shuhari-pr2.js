@@ -11,17 +11,6 @@ function ensureStyle() {
   document.head.append(link);
 }
 
-function primeHeroCopy() {
-  const home = document.querySelector("#homeView");
-  if (!home) return;
-  const eyebrow = home.querySelector(".hero-copy .eyebrow");
-  const title = home.querySelector(".hero-copy h1");
-  const lead = home.querySelector(".hero-copy > p:last-of-type");
-  if (eyebrow) eyebrow.textContent = "YOUR CULTURE, NEXT MOVE";
-  if (title) title.textContent = "今日は、どれに戻る？";
-  if (lead) lead.textContent = "続きを進める。次を選ぶ。まだ決まらなければ、興味から探す。";
-}
-
 function hasHorizontalOverflow(node) {
   return Boolean(node && node.scrollWidth > node.clientWidth + 2);
 }
@@ -42,11 +31,9 @@ function scheduleSync() {
   frame = requestAnimationFrame(syncShuhariSwipeHints);
 }
 
-primeHeroCopy();
 
 export function initUiShuhariPr2() {
   ensureStyle();
-  primeHeroCopy();
   subscribe(scheduleSync);
   window.addEventListener("resize", scheduleSync, { passive: true });
   document.addEventListener("click", (event) => {
