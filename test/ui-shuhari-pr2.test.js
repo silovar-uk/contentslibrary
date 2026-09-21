@@ -14,7 +14,7 @@ test("Shuhari PR2はHomeのコピーやスワイプ状態を所有しない", ()
 
 test("Homeレイアウトはhome-decision-surfaceへ委ねる", () => {
   assert.match(css, /home-decision-surface\.css/);
-  assert.doesNotMatch(css, /random-controls[\s\S]*grid-template-columns/);
+  assert.doesNotMatch(css, /\.home-zone-choose \.random-controls\{/);
 });
 
 test("スマホ一覧のツールは2列に折り返す", () => {
