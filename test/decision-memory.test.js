@@ -5,7 +5,8 @@ import {
   mergeDecisionMemory,
   readDecisionMemory,
   recentDecisionIdsFrom,
-  recordDecision
+  recordDecision,
+  syncDecisionMemory
 } from "../public/core/decision-memory.js";
 
 function memoryStorage() {
@@ -68,4 +69,68 @@ test("壊れたlocalStorage値は空履歴として安全に扱う", () => {
     setItem() {}
   };
   assert.deepEqual(readDecisionMemory(storage), []);
+});
+
+
+test("syncDecisionMemoryはローカル履歴をD1へ送り、サーバー結果でキャッシュを置き換える", async () => {
+  const storage = memoryStorage();
+  recordDecision({
+    work_id: "local",
+    title: "ローカル",
+    slot: "priority",
+    reason: "読む優先度「最優先」",
+    scope: "next",
+    decided_at: "2026-09-21T09:00:00.000Z"
+  }, storage);
+
+  let captured = null;
+  const rows = await syncDecisionMemory({
+    storage,
+    apiFn: async (path, options = {}) => {
+      captured = { path, options };
+      return {
+        decisions: [{
+          client_event_id: "server-1",
+          work_id: "server",
+          title: "サーバー",
+          creator: "作者",
+          slot: "remember",
+          reason: "最終更新から100日",
+          scope: "next",
+          decided_at: "2026-09-21T10:00:00.000Z"
+        }]
+      };
+    }
+  });
+
+  assert.equal(captured.path, "/api/decisions/sync");
+  assert.equal(captured.options.method, "POST");
+  assert.match(captured.options.body, /"work_id":"local"/);
+  assert.equal(rows[0].work_id, "server");
+  assert.equal(readDecisionMemory(storage)[0].client_event_id, "server-1");
+});
+
+test("syncDecisionMemoryはローカル履歴が空ならGETだけで他端末の履歴を取り込む", async () => {
+  const storage = memoryStorage();
+  let captured = null;
+  await syncDecisionMemory({
+    storage,
+    apiFn: async (path, options = {}) => {
+      captured = { path, options };
+      return {
+        decisions: [{
+          client_event_id: "remote-1",
+          work_id: "remote",
+          title: "別端末で選択",
+          slot: "wildcard",
+          reason: "この棚から完全ランダム",
+          scope: "all",
+          decided_at: "2026-09-20T10:00:00.000Z"
+        }]
+      };
+    }
+  });
+  assert.equal(captured.path, "/api/decisions");
+  assert.deepEqual(captured.options, {});
+  assert.equal(readDecisionMemory(storage)[0].work_id, "remote");
 });
