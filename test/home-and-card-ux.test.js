@@ -69,12 +69,13 @@ test('setSelectedDetailはhas_notes/experience_countを詳細レスポンスの�
   assert.match(body, /experience_count: detail\.experiences\?\.length \?\? 0/);
 });
 
-test('ホームの自動抽選は6冊をクライアント側で選び、初回読み込みと引き直し・モード切替だけで再抽選する', async () => {
+test('ホームのCHOOSEは3候補をクライアント側で組み、明示再抽選だけで顔ぶれを変える', async () => {
   const home = await read('public/views/home.js');
   const app = await read('public/app.js');
   assert.match(home, /export function drawRandomPicks/);
-  assert.match(home, /pickRandomWorks\(scope, 6, previousRandomIds\(\), mode\)/);
-  assert.match(home, /random-mode-change/);
+  assert.match(home, /buildDecisionDeck/);
+  assert.match(home, /preserveKept/);
+  assert.match(home, /data-decision-keep/);
   assert.match(app, /drawRandomPicks\(\);/);
   assert.doesNotMatch(home, /subscribe\(drawRandomPicks\)/);
 });
