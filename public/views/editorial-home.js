@@ -57,9 +57,9 @@ function ensureRandomSkeletonCount(home) {
   const grid = home.querySelector("#randomStage .random-pick-grid");
   if (!grid) return;
   const skeletons = [...grid.children].filter((item) => item.classList.contains("skeleton-card"));
-  if (!skeletons.length || skeletons.length >= 6) return;
+  if (!skeletons.length || skeletons.length >= 3) return;
   const template = skeletons[skeletons.length - 1];
-  for (let index = skeletons.length; index < 6; index += 1) grid.append(template.cloneNode(true));
+  for (let index = skeletons.length; index < 3; index += 1) grid.append(template.cloneNode(true));
 }
 
 function updateRandomScrollState() {
@@ -92,7 +92,7 @@ function decorateRandom(home) {
   const hero = home.querySelector(".hero-row");
   hero?.classList.add("editorial-hero");
   const topDraw = document.querySelector('.top-actions [data-action="draw-random"]');
-  if (topDraw) topDraw.title = "候補を6件引き直す";
+  if (topDraw) topDraw.title = "3候補を引き直す";
 }
 
 function decorateStats(home) {
