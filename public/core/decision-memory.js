@@ -1,3 +1,5 @@
+import { api } from "./api.js";
+
 const STORAGE_KEY = "contents-library-decision-memory-v1";
 const MAX_RECORDS = 30;
 
@@ -6,20 +8,28 @@ function storageOrNull(storage) {
   try { return globalThis.localStorage || null; } catch { return null; }
 }
 
+function clientEventId(value, workId, slot, decidedAt) {
+  const explicit = String(value?.client_event_id || value?.clientEventId || "").trim();
+  return explicit || `dm:${workId}:${slot}:${decidedAt}`;
+}
+
 export function normalizeDecisionRecord(value) {
   if (!value || typeof value !== "object") return null;
   const workId = String(value.work_id || value.workId || "").trim();
   if (!workId) return null;
-  const decidedAt = String(value.decided_at || value.decidedAt || "").trim();
-  const parsed = Date.parse(decidedAt);
+  const decidedAtRaw = String(value.decided_at || value.decidedAt || "").trim();
+  const parsed = Date.parse(decidedAtRaw);
+  const decidedAt = Number.isFinite(parsed) ? new Date(parsed).toISOString() : new Date().toISOString();
+  const slot = ["priority", "remember", "wildcard"].includes(value.slot) ? value.slot : "wildcard";
   return {
+    client_event_id: clientEventId(value, workId, slot, decidedAt),
     work_id: workId,
     title: String(value.title || "").trim(),
     creator: String(value.creator || "").trim(),
-    slot: ["priority", "remember", "wildcard"].includes(value.slot) ? value.slot : "wildcard",
+    slot,
     reason: String(value.reason || "").trim(),
     scope: String(value.scope || "next").trim() || "next",
-    decided_at: Number.isFinite(parsed) ? new Date(parsed).toISOString() : new Date().toISOString()
+    decided_at: decidedAt
   };
 }
 
@@ -63,16 +73,52 @@ export function readDecisionMemory(storage = null) {
   }
 }
 
+function publishDecisionMemory(entries, record = null) {
+  if (typeof document !== "undefined") {
+    document.dispatchEvent(new CustomEvent("decision-memory-change", { detail: { record, entries } }));
+  }
+}
+
+export function writeDecisionMemory(entries = [], storage = null) {
+  const target = storageOrNull(storage);
+  const normalized = entries.map(normalizeDecisionRecord).filter(Boolean).slice(0, MAX_RECORDS);
+  if (target) {
+    try { target.setItem(STORAGE_KEY, JSON.stringify(normalized)); } catch {}
+  }
+  publishDecisionMemory(normalized, normalized[0] || null);
+  return normalized;
+}
+
 export function recordDecision(record, storage = null) {
   const target = storageOrNull(storage);
   const next = mergeDecisionMemory(readDecisionMemory(target), record);
   if (target) {
     try { target.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
   }
-  if (typeof document !== "undefined") {
-    document.dispatchEvent(new CustomEvent("decision-memory-change", { detail: { record: next[0], entries: next } }));
-  }
+  publishDecisionMemory(next, next[0] || null);
   return next[0] || null;
+}
+
+export async function syncDecisionMemory({ apiFn = api, storage = null } = {}) {
+  const local = readDecisionMemory(storage);
+  let data;
+  if (local.length) {
+    data = await apiFn("/api/decisions/sync", {
+      method: "POST",
+      body: JSON.stringify({ decisions: local })
+    });
+  } else {
+    data = await apiFn("/api/decisions");
+  }
+  const decisions = Array.isArray(data?.decisions) ? data.decisions : [];
+  return writeDecisionMemory(decisions, storage);
+}
+
+export function recordDecisionAndSync(record, { storage = null, apiFn = api } = {}) {
+  const saved = recordDecision(record, storage);
+  if (!saved) return null;
+  void syncDecisionMemory({ apiFn, storage }).catch(() => {});
+  return saved;
 }
 
 export function recentDecisionIds(options = {}, storage = null) {
