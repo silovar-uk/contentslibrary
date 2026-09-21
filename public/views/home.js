@@ -6,6 +6,7 @@ import { state, shelfData, themeData, subscribe } from "../core/store.js";
 import { pickRandomWorks } from "../core/random-pick.js";
 import { getRandomMode, initRandomMode } from "./random-mode.js";
 import { shelfNavigateToGenre, shelfClearGenreFilter, themeNavigate } from "./library.js";
+import { statusChipMarkup } from "./status-visuals.js";
 
 let homeData = null;
 let shelfScope = "all";
@@ -70,7 +71,7 @@ function readingCardMarkup(work) {
     : "";
   return `<article class="reading-card" data-work-id="${esc(work.id)}">
       <button type="button" class="reading-card-main" data-open-work="${esc(work.id)}">
-        <div class="type-status"><span class="type-pill">${TYPE_LABELS[work.type]}</span><span>${statusLabel(work.type, work.status)}</span></div>
+        <div class="type-status"><span class="type-pill">${TYPE_LABELS[work.type]}</span>${statusChipMarkup(work.type, work.status)}</div>
         <h3>${esc(work.title)}</h3><div class="creator">${esc(work.creator || "")}</div>
         ${(recency || progress) ? `<div class="reading-card-resume-signals">${recency ? `<span class="reading-card-recency" title="${esc(recencyTitle)}">${esc(recency)}</span>` : ""}${progress ? `<span class="reading-card-progress">${esc(progress)}</span>` : ""}</div>` : ""}
         ${resumeMemoryMarkup(work)}
@@ -86,7 +87,7 @@ function randomPickMarkup(work) {
       <span class="genre-badge">${esc(genre)}</span>
       <h3>${esc(work.title)}</h3>
       <p class="random-pick-creator">${esc(work.creator || "作者情報なし")}</p>
-      <p class="random-pick-status">${esc(statusLabel(work.type, work.status))}</p>
+      <div class="random-pick-status">${statusChipMarkup(work.type, work.status)}</div>
     </button>
   </article>`;
 }
@@ -111,6 +112,25 @@ export function drawRandomPicks() {
   randomPickIds = pickRandomWorks(scope, 6, previousRandomIds(), mode).map((w) => String(w.id));
   if (randomPickIds.length) rememberRandom(randomPickIds);
   renderRandomPicks();
+}
+
+function drawRandomPicksWithFeedback() {
+  const stage = $("#randomStage");
+  const buttons = $("[data-action='draw-random']");
+  buttons.forEach((button) => {
+    if (!button.dataset.rerollLabel) button.dataset.rerollLabel = button.textContent.trim() || "↻ 候補を引き直す";
+    button.disabled = true;
+    button.textContent = "↻ 引き直しています…";
+  });
+  stage?.classList.add("is-rerolling");
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    drawRandomPicks();
+    stage?.classList.remove("is-rerolling");
+    buttons.forEach((button) => {
+      button.disabled = false;
+      button.textContent = button.dataset.rerollLabel || "↻ 候補を引き直す";
+    });
+  }));
 }
 
 function shelfItemMarkup(genre, maxCount) {
@@ -244,7 +264,7 @@ export function initHome() {
   document.addEventListener("random-mode-change", drawRandomPicks);
   $("#randomScope").addEventListener("change", drawRandomPicks);
   document.addEventListener("click", (event) => {
-    if (event.target.closest("[data-action='draw-random']")) { event.preventDefault(); drawRandomPicks(); return; }
+    if (event.target.closest("[data-action='draw-random']")) { event.preventDefault(); drawRandomPicksWithFeedback(); return; }
 
     const scope = event.target.closest("[data-shelf-scope]")?.dataset.shelfScope;
     if (scope) { shelfScope = scope; renderShelf(); return; }
