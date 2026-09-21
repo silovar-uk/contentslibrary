@@ -39,6 +39,16 @@ test("REFLECTはRecord Viewへ分離される", async () => {
   assert.match(record, /stats/);
 });
 
+test("RecordはDecision Memoryを独立した履歴として表示する", async () => {
+  const html = await read("public/index.html");
+  const record = await read("public/views/record.js");
+  assert.match(html, /id="recordDecisions"/);
+  assert.match(html, /DECISION MEMORY/);
+  assert.match(record, /readDecisionMemory/);
+  assert.match(record, /decisionMemoryMarkup/);
+  assert.match(record, /decision-memory-change/);
+});
+
 test("Mobile Navigationは4 Destination + Add Actionである", async () => {
   const html = await read("public/index.html");
   assert.match(html, /data-mobile-view="home"/);
