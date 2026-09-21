@@ -52,12 +52,13 @@ test('カードメモの開閉状態と保存処理はstore.jsで一覧・詳細
   assert.doesNotMatch(home, /data-toggle-card-note|cardNoteMarkup|openNoteCardIds/);
 });
 
-test('抽選6冊は軽量な候補カードを描画し、state.worksから引き直して顔ぶれを維持する', async () => {
+test('CHOOSEの3候補は軽量カードを描画し、state.worksから引き直して顔ぶれを維持する', async () => {
   const home = await read('public/views/home.js');
-  const body = home.match(/function randomPickMarkup[\s\S]*?\n}/)[0];
+  const body = home.match(/function decisionCandidateMarkup[\s\S]*?\n}/)[0];
   assert.doesNotMatch(body, /cardRatingMarkup|cardNoteMarkup|data-random-start/);
   assert.match(body, /data-open-work/);
-  assert.match(home, /randomPickIds\.map\(\(id\) => state\.works\.get\(id\)\)/);
+  assert.match(body, /data-decision-keep/);
+  assert.match(home, /decisionDeck[\s\S]*state\.works\.get/);
   assert.match(home, /renderRandomPicks\(\); \/\/ 抽選のやり直しはしない/);
 });
 
@@ -68,7 +69,7 @@ test('読み込み中は空表示ではなくスケルトンを出す(3か所)',
   const css = await read('public/styles/app.css');
   assert.match(dom, /export function skeletonCards/);
   assert.match(dom, /export function skeletonShelf/);
-  assert.match(home, /if \(!state\.loaded\)[\s\S]{0,80}skeletonCards\(6\)/);
+  assert.match(home, /if \(!state\.loaded\)[\s\S]{0,140}skeletonCards\(3\)/);
   assert.match(home, /if \(!state\.loaded\)[\s\S]{0,120}skeletonShelf\(8\)/);
   assert.match(library, /if \(!state\.loaded\)[\s\S]{0,80}skeletonCards\(6\)/);
   assert.match(css, /@keyframes skeleton-shimmer/);
