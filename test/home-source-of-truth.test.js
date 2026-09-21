@@ -12,7 +12,7 @@ test("CHOOSEは旧開始・評価・メモDOMを生成しない", async () => {
   assert.doesNotMatch(source, /cardNoteMarkup/);
   assert.doesNotMatch(source, /openNoteCardIds/);
   assert.doesNotMatch(source, /cardRatingMarkup/);
-  assert.match(source, /function randomPickMarkup/);
+  assert.match(source, /function decisionCandidateMarkup/);
 });
 
 test("CONTINUEはTOP用カードに評価操作を生成しない", async () => {
@@ -32,9 +32,11 @@ test("ジャンル棚はHome自身が全件表示用DOMを生成し展開状態�
   assert.match(source, /<div class=\"shelf-grid\">/);
 });
 
-test("ランダム再抽選は優先度変更では発火せず明示操作だけに限定する", async () => {
+test("Decision Deck再抽選は明示操作と棚変更だけに限定する", async () => {
   const source = await read("public/views/home.js");
-  assert.match(source, /random-mode-change/);
   assert.match(source, /data-action='draw-random'/);
+  assert.match(source, /randomScope/);
+  assert.match(source, /preserveKept: false/);
+  assert.doesNotMatch(source, /random-mode-change/);
   assert.doesNotMatch(source, /reading-priority.*drawRandomPicks|drawRandomPicks.*reading-priority/s);
 });
