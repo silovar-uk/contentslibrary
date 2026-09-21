@@ -47,7 +47,7 @@ test("CONTINUEはHomeのResume Surfaceを使い、時刻の意味付けはhome.j
   assert.match(source, /enhanceContinueCards/);
   assert.match(home, /home-resume-primary/);
   assert.match(home, /home-resume-secondary/);
-  assert.match(home, /resumeSortValue/);
+  assert.match(home, /const ordered = \\[\\.\\.\\.reading\\];/);\n  assert.doesNotMatch(home, /resumeSortValue/);
   assert.match(css, /\.home-resume-layout\{/);
 });
 
