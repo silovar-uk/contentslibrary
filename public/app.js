@@ -2,7 +2,7 @@ import { $, $$ } from "./core/dom.js";
 import { api } from "./core/api.js";
 import { toast, setBusy } from "./core/dom.js";
 import { ratingLevel } from "./core/format.js";
-import { state, loadSnapshot, setWorkRating, subscribe, setView, closeDetail, toggleQuickEdit, openNoteCardIds, toggleCardNote, submitCardNote } from "./core/store.js";
+import { state, loadSnapshot, setWorkRating, subscribe, setView, setHomeMode, closeDetail, toggleQuickEdit, openNoteCardIds, toggleCardNote, submitCardNote } from "./core/store.js";
 import { renderAccount, loadAdmin, initAdmin } from "./views/admin.js";
 import { initHome, loadHome, drawRandomPicks } from "./views/home.js";
 import { initHomeRescue } from "./views/home-rescue.js";
@@ -38,19 +38,33 @@ import { initBulkJsonOpenFix } from "./views/bulk-json-open-fix.js";
 import { initAddEntryFlow } from "./views/add-entry-flow.js";
 import { initUiShuhariPr1 } from "./views/ui-shuhari-pr1.js";
 import { initUiShuhariPr2 } from "./views/ui-shuhari-pr2.js";
+import { initRecord, loadRecord } from "./views/record.js";
 
 function applyView() {
   const view = state.view;
-  $("#app").dataset.view = view === "library" ? "library" : "home";
+  $("#app").dataset.view = view;
   $("#homeView").hidden = view !== "home";
+  $("#recordView").hidden = view !== "record";
   $("#settingsView").hidden = view !== "settings";
   $("#adminView").hidden = view !== "admin";
+
+  document.querySelectorAll("[data-mobile-view]").forEach((button) => {
+    const active = button.dataset.mobileView === view;
+    button.classList.toggle("is-active", active);
+    if (active) button.setAttribute("aria-current", "page");
+    else button.removeAttribute("aria-current");
+  });
 }
 
 function bindShell() {
   document.addEventListener("click", async (event) => {
     const action = event.target.closest("[data-action]")?.dataset.action;
-    if (action === "go-home") { setView("home"); await loadHome(); }
+    if (action === "go-home") {
+      if (state.view !== "home") setHomeMode(null);
+      setView("home");
+      await loadHome();
+    }
+    if (action === "open-record") { setView("record"); await loadRecord({ force: true }); }
     if (action === "open-settings") setView("settings");
     if (action === "open-admin") { setView("admin"); await loadAdmin(); }
 
@@ -79,8 +93,13 @@ function bindShell() {
     }
 
     const mobile = event.target.closest("[data-mobile-view]")?.dataset.mobileView;
-    if (mobile === "home") setView("home");
+    if (mobile === "home") {
+      if (state.view !== "home") setHomeMode(null);
+      setView("home");
+      if (state.view === "home") void loadHome();
+    }
     if (mobile === "library") { setView("library"); $("#globalSearch").focus(); }
+    if (mobile === "record") { setView("record"); void loadRecord({ force: true }); }
     if (mobile === "settings") setView("settings");
   });
 
@@ -153,6 +172,7 @@ async function init() {
     initEditorialHome();
     initHomeComposition();
     initHomeRescue();
+    initRecord();
     initDetail();
     initAmazonTitleSearch();
     initDetailTopNotes();
