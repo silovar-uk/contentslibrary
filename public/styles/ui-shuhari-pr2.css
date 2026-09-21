@@ -1,15 +1,6 @@
 @media(max-width:767px){
-  .home-zone-choose .random-controls{
-    display:grid;
-    grid-template-columns:minmax(100px,.8fr) minmax(120px,1fr);
-    gap:8px;
-    align-items:end;
-    overflow:visible;
-    padding-bottom:0;
-  }
-  .home-zone-choose .random-controls>label{grid-column:1/-1;min-width:0;width:100%}
-  .home-zone-choose .random-controls .random-mode-toggle{grid-column:1;min-width:100px;width:100%}
-  .home-zone-choose .random-controls .draw-button{grid-column:2;width:100%;min-width:0}
+  /* CHOOSEの操作順は home-decision-surface.css が所有する。
+     ここでは旧random-controlsの2列レイアウトを持たない。 */
 
   .list-panel .list-tools{
     display:grid;
