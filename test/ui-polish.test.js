@@ -17,15 +17,16 @@ test("スマホのランダム抽選レイアウトはHome decision surfaceが�
   const resilience = await read("public/styles/mobile-text-resilience.css");
   assert.doesNotMatch(polish, /#randomStage \.random-pick-grid,[\s\S]{0,180}grid-template-columns/);
   assert.doesNotMatch(resilience, /\.random-pick-grid\{grid-template-columns/);
-  assert.match(decision, /home-zone-choose \.editorial-random-feature \.random-pick-grid\{[\s\S]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(decision, /@media\(max-width:767px\)[\s\S]*home-zone-choose \.editorial-random-feature \.random-pick-grid\{[\s\S]*grid-template-columns:minmax\(0,1fr\)/);
 });
 
-test("ランダムカードは表紙・タイトル・作者・読む優先度を前面に置く", async () => {
+test("Decision CandidateはlegacyランダムカードCSSから独立する", async () => {
   const css = await read("public/styles/ui-polish.css");
-  assert.match(css, /home-cover-frame[\s\S]*aspect-ratio:2\/3!important/);
-  assert.match(css, /random-pick-card h3/);
-  assert.match(css, /random-pick-creator/);
-  assert.match(css, /reading-priority-surface-random/);
+  const decision = await read("public/styles/home-decision-surface.css");
+  assert.match(css, /random-pick-card:not\(\.decision-candidate\)/);
+  assert.match(decision, /decision-candidate-kind/);
+  assert.match(decision, /decision-candidate-reason/);
+  assert.match(decision, /decision-candidate-keep/);
 });
 
 test("作品評価・メモ・旧読みたさはスマホのランダムカード前面から外す", async () => {
