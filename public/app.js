@@ -114,6 +114,7 @@ function bindShell() {
     setBusy(button, true, "書き足し中…");
     try {
       await submitCardNote(workId, form.content.value);
+      await loadHome();
       toast("メモを書き足しました。");
     } catch (e) { toast(e.message, "error"); setBusy(button, false); }
   });
@@ -135,6 +136,7 @@ function bindShell() {
   });
 
   document.addEventListener("app:reload-snapshot", () => { void loadSnapshot(); });
+  document.addEventListener("app:refresh-home", () => { void loadHome(); });
   document.addEventListener("app:auth-lost", () => toast("ログイン状態を確認できません。再読み込みします。", "error"));
   subscribe(applyView);
 }
