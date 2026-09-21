@@ -38,3 +38,12 @@ test("棚UIはExploreから渡されたmodeだけを描画しLibrary検索へ遷
   assert.doesNotMatch(source, /data-source-shelf-mode/);
   assert.doesNotMatch(source, /MutationObserver/);
 });
+
+
+test("著者・レーベル棚は同じ内容ならDOMを書き換えずHome observerと再描画ループしない", () => {
+  const source = fs.readFileSync("public/views/source-shelves.js", "utf8");
+  assert.match(source, /let lastSignature = ""/);
+  assert.match(source, /const signature = JSON\.stringify/);
+  assert.match(source, /signature === lastSignature/);
+  assert.match(source, /lastSignature = signature/);
+});
