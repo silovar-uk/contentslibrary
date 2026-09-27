@@ -55,6 +55,16 @@ function progressText(work) {
   return `${work.progress_current}${total}${work.unit_label ? ` ${work.unit_label}` : ""}`;
 }
 
+export function workOverview(work = {}) {
+  const metadata = work?.metadata && typeof work.metadata === "object" && !Array.isArray(work.metadata) ? work.metadata : {};
+  for (const key of ["overview", "summary", "description", "synopsis"]) {
+    const text = typeof metadata[key] === "string" ? metadata[key].trim() : "";
+    if (text) return { label: "概要", text };
+  }
+  const note = typeof work?.short_note === "string" ? work.short_note.trim() : "";
+  return note ? { label: "一言メモ", text: note } : null;
+}
+
 export function renderWorkList() {
   if (state.view !== "library") return; // 非表示ビューの全件再描画はしない(実測: 600件で600ms超)
   const list = $("#workList");
@@ -74,6 +84,7 @@ export function renderWorkList() {
         const coverImg = cover && isAllowedCoverUrl(cover)
           ? `<img class="work-cover-thumb" src="${esc(coverThumbUrl(cover))}" alt="" loading="lazy" decoding="async" width="44" height="62">`
           : "";
+        const overview = workOverview(work);
         return `
     <article class="work-card ${selectionMode ? "is-selectable" : ""} ${selectionMode && selected ? "is-selected" : ""} ${isCurrent ? "is-current" : ""}" data-work-id="${esc(work.id)}">
       <button type="button" class="work-card-main" data-open-work="${esc(work.id)}" aria-current="${isCurrent}" ${selectionMode ? `aria-pressed="${selected}"` : ""}>
@@ -82,7 +93,7 @@ export function renderWorkList() {
         <div class="work-card-body">
           <div class="work-card-top"><div class="type-status"><span class="type-pill">${TYPE_LABELS[work.type]}</span>${statusChipMarkup(work.type, work.status)}</div>${favorite ? '<span class="favorite-mark">栞</span>' : ""}</div>
           <h3>${esc(work.title)}</h3><div class="creator">${esc(work.creator || "")}</div>
-          ${work.short_note ? `<p class="short-note">${esc(work.short_note)}</p>` : ""}
+          ${overview ? `<p class="short-note work-overview"><span>${esc(overview.label)}</span>${esc(overview.text)}</p>` : ""}
           <div class="label-row">${labels.slice(0, 6).map(labelChip).join("")}</div>
           <div class="card-footer"><span>${progressText(work) ? esc(progressText(work)) : "進捗未設定"}</span></div>
         </div>
