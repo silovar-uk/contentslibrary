@@ -47,12 +47,13 @@ test('棚から主ジャンルと複数状態で作品一覧を絞り込む', as
   assert.match(library, /genreId === "other"/);
 });
 
-test('ジャンル棚をホームに表示し一覧へ接続する', async () => {
+test('ジャンル棚をLibrary Exploreに表示し一覧へ接続する', async () => {
   const html = await read('public/index.html');
   const home = await read('public/views/home.js');
   const store = await read('public/core/store.js');
   const css = await read('public/styles/app.css');
-  assert.match(html, /あなたのジャンル棚/);
+  assert.match(html, /id="libraryExplore"/);
+  assert.match(html, /ジャンルから探す/);
   // 全件常駐しているため、棚の集計はサーバー往復せずクライアント側で計算する。
   assert.match(store, /export function shelfData/);
   assert.match(home, /shelfNavigateToGenre/);
