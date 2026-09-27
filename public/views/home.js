@@ -279,9 +279,17 @@ function renderThemeShelf() {
 
 function renderShelfFilterChip() {
   const chip = $("#shelfFilterChip");
+  if (!chip) return;
   if (!activeShelfFilter) { chip.hidden = true; chip.innerHTML = ""; return; }
   chip.hidden = false;
   chip.innerHTML = `<span>棚から絞り込み：<strong>${esc(activeShelfFilter.name)}</strong></span><button type="button" data-clear-shelf-filter aria-label="解除">×</button>`;
+}
+
+export function renderExploreShelves() {
+  if (!$("#genreShelf") || !$("#themeShelf")) return;
+  renderShelf();
+  renderShelfFilterChip();
+  renderThemeShelf();
 }
 
 function shelfScopeStatuses(scope) {
@@ -314,10 +322,8 @@ export function renderHome() {
   if (h.openSecurityCount > 0) { banner.hidden = false; banner.innerHTML = `<strong>要確認のセキュリティイベントが ${h.openSecurityCount} 件あります。</strong> <button class="text-button" data-action="open-admin">確認する →</button>`; }
   else banner.hidden = true;
 
-  renderShelf();
-  renderShelfFilterChip();
-  renderThemeShelf();
   renderRandomPicks(); // 抽選のやり直しはしない。優先度などの表示更新だけをここに乗せる
+  document.dispatchEvent(new CustomEvent("home:rendered"));
 }
 
 export async function loadHome() {
@@ -355,7 +361,11 @@ async function setupNotionImport() {
 }
 
 export function initHome() {
-  subscribe(renderHome);
+  subscribe(() => {
+    renderHome();
+    renderExploreShelves();
+  });
+  renderExploreShelves();
   $("#randomScope").addEventListener("change", () => drawRandomPicks({ preserveKept: false }));
   document.addEventListener("click", (event) => {
     const chooseButton = event.target.closest("[data-decision-choose]");
