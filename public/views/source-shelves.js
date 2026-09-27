@@ -3,6 +3,7 @@ import { allWorks, setFilters, setView, subscribe } from "../core/store.js";
 import { sourceShelfData } from "../core/source-shelf.js";
 import { workFaceMarkup } from "../core/work-face.js";
 
+let initialized = false;
 let expanded = false;
 let renderedMode = "";
 let lastSignature = "";
@@ -86,6 +87,8 @@ function scheduleRender() {
 }
 
 export function initSourceShelves() {
+  if (initialized) return;
+  initialized = true;
   ensureStyle();
   subscribe(scheduleRender);
 
