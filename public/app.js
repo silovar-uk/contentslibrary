@@ -12,6 +12,7 @@ import { initEditorialHome } from "./views/editorial-home.js";
 import { initHomeComposition } from "./views/home-composition.js";
 import { initLibrary, renderWorkList } from "./views/library.js";
 import { initLibraryBookcase } from "./views/library-bookcase.js";
+import { initLibraryExplore } from "./views/library-explore.js";
 import { initReadingPriority } from "./views/reading-priority.js";
 import { initReadingPrioritySurfaces } from "./views/reading-priority-surfaces.js";
 import { initLightEditSurfaces } from "./views/light-edit-surfaces.js";
@@ -165,6 +166,7 @@ async function init() {
     initAddEntryFlow();
     initLibrary();
     initLibraryBookcase();
+    initLibraryExplore();
     initReadingPriority();
     initHome();
     initRandomScopeOptions();
