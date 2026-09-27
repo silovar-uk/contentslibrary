@@ -29,14 +29,14 @@ function sourceHost() {
 }
 
 function ensureHost() {
-  const body = document.querySelector('[data-home-zone="explore"] .home-zone-body');
+  const body = document.querySelector("#libraryExploreBody");
   if (!body) return null;
   let host = sourceHost();
   if (!host) {
     host = document.createElement("section");
     host.id = "sourceShelves";
     host.className = "source-shelves";
-    const tabs = body.querySelector(".home-explore-tabs");
+    const tabs = body.querySelector(".library-explore-tabs");
     if (tabs) tabs.after(host);
     else body.prepend(host);
   }
