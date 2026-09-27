@@ -14,23 +14,6 @@ function ensureStyle() {
   document.head.append(link);
 }
 
-function ensureExploreGrid(home) {
-  const genre = home.querySelector("#genreShelf");
-  const theme = home.querySelector("#themeShelf");
-  if (!genre || !theme) return;
-  let grid = home.querySelector("#editorialExploreGrid");
-  if (!grid) {
-    grid = document.createElement("div");
-    grid.id = "editorialExploreGrid";
-    grid.className = "editorial-explore-grid";
-    genre.before(grid);
-  }
-  if (genre.parentElement !== grid) grid.append(genre);
-  if (theme.parentElement !== grid) grid.append(theme);
-  genre.classList.add("editorial-card", "editorial-card-explore");
-  theme.classList.add("editorial-card", "editorial-card-explore");
-}
-
 function ensureReadingFeature(home) {
   const strip = home.querySelector("#readingStrip");
   if (!strip) return;
@@ -104,7 +87,6 @@ export function applyEditorialHome() {
   if (!home) return;
   home.classList.add("editorial-home");
   decorateRandom(home);
-  ensureExploreGrid(home);
   ensureReadingFeature(home);
   decorateRecents(home);
   decorateStats(home);
