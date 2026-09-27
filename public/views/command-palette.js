@@ -19,7 +19,7 @@ const ACTIONS = [
   { id: "notes", label: "メモがある作品を見る", hint: "記録を残した作品だけを表示", keywords: "メモ note notes", icon: "✎" },
   { id: "reading", label: "進行中を見る", hint: "現在読書・視聴中の作品", keywords: "読書中 進行中 active reading", icon: "▶" },
   { id: "organize", label: "読む順番を整理", hint: "読む優先度をまとめて変更", keywords: "読む順番 整理 優先度 organize priority", icon: "↕" },
-  { id: "home", label: "ホームへ", hint: "抽選棚と本の束へ戻る", keywords: "ホーム home", icon: "⌂" }
+  { id: "home", label: "NOWへ", hint: "続き・次候補へ戻る", keywords: "now ホーム home 続き 次", icon: "⌂" }
 ];
 
 function ensureStyle() {
