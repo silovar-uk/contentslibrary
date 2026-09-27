@@ -5,44 +5,27 @@ import test from "node:test";
 const root = new URL("../", import.meta.url);
 const read = (path) => readFile(new URL(path, root), "utf8");
 
-test("ホームにEditorial装飾を付与し、配置責務はCompositionへ委譲する", async () => {
+test("Editorial HomeはNOWのFeatured表示だけを装飾する", async () => {
   const source = await read("public/views/editorial-home.js");
   assert.match(source, /editorial-home/);
   assert.match(source, /editorial-random-feature/);
   assert.match(source, /editorial-reading-feature/);
-  assert.doesNotMatch(source, /movePriorityHub/);
-  assert.doesNotMatch(source, /editorial-priority-feature/);
+  assert.doesNotMatch(source, /ensureExploreGrid/);
+  assert.doesNotMatch(source, /#genreShelf|#themeShelf/);
 });
 
-test("ジャンル棚とテーマ棚を探索グリッドへまとめる", async () => {
+test("既存idを保持したままCONTINUEとCHOOSEを包む", async () => {
   const source = await read("public/views/editorial-home.js");
-  assert.match(source, /editorialExploreGrid/);
-  assert.match(source, /grid\.append\(genre\)/);
-  assert.match(source, /grid\.append\(theme\)/);
-});
-
-test("既存idを保持したままDOMを包む", async () => {
-  const source = await read("public/views/editorial-home.js");
-  assert.match(source, /#genreShelf/);
-  assert.match(source, /#themeShelf/);
   assert.match(source, /#readingStrip/);
   assert.match(source, /#randomStage/);
   assert.doesNotMatch(source, /innerHTML\s*=\s*`[\s\S]*randomStage/);
 });
 
-test("Editorial CSSは大中小の面積差を持つ", async () => {
+test("Editorial CSSはFeaturedと補助面の面積差を持つ", async () => {
   const css = await read("public/styles/editorial-home.css");
   assert.match(css, /\.editorial-random-feature/);
-  assert.match(css, /\.editorial-explore-grid\{display:grid;grid-template-columns:minmax\(0,1\.2fr\) minmax\(320px,\.8fr\)/);
   assert.match(css, /\.editorial-recents-grid/);
   assert.match(css, /\.editorial-stats/);
-});
-
-test("スマホではEditorialカードを単列へ縮退する", async () => {
-  const css = await read("public/styles/editorial-home.css");
-  assert.match(css, /@media\(max-width:767px\)/);
-  assert.match(css, /\.editorial-explore-grid\{gap:12px/);
-  assert.match(css, /grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/);
 });
 
 test("アプリ起動時にEditorial装飾の後でHome Compositionを初期化する", async () => {
