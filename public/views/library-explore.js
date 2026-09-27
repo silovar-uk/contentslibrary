@@ -1,6 +1,6 @@
 import { $ } from "../core/dom.js";
 import { subscribe } from "../core/store.js";
-import { renderSourceShelves } from "./source-shelves.js";
+import { initSourceShelves, renderSourceShelves } from "./source-shelves.js";
 
 const MODES = ["genre", "theme", "creator", "label"];
 const MODE_KEY = "contents-library-explore-mode-v2";
@@ -37,6 +37,7 @@ export function initLibraryExplore() {
   if (initialized) return;
   initialized = true;
   ensureStyle();
+  initSourceShelves();
 
   try {
     const stored = localStorage.getItem(MODE_KEY);
