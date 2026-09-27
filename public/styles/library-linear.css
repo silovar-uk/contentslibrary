@@ -14,7 +14,7 @@
     grid-template-columns:minmax(0,1fr) auto auto auto;
     align-items:center;
     gap:5px;
-    min-height:68px;
+    min-height:96px;
     margin:0;
     padding:0 7px 0 0;
     border:0;
@@ -40,12 +40,12 @@
   #workList .work-card-main{
     display:grid;
     grid-template-columns:36px minmax(0,1fr);
-    align-items:center;
+    align-items:start;
     gap:10px;
     width:100%;
     min-width:0;
-    min-height:67px;
-    padding:7px 7px 7px 10px;
+    min-height:95px;
+    padding:9px 7px 9px 10px;
     border:0;
     border-radius:0;
     background:transparent;
@@ -58,16 +58,23 @@
     border-radius:7px;
   }
 
-  #workList .work-cover-thumb{
+  #workList .work-cover-thumb,
+  #workList .work-face-list-thumb{
+    grid-column:1;
+    grid-row:1;
     width:34px;
+    min-width:34px;
     height:48px;
     margin:0;
     border-radius:4px;
+    overflow:hidden;
     object-fit:cover;
     box-shadow:0 1px 3px rgba(0,0,0,.1);
   }
-  #workList .work-card-main:not(:has(.work-cover-thumb))::before{
+  #workList .work-card-main:not(:has(.work-cover-thumb)):not(:has(.work-face-list-thumb))::before{
     content:"";
+    grid-column:1;
+    grid-row:1;
     width:34px;
     height:48px;
     border:1px solid color-mix(in srgb,var(--line) 75%,transparent);
@@ -76,11 +83,15 @@
   }
 
   #workList .work-card-body{
+    grid-column:2;
+    grid-row:1;
     display:grid;
     grid-template-columns:minmax(0,1fr) auto;
     grid-template-areas:
       "title top"
-      "creator progress";
+      "creator progress"
+      "overview overview"
+      "labels labels";
     align-items:center;
     column-gap:12px;
     row-gap:2px;
@@ -144,8 +155,46 @@
     font-size:9px;
     white-space:nowrap;
   }
-  #workList .short-note,
-  #workList .label-row{display:none}
+  #workList .work-overview{
+    grid-area:overview;
+    display:-webkit-box;
+    min-width:0;
+    max-width:100%;
+    margin:5px 0 1px;
+    overflow:hidden;
+    color:color-mix(in srgb,var(--ink) 78%,var(--muted));
+    font-size:10px;
+    line-height:1.45;
+    -webkit-box-orient:vertical;
+    -webkit-line-clamp:2;
+  }
+  #workList .work-overview>span{
+    margin-right:6px;
+    color:var(--muted);
+    font-size:8px;
+    font-weight:800;
+    letter-spacing:.08em;
+  }
+  #workList .label-row{
+    grid-area:labels;
+    display:flex;
+    min-width:0;
+    margin-top:4px;
+    overflow:hidden;
+    flex-wrap:nowrap;
+    gap:4px;
+  }
+  #workList .label-row .label-chip{
+    flex:none;
+    max-width:110px;
+    overflow:hidden;
+    padding:2px 5px;
+    font-size:8px;
+    line-height:1.25;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  #workList .label-row .label-chip:nth-child(n+5){display:none}
 
   #workList .work-card > .reading-priority-surface-library{
     align-self:center;
@@ -178,8 +227,8 @@
     white-space:nowrap;
   }
   #workList .card-star{
-    width:19px;
-    min-width:19px;
+    width:24px;
+    min-width:24px;
     height:28px;
     min-height:28px;
     padding:0;
