@@ -361,10 +361,8 @@ async function setupNotionImport() {
 }
 
 export function initHome() {
-  subscribe(() => {
-    renderHome();
-    renderExploreShelves();
-  });
+  subscribe(renderHome);
+  subscribe(renderExploreShelves);
   renderExploreShelves();
   $("#randomScope").addEventListener("change", () => drawRandomPicks({ preserveKept: false }));
   document.addEventListener("click", (event) => {
