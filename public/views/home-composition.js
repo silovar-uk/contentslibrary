@@ -1,21 +1,16 @@
 import { $ } from "../core/dom.js";
 import { state, subscribe, setHomeMode } from "../core/store.js";
-import { renderSourceShelves } from "./source-shelves.js";
 import { readingPriority } from "./reading-priority.js";
 import { readingPrioritySurfaceMarkup } from "./reading-priority-surfaces.js";
 
 let initialized = false;
 let frame = 0;
-let observer = null;
-let exploreMode = "genre";
-const EXPLORE_MODES = ["genre", "theme", "creator", "label"];
-const EXPLORE_STORAGE_KEY = "contents-library-home-explore-mode-v1";
 
 const ZONES = [
   { key: "continue", eyebrow: "CONTINUE", title: "続きを進める", description: "いま進めている作品へ、すぐ戻る。" },
-  { key: "choose", eyebrow: "CHOOSE", title: "次の作品を、棚から引く。", description: "候補から、次の一歩だけ決める。" },
-  { key: "explore", eyebrow: "EXPLORE", title: "興味から探す", description: "ジャンル、テーマ、著者、レーベルから探す。" }
+  { key: "choose", eyebrow: "CHOOSE", title: "次の作品を、棚から引く。", description: "候補から、次の一歩だけ決める。" }
 ];
+const HOME_MODES = new Set(ZONES.map(({ key }) => key));
 
 function ensureStyle() {
   if ($('link[href="/styles/home-decision-surface.css"]')) return;
@@ -82,13 +77,12 @@ function updateIntro(home, mode) {
   const eyebrow = home.querySelector(".hero-copy .eyebrow");
   const title = home.querySelector(".hero-copy h1");
   const lead = home.querySelector(".hero-copy > p:last-of-type");
-  setText(eyebrow, "YOUR CULTURE, NEXT MOVE");
+  setText(eyebrow, "NOW / YOUR CULTURE");
   if (!title || !lead) return;
 
   const copy = {
     continue: "今日は、どれに戻る？",
-    choose: "次は、何にする？",
-    explore: "興味から探す。"
+    choose: "次は、何にする？"
   };
   setText(title, copy[mode] || copy.continue);
   setText(lead, "");
@@ -100,8 +94,8 @@ function ensureModeSwitcher(home, flow) {
     switcher = document.createElement("nav");
     switcher.id = "homeModeSwitcher";
     switcher.className = "home-mode-switcher";
-    switcher.setAttribute("aria-label", "ホームの表示");
-    switcher.innerHTML = `<button type="button" data-home-mode="continue" aria-pressed="false">続き</button><button type="button" data-home-mode="choose" aria-pressed="false">次を選ぶ</button><button type="button" data-home-mode="explore" aria-pressed="false">探す</button>`;
+    switcher.setAttribute("aria-label", "NOWの表示");
+    switcher.innerHTML = `<button type="button" data-home-mode="continue" aria-pressed="false">続き</button><button type="button" data-home-mode="choose" aria-pressed="false">次を選ぶ</button>`;
   }
   const hero = home.querySelector(".hero-row");
   if (hero && switcher.parentElement !== hero) hero.append(switcher);
@@ -223,51 +217,6 @@ function composeChoose(zone) {
   if (controls && controls.childElementCount === 0) controls.remove();
 }
 
-function ensureExploreTabs(zone) {
-  const body = zone.querySelector(".home-zone-body");
-  if (!body) return;
-  let tabs = body.querySelector(".home-explore-tabs");
-  if (!tabs) {
-    tabs = document.createElement("nav");
-    tabs.className = "home-explore-tabs";
-    tabs.setAttribute("aria-label", "探し方を切り替える");
-    tabs.innerHTML = `<button type="button" data-home-explore-mode="genre" aria-pressed="false">ジャンル</button><button type="button" data-home-explore-mode="theme" aria-pressed="false">テーマ</button><button type="button" data-home-explore-mode="creator" aria-pressed="false">著者</button><button type="button" data-home-explore-mode="label" aria-pressed="false">レーベル</button>`;
-    body.prepend(tabs);
-  }
-}
-
-function syncExploreTabs(zone) {
-  zone.dataset.exploreMode = exploreMode;
-  zone.querySelectorAll("[data-home-explore-mode]").forEach((button) => {
-    button.setAttribute("aria-pressed", String(button.dataset.homeExploreMode === exploreMode));
-  });
-  const genre = zone.querySelector("#genreShelf");
-  const theme = zone.querySelector("#themeShelf");
-  if (genre) genre.hidden = exploreMode !== "genre";
-  if (theme) theme.hidden = exploreMode !== "theme";
-  renderSourceShelves(exploreMode);
-}
-
-function enhanceGenreShelf(zone) {
-  const genre = zone.querySelector("#genreShelf");
-  if (!genre) return;
-  genre.classList.add("genre-shelf-complete");
-  genre.querySelector("[data-shelf-expand]")?.remove();
-  genre.querySelectorAll(".shelf-item").forEach((item) => {
-    item.classList.remove("is-secondary");
-    item.style.removeProperty("--shelf-span");
-  });
-
-}
-
-function composeExplore(zone) {
-  const grid = $("#editorialExploreGrid");
-  if (grid) moveIntoBody(zone, grid);
-  ensureExploreTabs(zone);
-  syncExploreTabs(zone);
-  enhanceGenreShelf(zone);
-}
-
 function removeLegacyHomeSurfaces() {
   $("#readingPriorityHomeHub")?.remove();
   $("#walletStacks")?.remove();
@@ -281,8 +230,7 @@ function chooseHasCandidates() {
 
 function recommendedHomeMode() {
   if (hasContinueItems()) return "continue";
-  if (chooseHasCandidates()) return "choose";
-  return "explore";
+  return "choose";
 }
 
 export function applyHomeComposition() {
@@ -298,15 +246,15 @@ export function applyHomeComposition() {
 
   composeContinue(zones.continue);
   composeChoose(zones.choose);
-  composeExplore(zones.explore);
 
   const columns = home.querySelector(".home-columns");
   const stats = $("#statsBar");
   if (columns) columns.hidden = true;
   if (stats) stats.hidden = true;
 
-  const mode = state.homeMode || (state.loaded ? recommendedHomeMode() : "continue");
-  if (state.loaded && !state.homeMode) {
+  const requestedMode = HOME_MODES.has(state.homeMode) ? state.homeMode : null;
+  const mode = requestedMode || (state.loaded ? recommendedHomeMode() : "continue");
+  if (state.loaded && state.homeMode !== mode) {
     setHomeMode(mode);
     return;
   }
@@ -327,33 +275,16 @@ export function initHomeComposition() {
   if (initialized) return;
   initialized = true;
   ensureStyle();
-  const home = $("#homeView");
-  if (home) {
-    observer = new MutationObserver(scheduleApply);
-    observer.observe(home, { childList: true, subtree: true });
-  }
   subscribe(scheduleApply);
+  document.addEventListener("home:rendered", scheduleApply);
   window.addEventListener("resize", scheduleApply, { passive: true });
-  try {
-    const stored = localStorage.getItem(EXPLORE_STORAGE_KEY);
-    if (EXPLORE_MODES.includes(stored)) exploreMode = stored;
-  } catch {}
 
   document.addEventListener("click", (event) => {
     const modeButton = event.target.closest("[data-home-mode]");
-    if (modeButton) {
-      setHomeMode(modeButton.dataset.homeMode);
-      return;
-    }
-
-    const tab = event.target.closest("[data-home-explore-mode]");
-    if (!tab) return;
-    const next = tab.dataset.homeExploreMode;
-    if (!EXPLORE_MODES.includes(next)) return;
-    exploreMode = next;
-    try { localStorage.setItem(EXPLORE_STORAGE_KEY, exploreMode); } catch {}
-    const zone = document.querySelector('[data-home-zone="explore"]');
-    if (zone) syncExploreTabs(zone);
+    if (!modeButton) return;
+    const next = modeButton.dataset.homeMode;
+    if (!HOME_MODES.has(next)) return;
+    setHomeMode(next);
   });
   scheduleApply();
 }
