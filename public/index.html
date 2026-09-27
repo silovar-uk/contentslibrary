@@ -67,40 +67,6 @@
 
       <div id="securityBanner" class="security-banner" hidden></div>
 
-      <section id="genreShelf" class="genre-shelf" aria-labelledby="genreShelfTitle">
-        <div class="shelf-heading">
-          <div><p class="shelf-kicker">YOUR GENRE SHELF</p><h2 id="genreShelfTitle">あなたのジャンル棚</h2><p>作品数ではなく、いまの興味の厚みとして眺める棚。</p></div>
-          <div id="shelfSummary" class="shelf-summary" aria-live="polite"></div>
-        </div>
-        <div class="shelf-scope-tabs" role="tablist" aria-label="棚の対象">
-          <button type="button" role="tab" aria-selected="true" data-shelf-scope="all">すべて</button>
-          <button type="button" role="tab" aria-selected="false" data-shelf-scope="unread">未読・読みたい</button>
-          <button type="button" role="tab" aria-selected="false" data-shelf-scope="active">進行中</button>
-          <button type="button" role="tab" aria-selected="false" data-shelf-scope="completed">完了</button>
-          <button type="button" role="tab" aria-selected="false" data-shelf-scope="favorite">お気に入り</button>
-        </div>
-        <div id="shelfBody" class="shelf-body" aria-live="polite">
-          <div class="shelf-grid">
-            <div class="skeleton-line skeleton-shelf"></div><div class="skeleton-line skeleton-shelf"></div><div class="skeleton-line skeleton-shelf"></div>
-            <div class="skeleton-line skeleton-shelf"></div><div class="skeleton-line skeleton-shelf"></div><div class="skeleton-line skeleton-shelf"></div>
-          </div>
-        </div>
-      </section>
-
-      <section id="themeShelf" class="theme-shelf" aria-labelledby="themeShelfTitle">
-        <div class="shelf-heading">
-          <div><p class="shelf-kicker">CROSS-GENRE THEMES</p><h2 id="themeShelfTitle">テーマで横断する</h2><p>ジャンルをまたいで、いま気になっている主題から探す。</p></div>
-        </div>
-        <div id="themeShelfBody" class="shelf-body" aria-live="polite">
-          <div class="theme-chip-grid">
-            <div class="skeleton-line" style="width:80px;height:28px;border-radius:999px"></div>
-            <div class="skeleton-line" style="width:64px;height:28px;border-radius:999px"></div>
-            <div class="skeleton-line" style="width:96px;height:28px;border-radius:999px"></div>
-            <div class="skeleton-line" style="width:72px;height:28px;border-radius:999px"></div>
-          </div>
-        </div>
-      </section>
-
       <div class="section-heading">
         <div><span class="section-number">01</span><h2>現在読んでいる本</h2></div>
         <button type="button" class="text-button" data-preset="reading">すべて見る →</button>
@@ -179,6 +145,52 @@
             </select>
           </div>
         </div>
+        <details id="libraryExplore" class="library-explore">
+          <summary>
+            <span><strong>興味から探す</strong><small>ジャンル・テーマ・著者・レーベル</small></span>
+            <span class="library-explore-summary-cue" aria-hidden="true">⌄</span>
+          </summary>
+          <div id="libraryExploreBody" class="library-explore-body">
+            <nav class="library-explore-tabs" aria-label="探し方を切り替える">
+              <button type="button" data-library-explore-mode="genre" aria-pressed="true">ジャンル</button>
+              <button type="button" data-library-explore-mode="theme" aria-pressed="false">テーマ</button>
+              <button type="button" data-library-explore-mode="creator" aria-pressed="false">著者</button>
+              <button type="button" data-library-explore-mode="label" aria-pressed="false">レーベル</button>
+            </nav>
+            <section id="genreShelf" class="genre-shelf" aria-labelledby="genreShelfTitle">
+              <div class="shelf-heading">
+                <div><p class="shelf-kicker">YOUR GENRE SHELF</p><h2 id="genreShelfTitle">ジャンルから探す</h2><p>作品数ではなく、いまの興味の厚みとして眺める。</p></div>
+                <div id="shelfSummary" class="shelf-summary" aria-live="polite"></div>
+              </div>
+              <div class="shelf-scope-tabs" role="tablist" aria-label="棚の対象">
+                <button type="button" role="tab" aria-selected="true" data-shelf-scope="all">すべて</button>
+                <button type="button" role="tab" aria-selected="false" data-shelf-scope="unread">未読・読みたい</button>
+                <button type="button" role="tab" aria-selected="false" data-shelf-scope="active">進行中</button>
+                <button type="button" role="tab" aria-selected="false" data-shelf-scope="completed">完了</button>
+                <button type="button" role="tab" aria-selected="false" data-shelf-scope="favorite">お気に入り</button>
+              </div>
+              <div id="shelfBody" class="shelf-body" aria-live="polite">
+                <div class="shelf-grid">
+                  <div class="skeleton-line skeleton-shelf"></div><div class="skeleton-line skeleton-shelf"></div><div class="skeleton-line skeleton-shelf"></div>
+                  <div class="skeleton-line skeleton-shelf"></div><div class="skeleton-line skeleton-shelf"></div><div class="skeleton-line skeleton-shelf"></div>
+                </div>
+              </div>
+            </section>
+            <section id="themeShelf" class="theme-shelf" aria-labelledby="themeShelfTitle" hidden>
+              <div class="shelf-heading">
+                <div><p class="shelf-kicker">CROSS-GENRE THEMES</p><h2 id="themeShelfTitle">テーマから探す</h2><p>ジャンルをまたいで、気になっている主題から探す。</p></div>
+              </div>
+              <div id="themeShelfBody" class="shelf-body" aria-live="polite">
+                <div class="theme-chip-grid">
+                  <div class="skeleton-line" style="width:80px;height:28px;border-radius:999px"></div>
+                  <div class="skeleton-line" style="width:64px;height:28px;border-radius:999px"></div>
+                  <div class="skeleton-line" style="width:96px;height:28px;border-radius:999px"></div>
+                  <div class="skeleton-line" style="width:72px;height:28px;border-radius:999px"></div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </details>
         <div id="activeFilters" class="active-filters" aria-live="polite"></div>
         <div id="selectionExportBar" class="selection-bar" hidden aria-live="polite">
           <div class="selection-summary"><strong id="selectionExportCount">0件選択中</strong><small>作品をクリックして追加・解除</small></div>
@@ -240,7 +252,7 @@
     </section>
 
     <nav class="mobile-nav" aria-label="主要メニュー">
-      <button type="button" data-mobile-view="home"><span>⌂</span>ホーム</button>
+      <button type="button" data-mobile-view="home"><span>⌂</span>NOW</button>
       <button type="button" data-mobile-view="library"><span>⌕</span>ライブラリ</button>
       <button type="button" class="mobile-add" data-action="open-work-dialog" aria-label="作品を追加"><span>＋</span>追加</button>
       <button type="button" data-mobile-view="record"><span>≡</span>記録</button>
